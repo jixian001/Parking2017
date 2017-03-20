@@ -137,8 +137,7 @@ namespace Parking.Application
                     bSend1[18] = (byte)(Rack * 2 * 16 + Slot);
                 }
                 else 
-                {
-                    CRecord.RecordError("PLC的型式不存在，无法使用该代码！");
+                {                   
                     return false;
                 }
                 
