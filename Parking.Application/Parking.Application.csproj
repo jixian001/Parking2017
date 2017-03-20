@@ -41,6 +41,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EqpService.cs" />
+    <Compile Include="ICCard\ICCardReader.cs" />
+    <Compile Include="ICCard\ICCardRW.cs" />
+    <Compile Include="ICCard\ICCardCommon.cs" />
+    <Compile Include="PLC\IPLC.cs" />
+    <Compile Include="PLC\SocketPLC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorkFlow.cs" />
   </ItemGroup>
@@ -59,9 +64,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ICCard\" />
     <Folder Include="Led\" />
-    <Folder Include="PLC\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
