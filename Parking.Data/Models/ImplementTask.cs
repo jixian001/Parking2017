@@ -65,6 +65,45 @@ namespace Parking.Data
 
     public enum EnmTaskStatus
     {
+        Init = 0,//初始
+        //存车，车厅
+        ICarInWaitFirstSwipeCard,// 车厅内已经有车停好，等待刷卡
+        IFirstSwipedWaitforCheckSize,// 入库车辆的第一次刷卡结束，提示用户第二次刷卡(等待下发1-9)
+        ISecondSwipedWaitforCheckSize,//第二次刷卡，等待检测尺寸
+        ISecondSwipedWaitforEVDown,// 第二次刷卡成功，等待检测车辆(等待下发1-1)
+        ISecondSwipedWaitforCarLeave,// 第二次刷卡分配车位失败，等待车辆离开(等待下发3-1)
+        IEVDownFinished,//确认入库 收到(1,54,9999)后修改
+        IEVDownFinishing,//升降机下降完成(等待下发1,54)
+
+        //取车，车厅
+        OWaitforEVDown,   //出库开始，升降机等待下降(等待下发1-1)       
+        OTVLoadWaitforEVDown,//装载完成等待升降机下降
+        OEVDownWaitforTVLoad,//升降机下降等待装载
+        OWaitforEVUp,//出车卸载完成，等待升降机上升
+        OCarOutWaitforDriveaway,// 车已取出，等待用户开车(等待下发3-1)
+        OEVDownFinishing,//升降机下降完成（取）
+
+        Finished,   //作业完成(收到 3,54)
+        ICheckCarFail,//检测失败(收到 1001,104)
+
+        TMURO,    // 故障       
+        TMURORecoverNocar,// 故障人工确认继续
+        TMURORecoverHascar,// TV故障恢复       
+        TMUORWaitforUnload,
+
+        //TV
+        TWaitforLoad,//车厅开始下降,等待执行装载(等待下发13-1)
+        TWaitforUnload,  // 装载完成等待卸载
+
+        UnLoadFinishing,//卸载完成
+        TWaitforMove,// 等待移动
+
+        MoveFinishing,//移动完成
+        HallFinishing,//出厅完成(收到 1003，4,下发3,54)
+        LoadFinishing,//装载完成
+
+        TempOWaitforEVDown,  //暂时取车
+        TempOEVDownFinishing  //暂时取车时，升降机下降完成
 
     }
 

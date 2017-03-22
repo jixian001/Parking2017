@@ -75,10 +75,35 @@ namespace Parking.Application
             for (int i = 1; i < plcCount + 1; i++)
             {
                 XmlNode node = XMLHelper.GetPlcNodeByTagName("//root//setting", i.ToString(), "PlcIPAddress");
-                string ipadrs = node.InnerText;  //plc ip地址
-                               
-                WorkFlow control = new WorkFlow(ipadrs, i);
-                dic_WorkFlows.Add(i, control);
+                if (node != null)
+                {
+                    string ipadrs = node.InnerText;  //plc ip地址
+
+                    WorkFlow controller = new WorkFlow(ipadrs, i);
+                    dic_WorkFlows.Add(i, controller);
+                    //添加 S7 connection_1 连接项
+                    XmlNode xnode = XMLHelper.GetPlcNodeByTagName("//root//setting", i.ToString(), "ConnectItem");
+                    if (xnode != null)
+                    {
+                        string items = xnode.InnerText.Trim();
+                        string[] array_items = items.Split(';');
+                        if (array_items != null && array_items.Length > 4)
+                        {
+                            controller.S7_Connection_Items = new string[array_items.Length];
+                            int te = 0;
+                            foreach(string item in array_items)
+                            {
+                                controller.S7_Connection_Items[te++] = item.Trim();
+                            }
+                            log.Info("S7_Connection 连接项");
+                            foreach(string item in controller.S7_Connection_Items)
+                            {
+                                log.Info(item);
+                            }
+                        }
+                    }
+                }
+
             }
 
             for (int i = 1; i < plcCount + 1; i++)

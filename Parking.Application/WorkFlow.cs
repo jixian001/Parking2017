@@ -12,6 +12,7 @@ namespace Parking.Application
         private int warehouse;
         private string ipAddrs;
         private SocketPlc plcAccess;
+        private string[] s7_Connection_Items = null;
         
         private WorkFlow()
         {
@@ -21,6 +22,12 @@ namespace Parking.Application
             ipAddrs = ipaddrs;
             warehouse = wh;
             plcAccess = new SocketPlc(ipAddrs);
+        }
+
+        public string[] S7_Connection_Items
+        {
+            get { return s7_Connection_Items; }
+            set { s7_Connection_Items = value; }
         }
 
         public void ConnectPLC()
