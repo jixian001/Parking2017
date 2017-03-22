@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <!--计费功能 -->
+  <ChargeEnable>0</ChargeEnable>
+  <!--主plc连接的数量-->
+  <PlcCount>1</PlcCount>
+  <PLCRefresh>500</PLCRefresh>
+  <ICcdRefresh>1000</ICcdRefresh>
+  <!--区分库区，区分车厅-->
+  <setting>
+    <!--开始设定库区信息-->
+    <PLC ID="1">
+      <!--plc ip地址-->
+      <PlcIPAddress>192.168.0.101</PlcIPAddress>    
+      <!--要读取的连接项-->
+      <ConnectItem>
+        S7:[S7 connection_1]DB1001,INT0,50;
+        S7:[S7 connection_1]DB1001,INT100,1;
+        S7:[S7 connection_1]DB1002,INT0,50;
+        S7:[S7 connection_1]DB1002,INT100,1;
+        S7:[S7 connection_1]DB1003,B0,54;
+        S7:[S7 connection_1]DB1023,B0,54
+      </ConnectItem>
+
+      <halls count="2">
+        <hall>
+          <ID>11</ID>
+          <!--刷卡器的网络地址-->
+          <ICCardIPAddrss>192.168.0.10</ICCardIPAddrss>
+          <!--LED显示屏网络地址-->
+          <LEDAddress></LEDAddress>          
+        </hall>
+        <hall>
+          <ID>12</ID>
+          <!--刷卡器的网络地址-->
+          <ICCardIPAddrss>192.168.0.11</ICCardIPAddrss>
+          <!--LED显示屏网络地址-->
+          <LEDAddress></LEDAddress>
+        </hall>
+      </halls>            
+    </PLC>
+    
+  </setting>
+</root>

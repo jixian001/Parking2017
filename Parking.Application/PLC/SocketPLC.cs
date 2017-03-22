@@ -6,10 +6,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
 using Parking.Auxiliary;
+using System.Text.RegularExpressions;
 
 namespace Parking.Application
 {
-    public class CSocketPlc:IPLC, IDisposable
+    public class SocketPlc:IPLC, IDisposable
     {
         #region 枚举型数据
         public enum CpuType
@@ -25,6 +26,7 @@ namespace Parking.Application
         /// </summary>
         public enum DataType
         {
+            Init=0,
             Input = 129,
             Output = 130,
             Memory = 131,
@@ -35,6 +37,7 @@ namespace Parking.Application
 
         /// <summary>
         /// 读取的数据单位 byte=1,Int=4
+        /// 要返回的数据的类型
         /// </summary>
         public enum VarType
         {
@@ -58,12 +61,21 @@ namespace Parking.Application
         private bool isConnect;
         private Socket mSocket;
 
-        public CSocketPlc() 
+        public SocketPlc() 
         {
             isConnect = false;
         }
 
-        public CSocketPlc(CpuType ctype, string ip, short rack, short slot)
+        public SocketPlc(string ip) : 
+            this()
+        {
+            CPU = CpuType.S7300;
+            IP = ip;
+            Rack = 0;
+            Slot = 2;
+        }
+
+        public SocketPlc(CpuType ctype, string ip, short rack, short slot)
             : this()
         {
             CPU = ctype;
@@ -189,12 +201,62 @@ namespace Parking.Application
         /// 依订阅名，读取对应的数据
         /// </summary>
         /// <param name="itemName"></param>
-        /// <returns></returns>
-        public object ReadData(string itemName)
+        /// <returns>DataType dataType, int DB, int startByteAdr, int count</returns>
+        public object ReadData(string itemName, VarType varType)
         {
+            DataType dataType = DataType.Init;
+            int DB = 0;
+            int startByteAddrs = 0;
+            int count = 0;
 
+            //itemName格式 S7:[S7 connection_1]DB1001,INT0,50
+            Log log = LogFactory.GetLogger("CSocketPlc.ReadData");
+            string[] lstItems = itemName.Split(',');
+            if (lstItems.Length == 0)
+            {                
+                log.Info("Item-"+itemName+" 格式不正确！split(',')不出来");
+                return null;
+            }
+            if (lstItems.Length < 3)
+            {
+                log.Info("Item-" + itemName + " 格式不正确！split(',')出来长度不小于3！");
+                return null;
+            }
+            string head = lstItems[0];
+            string[] hArray = head.Split(']');            
+            if (hArray.Length == 0)
+            {
+                log.Info("Item-" + itemName + " 格式不正确！Split(']')不出来");
+                return null;
+            }
+            string dtype = hArray.Last();           
+            if (dtype.Contains("DB"))
+            {
+                dataType = DataType.DataBlock;
+            }
+            else
+            {
+                log.Info("Itme-"+itemName+"格式不正确，不包含DB！");
+                return null;
+            }
+            DB = removeNotNumber(dtype);
 
-            return null;
+            string startAddress = lstItems[1];
+            if (!startAddress.ToLower().Contains("int"))
+            {
+                log.Info("Itme-" + itemName + "格式不正确，不包含INT！");
+                return null;
+            }
+            startByteAddrs = removeNotNumber(startAddress);
+
+            if (!isNumber(lstItems[2]))
+            {
+                log.Info("Itme-" + itemName + "格式不正确，最后一组不为数字！");
+                return null;
+            }
+            count = Convert.ToInt32(lstItems[2]);
+
+            return Read(dataType, DB, startByteAddrs,varType, count);
         }
 
         /// <summary>
@@ -205,8 +267,51 @@ namespace Parking.Application
         /// <returns></returns>
         public int WriteData(string itemName, object value)
         {
+            DataType dataType = DataType.Init;
+            int DB = 0;
+            int startByteAddrs = 0;
+           
+            //itemName格式 S7:[S7 connection_1]DB1001,INT0,50
+            Log log = LogFactory.GetLogger("CSocketPlc.WriteData");
+            string[] lstItems = itemName.Split(',');
+            if (lstItems.Length == 0)
+            {
+                log.Info("Item-" + itemName + " 格式不正确！split(',')不出来");
+                return -1;
+            }
+            if (lstItems.Length < 3)
+            {
+                log.Info("Item-" + itemName + " 格式不正确！split(',')出来长度不小于3！");
+                return -1;
+            }
+            string head = lstItems[0];
+            string[] hArray = head.Split(']');
+            if (hArray.Length == 0)
+            {
+                log.Info("Item-" + itemName + " 格式不正确！Split(']')不出来");
+                return -1;
+            }
+            string dtype = hArray.Last();
+            if (dtype.Contains("DB"))
+            {
+                dataType = DataType.DataBlock;
+            }
+            else
+            {
+                log.Info("Itme-" + itemName + "格式不正确，不包含DB！");
+                return -1;
+            }
+            DB = removeNotNumber(dtype);
 
-            return 0;
+            string startAddress = lstItems[1];
+            if (!startAddress.ToLower().Contains("int"))
+            {
+                log.Info("Itme-" + itemName + "格式不正确，不包含INT！");
+                return -1;
+            }
+            startByteAddrs = removeNotNumber(startAddress);
+
+            return Write(dataType, DB, startByteAddrs, value);
         }
 
         /// <summary>
@@ -235,15 +340,13 @@ namespace Parking.Application
         {
             try
             {
-                #region
-                if (mSocket == null)
+                #region               
+                if (mSocket == null||isBlockConnected(mSocket))
                 {
+                    isConnect = false;
                     return null;
                 }
-                if (!isConnect)
-                {
-                    throw new Exception("PLC通讯断开！");
-                }
+
                 // first create the header
                 int packageSize = 31;
                 List<byte> package = new List<byte>();
@@ -292,9 +395,13 @@ namespace Parking.Application
                 return rdbytes;
                 #endregion
             }
-            catch (Exception ex)
+            catch(SocketException ec)
             {
                 isConnect = false;
+                throw ec;
+            }
+            catch (Exception ex)
+            {               
                 throw ex;
             }
         }
@@ -305,7 +412,7 @@ namespace Parking.Application
         /// <param name="dataType"></param>
         /// <param name="DB"></param>
         /// <param name="startByteAddr"></param>
-        /// <param name="varType"></param>
+        /// <param name="varType">要返回的数据的类型,目前只有字节或短整型</param>
         /// <param name="varCount"></param>
         /// <returns>返回整型(int16,int16[])数据或字节型(byte,byte[])数据</returns>
         public object Read(DataType dataType, int DB, int startByteAddr, VarType varType, int varCount)
@@ -367,8 +474,9 @@ namespace Parking.Application
             #region
             try
             {
-                if (!isConnect) 
+                if (mSocket == null || isBlockConnected(mSocket))
                 {
+                    isConnect = false;
                     return 101;
                 }
                 int varCount = value.Length;
@@ -400,7 +508,7 @@ namespace Parking.Application
                 {
                     throw new Exception("接收到的21个数据字节不匹配！无法完成读取操作！");
                 }
-                return 100;
+                return 1;
             }
             catch (Exception ex) 
             {
@@ -542,5 +650,59 @@ namespace Parking.Application
             return arr.ToArray();
         }
 
+        /// <summary>
+        /// 检查Socket是否连接
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns>false:连接，true:中断</returns>
+        private bool isBlockConnected(Socket client)
+        {
+            bool blockingState = client.Blocking;
+            try
+            {
+                byte[] tmp = new byte[1];
+                client.Blocking = false;
+                client.Send(tmp, 0, 0);
+                return false;
+            }
+            catch (SocketException e)
+            {
+                // 产生 10035 == WSAEWOULDBLOCK 错误，说明被阻止了，但是还是连接的  
+                if (e.NativeErrorCode.Equals(10035))
+                    return false;
+                else
+                    return true;
+            }
+            finally
+            {
+                client.Blocking = blockingState;    // 恢复状态  
+            }
+        }
+
+        /// <summary>
+        /// 去掉字符串中非数字的
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        private int removeNotNumber(string msg)
+        {
+            string key = Regex.Replace(msg,@"[^\d]*","");
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                return Convert.ToInt32(key);
+            }
+            return -1;
+        }
+        /// <summary>
+        /// 是否为数字
+        /// </summary>
+        /// <param name="linkNum"></param>
+        /// <returns></returns>
+        private bool isNumber(string linkNum)
+        {
+            string pattern = "^[0-9]*[1-9][0-9]*$";
+            Regex rx = new Regex(pattern);
+            return rx.IsMatch(linkNum);
+        }
     }
 }

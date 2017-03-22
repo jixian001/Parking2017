@@ -23,7 +23,15 @@ namespace Parking.Application
         public bool Connect()
         {
             isConnect = false;
+            mnDesc = -1;
             if (string.IsNullOrEmpty(ipAddrs))
+            {
+                return false;
+            }
+            //建立连接时，ping下
+            Ping ping = new Ping();
+            PingReply result = ping.Send(ipAddrs);
+            if (result == null || result.Status != IPStatus.Success)
             {
                 return false;
             }
@@ -54,15 +62,17 @@ namespace Parking.Application
         public int GetPhyscard(ref uint physiccard)
         {
             physiccard = 0;
-            if (!string.IsNullOrEmpty(ipAddrs))
-            {
-                Ping ping = new Ping();
-                PingReply result = ping.Send(ipAddrs);
-                if (result == null || result.Status != IPStatus.Success)
-                {
-                    return -1;
-                }
-            }
+            #region 为减少资源消耗，暂不一直PING
+            //if (!string.IsNullOrEmpty(ipAddrs))
+            //{
+            //    Ping ping = new Ping();
+            //    PingReply result = ping.Send(ipAddrs);
+            //    if (result == null || result.Status != IPStatus.Success)
+            //    {
+            //        return -1;
+            //    }
+            //}
+            #endregion
             if (isConnect)
             {
                 UInt16 nICType = 0;
@@ -78,7 +88,7 @@ namespace Parking.Application
                         return nback;
                     }
                 }
-
+                //依这个来改变连接状态，以便可以进行重连
                 if(nback == 0xF1 || nback == 0xF2)
                 {
                     isConnect = false;

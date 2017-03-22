@@ -30,6 +30,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.DirectX">
+      <HintPath>..\引用DLL\Microsoft.DirectX.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DirectX.AudioVideoPlayback">
+      <HintPath>..\引用DLL\Microsoft.DirectX.AudioVideoPlayback.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DirectX.DirectSound">
+      <HintPath>..\引用DLL\Microsoft.DirectX.DirectSound.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -40,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CardControl.cs" />
     <Compile Include="EqpService.cs" />
     <Compile Include="ICCard\ICCardReader.cs" />
     <Compile Include="ICCard\ICCardRW.cs" />

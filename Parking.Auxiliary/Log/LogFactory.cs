@@ -11,11 +11,11 @@ namespace Parking.Auxiliary
 {
     public class LogFactory
     {
-        static LogFactory()
-        {
-            FileInfo configFile = new FileInfo(HttpContext.Current.Server.MapPath("/Configs/log4net.config"));
-            log4net.Config.XmlConfigurator.Configure(configFile);
-        }
+        //static LogFactory()
+        //{
+        //    FileInfo configFile = new FileInfo(HttpContext.Current.Server.MapPath("/Configs/log4net.config"));
+        //    log4net.Config.XmlConfigurator.Configure(configFile);
+        //}
         public static Log GetLogger(Type type)
         {
             return new Log(LogManager.GetLogger(type));
@@ -24,5 +24,6 @@ namespace Parking.Auxiliary
         {
             return new Log(LogManager.GetLogger(str));
         }
+
     }
 }
