@@ -17,7 +17,7 @@ namespace Parking.Data
         public override Response Add(Device entity)
         {
             Response _resp = new Response();
-            if (IsExist(entity.DeviceCode))
+            if (IsExist(entity.DeviceCode,entity.Warehouse))
             {
                 _resp.Code = 2;
                 _resp.Message = "当前设备Code已存在";
@@ -27,13 +27,17 @@ namespace Parking.Data
                 _resp = base.Add(entity);
             }
             return _resp;
-        }        
+        } 
 
-        public bool IsExist(int code)
+        public bool IsExist(int code,int warehouse)
         {
-            return base._repository.IsContains(dev => dev.DeviceCode == code);
+            return base._repository.IsContains(dev => dev.DeviceCode == code&&dev.Warehouse==warehouse);
         }
 
+        public Device GetDeviceByCode(int code,int warehouse)
+        {
+            return base._repository.Find(dev => dev.Warehouse == warehouse && dev.DeviceCode == code);
+        }
        
     }
 }

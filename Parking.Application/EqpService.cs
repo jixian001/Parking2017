@@ -185,12 +185,20 @@ namespace Parking.Application
             }
             while (isStart)
             {
-                controller.DealAlarmInfo();
-                controller.TaskAssign();
-                controller.SendMessage();
-                controller.ReceiveMessage();
+                try
+                {
+                    controller.DealAlarmInfo();
+                    controller.TaskAssign();
+                    controller.SendMessage();
+                    controller.ReceiveMessage();
 
-                Thread.Sleep(plcRefresh);
+                    Thread.Sleep(plcRefresh);
+                }
+                catch(Exception ec)
+                {
+                    log.Error("处理业务异常-" + ec.ToString());
+                    Thread.Sleep(5000);
+                }               
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.Entity;
@@ -23,7 +24,7 @@ namespace Parking.Data
         }
 
         /// <summary>
-        /// 查找实体
+        /// 查找实体,以ID号查询的
         /// </summary>
         /// <param name="ID"></param>
         /// <returns></returns>

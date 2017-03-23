@@ -14,6 +14,10 @@ namespace Parking.Data
     {
         [Key]
         public int ID { get; set; }
+        public DateTime RecordDtime { get; set; }
+        /// <summary>
+        /// 日志类型- 1：发送，2：接收
+        /// </summary>
         public int Type { get; set; }
         public int Warehouse { get; set; }
         public string Telegram { get; set; }
@@ -26,5 +30,6 @@ namespace Parking.Data
         [StringLength(10)]
         public string ToAddress { get; set; }
         public int TelegramID { get; set; }
+        
     }
 }

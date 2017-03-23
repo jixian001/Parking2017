@@ -27,6 +27,7 @@ namespace Parking.Data
         public int RunStep { get; set; }
         public int InStep { get; set; }
         public int OutStep { get; set; }
+        public int TaskID { get; set; }
     }
     #region 枚举类型
     public enum EnmSMGType

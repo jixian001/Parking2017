@@ -25,6 +25,10 @@ namespace Parking.Data
         [NotMapped]
         public EnmTaskStatusDetail SendStatusDetail { get; set; }
         public DateTime CreateDate { get; set; }
+        /// <summary>
+        /// 发送时间
+        /// </summary>
+        public DateTime SendDtime { get; set; }
         public int HallCode { get; set; }
         [StringLength(10)]
         public string FromLctAddress { get; set; }
@@ -76,11 +80,11 @@ namespace Parking.Data
         IEVDownFinishing,//升降机下降完成(等待下发1,54)
 
         //取车，车厅
-        OWaitforEVDown,   //出库开始，升降机等待下降(等待下发1-1)       
+        OWaitforEVDown,   //出库开始，升降机等待下降(等待下发3-1)       
         OTVLoadWaitforEVDown,//装载完成等待升降机下降
         OEVDownWaitforTVLoad,//升降机下降等待装载
         OWaitforEVUp,//出车卸载完成，等待升降机上升
-        OCarOutWaitforDriveaway,// 车已取出，等待用户开车(等待下发3-1)
+        OCarOutWaitforDriveaway,// 车已取出，等待用户开车(等待下发2-1)
         OEVDownFinishing,//升降机下降完成（取）
 
         Finished,   //作业完成(收到 3,54)

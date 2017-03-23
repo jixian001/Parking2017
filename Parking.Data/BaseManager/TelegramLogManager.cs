@@ -7,7 +7,8 @@ using Parking.Auxiliary;
 
 namespace Parking.Data
 {
-    public class TelegramLogManager
+    public class TelegramLogManager:BaseManager<TelegramLog>
     {
+        
     }
 }
