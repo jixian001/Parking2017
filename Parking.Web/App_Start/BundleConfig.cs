@@ -30,14 +30,24 @@ namespace Parking.Web
                      "~/Scripts/signalr.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/plugin").Include(
-                     "~/Scripts/bootstrap-dialog.js"));
+                     "~/Scripts/bootstrap-dialog.js",
+                     "~/Scripts/bootstrap-datetimepicker.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/site.css"));
 
-            bundles.Add(new ScriptBundle("~/Content/bootstrapplugin").Include(
-               "~/Content/bootstrap-dialog.css"));
+            bundles.Add(new StyleBundle("~/Content/bootstrapplugin").Include(
+               "~/Content/bootstrap-dialog.css",
+               "~/Content/bootstrap-datetimepicker.css"));
+
+            bundles.Add(new StyleBundle("~/Content/bootstraptable").Include(
+                "~/Content/bootstrap-table.css"));
+
+            bundles.Add(new ScriptBundle("~/bundles/bootstraptable").Include(
+                "~/Scripts/bootstrap-table.js",
+                "~/Scripts/bootstrap-table-zh-CN.js"));
+            
 
         }
     }

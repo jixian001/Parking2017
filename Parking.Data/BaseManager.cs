@@ -46,10 +46,10 @@ namespace Parking.Data
         /// </summary>
         /// <param name="paging"></param>
         /// <returns></returns>
-        public Page<TEntity> FindPageList(Page<TEntity> paging)
+        public Page<TEntity> FindPageList(Page<TEntity> paging,OrderParam param)
         {
             int Num = 0;
-            paging.ItemLists = _repository.FindPageList(paging.PageSize, paging.PageIndex, out Num).ToList();
+            paging.ItemLists = _repository.FindPageList(paging.PageSize, paging.PageIndex, out Num, param).ToList();
             paging.TotalNumber = Num;
             return paging;
         }

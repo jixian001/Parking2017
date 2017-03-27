@@ -16,7 +16,7 @@ namespace Parking.Application
         private SocketPlc plcAccess;
         private string[] s7_Connection_Items = null;
 
-        private CWExecTask cwexectask = new CWExecTask();
+        private CWTask cwtask = new CWTask();
         private CWDevice cwdevice = new CWDevice();
 
         private Int16 messageID = 0;
@@ -62,7 +62,7 @@ namespace Parking.Application
 
         public void SendMessage()
         {
-            List<ImplementTask> tasks =cwexectask.GetExecuteTasks();
+            List<ImplementTask> tasks =cwtask.GetExecuteTasks();
             if (tasks == null)
             {
                 return;
@@ -82,21 +82,141 @@ namespace Parking.Application
                     if (smg.Type == EnmSMGType.Hall)
                     {
                         #region 车厅
-                        if (smg.IsAvailabe == 1 && smg.TaskID == task.ID &&
+                        if (smg.IsAble == 1 && smg.TaskID == task.ID &&
                             (task.SendStatusDetail == EnmTaskStatusDetail.NoSend ||
                             (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk && task.SendDtime.AddSeconds(10) < DateTime.Now)))
                         {
                             #region 存车
                             if (task.Status == EnmTaskStatus.ISecondSwipedWaitforCheckSize)
                             {
-
+                                bool nback = this.sendData(this.packageMessage(1, 9, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforEVDown)
+                            {
+                                bool nback = this.sendData(this.packageMessage(1, 1, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.IEVDownFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(1, 54, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.IHallFinishing) //异常退出
+                            {
+                                bool nback = this.sendData(this.packageMessage(1, 55, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforCarLeave) //找不到合适车位
+                            {
+                                bool nback = this.sendData(this.packageMessage(1, 2, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.ICheckCarFail) //检测失败
+                            {
+                                bool nback = this.sendData(this.packageMessage(1001, 4, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
                             }
                             #endregion
                             #region 取车
-
+                            else if (task.Status == EnmTaskStatus.OWaitforEVDown)
+                            {
+                                if (smg.IsAvailabe==1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(3, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                                else
+                                {
+                                    log.Info("取车时，车厅不可接收新指令。iccard-" + task.ICCardCode + "  hallID-" + smg.DeviceCode + " address-" + task.FromLctAddress);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.OEVDownFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(3, 54, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.OCarOutWaitforDriveaway)
+                            {
+                                bool nback = this.sendData(this.packageMessage(3, 2, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.OHallFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(3, 55, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
                             #endregion
                             #region 取物
-
+                            else if (task.Status == EnmTaskStatus.TempWaitforEVDown)
+                            {
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(2, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                                else
+                                {
+                                    log.Info("取物时，车厅不可接收新指令。iccard-" + task.ICCardCode + "  hallID-" + smg.DeviceCode + " address-" + task.FromLctAddress);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.TempEVDownFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(2, 54, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.TempWaitforEVUp)
+                            {
+                                bool nback = this.sendData(this.packageMessage(2, 2, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.TempHallFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(2, 55, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
                             #endregion
                         }
                         #endregion
@@ -104,18 +224,88 @@ namespace Parking.Application
                     else if (smg.Type == EnmSMGType.ETV)
                     {
                         #region ETV
-                        if (smg.IsAvailabe == 1 && smg.TaskID == task.ID &&
+                        if (smg.IsAble == 1 && smg.TaskID == task.ID &&
                             (task.SendStatusDetail == EnmTaskStatusDetail.NoSend ||
                             (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk && task.SendDtime.AddSeconds(10) < DateTime.Now)))
                         {
                             #region 装载
-
+                            if (task.Status == EnmTaskStatus.TWaitforLoad)
+                            {
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(13, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                                else
+                                {
+                                    log.Info("装载时，TV不可接收新指令。作业类型："+task.Type.ToString()+"  iccard-" +
+                                                                            task.ICCardCode + "  hallID-" + smg.DeviceCode + " FromAddress-" + 
+                                                                            task.FromLctAddress+" ToAddress-"+task.ToLctAddress);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.LoadFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(13, 51, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
                             #endregion
                             #region 卸载
-
+                            else if (task.Status == EnmTaskStatus.TWaitforUnload)
+                            {
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(14, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                                else
+                                {
+                                    log.Info("卸载时，TV不可接收新指令。作业类型：" + task.Type.ToString() + "  iccard-" +
+                                                                            task.ICCardCode + "  hallID-" + smg.DeviceCode + " FromAddress-" +
+                                                                            task.FromLctAddress + " ToAddress-" + task.ToLctAddress);
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.UnLoadFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(14, 51, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
                             #endregion
                             #region 移动
-
+                            else if (task.Status == EnmTaskStatus.TWaitforMove)
+                            {
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(11, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                                else
+                                {
+                                    log.Info("移动时，TV不可接收新指令。");
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.MoveFinishing)
+                            {
+                                bool nback = this.sendData(this.packageMessage(11, 51, smg.DeviceCode, task));
+                                if (nback)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                }
+                            }
                             #endregion
                         }
                         #endregion
@@ -130,12 +320,137 @@ namespace Parking.Application
 
         public void ReceiveMessage()
         {
+            Log log = LogFactory.GetLogger("WorkFlow.ReceiveMessage");
+            try
+            {
+                bool hasdata = false;
+                Int16[] data;
+                unpackageMessage(out data, out hasdata);
+                if (!hasdata)
+                {
+                    return;
+                }
+                Device smg = cwdevice.SelectSMG(data[6], data[1]);
+                if (smg == null)
+                {
+                    log.Error("无效报文，找不到相关设备。deviceCode-"+data[6]+" warehouse-"+data[1]);
+                    return;
+                }
+                ImplementTask task = cwtask.GetTaskBySmgID(smg.DeviceCode, smg.Warehouse);
+                if (task != null)
+                {
+                    if (smg.Type == EnmSMGType.Hall)
+                    {
+                        #region
+                        #region 存车
+                        if (task.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 1 && data[3] == 9 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task,EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1001 && data[4] == 101)
+                            {
 
+                            }
+                        }
+                        #endregion
+                        #region 取车
+
+                        #endregion
+                        #region 取物
+
+                        #endregion
+                        #endregion
+                    }
+                    else if (smg.Type == EnmSMGType.ETV)
+                    {
+                        #region
+                        #region 装载
+
+                        #endregion
+                        #region 卸载
+
+                        #endregion
+                        #region 移动
+
+                        #endregion
+                        #endregion
+                    }
+                }
+                else
+                {
+                    #region 处理第一次入库
+                    if (data[2] == 1001 && data[4] == 1)
+                    {
+                        new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealCarEntrance();
+                    }
+                    #endregion
+                    #region 处理开机故障报文
+                    if (data[2] == 1074 && data[4] == 7)
+                    {
+                        cwdevice.UpdateSMG(smg);
+                        this.sendData(this.packageMessage(74, 1, smg.DeviceCode, null));
+                    }
+                    #endregion
+                }
+
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
         }
 
         public void DealAlarmInfo()
         {
 
+        }
+
+        /// <summary>
+        /// 报文接收
+        /// </summary>
+        /// <param name="data">返回信息</param>
+        /// <param name="hasData">有报文</param>
+        private void unpackageMessage(out Int16[] data, out bool hasData)
+        {
+            #region
+            hasData = false;
+            data = null;
+            if (JudgeSocketAvailabe() == false)
+            {
+                return;
+            }
+            string recvFlag = s7_Connection_Items[1];
+            object recvBuffFlag = plcAccess.ReadData(recvFlag, SocketPlc.VarType.Int16);
+            if (recvBuffFlag == null)
+            {
+                return;
+            }
+            //有数据要接收
+            if (Convert.ToInt16(recvBuffFlag) == 9999)
+            {
+                string recvBuff = s7_Connection_Items[0];
+                object recvData = plcAccess.ReadData(recvBuff, SocketPlc.VarType.Int16);
+                if (recvBuff != null)
+                {
+                    //清空标志字                    
+                    int flag = 0;
+                    int nback = plcAccess.WriteData(recvFlag, flag);
+                    if (nback == 1)
+                    {
+                        //读取数据成功，返回值
+                        data = (Int16[])recvData;
+                        hasData = true;
+                        //记录
+                        new CWTelegramLog().AddRecord(data, 2);
+                    }
+                }
+            }
+            #endregion
         }
 
         /// <summary>
@@ -260,51 +575,7 @@ namespace Parking.Application
                 messageID = 1;
             }
             return messageID;
-        }
-
-        /// <summary>
-        /// 报文接收
-        /// </summary>
-        /// <param name="data">返回信息</param>
-        /// <param name="hasData">有报文</param>
-        private void unpackageMessage(out Int16[] data,out bool hasData)
-        {
-            #region
-            hasData = false;
-            data = null;
-            if (JudgeSocketAvailabe() == false)
-            {
-                return;
-            }
-            string recvFlag = s7_Connection_Items[1];
-            object recvBuffFlag = plcAccess.ReadData(recvFlag, SocketPlc.VarType.Int16);
-            if (recvBuffFlag == null)
-            {
-                return;
-            }
-            //有数据要接收
-            if (Convert.ToInt16(recvBuffFlag) == 9999)
-            {
-                string recvBuff = s7_Connection_Items[0];
-                object recvData = plcAccess.ReadData(recvBuff,SocketPlc.VarType.Int16);
-                if (recvBuff != null)
-                {
-                    //清空标志字                    
-                    int flag = 0;
-                    int nback= plcAccess.WriteData(recvFlag, flag);
-                    if (nback == 1)
-                    {
-                        //读取数据成功，返回值
-                        data = (Int16[])recvData;
-                        hasData = true;
-                        //记录
-                        new CWTelegramLog().AddRecord(data, 2);
-                    }
-                }
-            }
-
-            #endregion
-        }
+        }      
 
         private bool JudgeSocketAvailabe()
         {

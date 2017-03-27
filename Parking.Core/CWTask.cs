@@ -1,0 +1,210 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Parking.Auxiliary;
+using Parking.Data;
+
+namespace Parking.Core
+{
+    /// <summary>
+    /// 处理处于执行的作业
+    /// </summary>
+    public class CWTask
+    {
+        private CurrentTaskManager manager = new CurrentTaskManager();
+
+        private static List<string> soundsList = new List<string>();
+
+        public CWTask()
+        {
+        }
+
+        /// <summary>
+        /// 添加声音文件
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="hallID"></param>
+        /// <param name="soundFile"></param>
+        public void AddNofication(int warehouse,int hallID,string soundFile)
+        {
+            string sfile = warehouse.ToString() + ";" + hallID.ToString() + ";" + soundFile;
+            if (!soundsList.Contains(sfile))
+            {
+                soundsList.Add(sfile);
+            }
+        }
+
+        /// <summary>
+        /// 移除声音
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="hallID"></param>
+        public void ClearNotification(int warehouse,int hallID)
+        {
+            for (int i = 0; i < soundsList.Count; i++)
+            {
+                string[] infos = soundsList[i].Split(';');
+                if (infos.Length > 1)
+                {
+                    int wh = Convert.ToInt32(infos[0]);
+                    int hall = Convert.ToInt32(infos[1]);
+                    if (wh == warehouse && hall == hallID)
+                    {
+                        soundsList.RemoveAt(i);
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// 获取声音
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="hallID"></param>
+        /// <returns></returns>
+        public string GetNotification(int warehouse, int hallID)
+        {
+            for (int i = 0; i < soundsList.Count; i++)
+            {
+                string[] infos = soundsList[i].Split(';');
+                if (infos.Length > 2)
+                {
+                    int wh = Convert.ToInt32(infos[0]);
+                    int hall = Convert.ToInt32(infos[1]);
+                    if (wh == warehouse && hall == hallID)
+                    {
+                        string sound = infos[2];
+                        soundsList.RemoveAt(i);
+                        return sound;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public List<ImplementTask> GetExecuteTasks()
+        {
+            return manager.GetCurrentTaskList();
+        }
+        /// <summary>
+        /// 更新作业报文的发送状态
+        /// </summary>
+        /// <param name="task"></param>
+        /// <param name="detail"></param>
+        public void UpdateSendStatusDetail(ImplementTask task,EnmTaskStatusDetail detail)
+        {
+            task.SendStatusDetail = detail;
+        }
+
+        /// <summary>
+        /// 依ID获取任务
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public ImplementTask GetTaskByID(int id)
+        {
+            return manager.Find(id);
+        }
+
+        /// <summary>
+        /// 依设备查找任务
+        /// </summary>
+        /// <param name="smg"></param>
+        /// <param name="warehouse"></param>
+        /// <returns></returns>
+        public ImplementTask GetTaskBySmgID(int smg,int warehouse)
+        {
+            return manager.GetTaskBySmgID(smg,warehouse);
+        }
+
+        /// <summary>
+        /// 有车入库
+        /// </summary>
+        /// <param name="hall"></param>
+        public void DealFirstCarEntrance(Device hall)
+        {
+            ImplementTask task = new ImplementTask();
+            task.Warehouse = hall.Warehouse;
+            task.DeviceCode = hall.DeviceCode;
+            task.Type = EnmTaskType.SaveCar;
+            task.Status = EnmTaskStatus.ICarInWaitFirstSwipeCard;
+            task.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            task.CreateDate = DateTime.Now;
+            #region 发送时间没有暂为空，看看有没有异常出现
+            task.SendDtime = DateTime.Parse("2017-1-1");
+            #endregion
+            task.HallCode = hall.DeviceCode;
+            task.FromLctAddress = hall.Address;
+            task.ToLctAddress = "";
+            task.ICCardCode = "";
+            task.Distance = 0;
+            task.CarSize = "";
+            task.IsComplete = 0;
+            Response _resp = manager.Add(task);
+            if (_resp.Code == 1)
+            {
+                //这里是否可以获取到ID？或者再查询一次
+                hall.TaskID = task.ID;
+                new CWDevice().UpdateSMG(hall);
+            }
+        }
+
+        /// <summary>
+        /// 外形检测上报处理
+        /// </summary>
+        /// <param name="hallID"></param>
+        /// <param name="distance"></param>
+        /// <param name="carSize"></param>
+        public void IDealCheckedCar(ImplementTask htsk, int hallID,int distance,string checkCode)
+        {
+            htsk.CarSize = checkCode;
+            htsk.Distance = distance;
+            htsk.SendDtime = DateTime.Now;
+            htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+
+            #region 上报外形数据不正确
+            if (checkCode.Length != 3)
+            {
+                htsk.Status =EnmTaskStatus.ISecondSwipedWaitforCarLeave;
+                //更新任务信息
+                manager.Update(htsk);
+                //
+                this.AddNofication(htsk.Warehouse,htsk.DeviceCode, "60.wav");
+                return;
+            }
+            #endregion
+            
+            //暂以卡号为准
+            ICCard iccd = new CWICCard().SelectICCdByUserCode(htsk.ICCardCode);
+            if (iccd == null)
+            {
+                //上位控制系统故障
+                this.AddNofication(htsk.Warehouse,hallID,"20.wav");
+                this.AddNofication(htsk.Warehouse, hallID, "6.wav");
+                return;
+            }
+            Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
+            int smgID;
+            Location lct = new AllocateLocation().IAllocateLocation(checkCode, iccd,hall, out smgID);
+
+
+
+
+        }
+
+        public Page<ImplementTask> FindPageList(Page<ImplementTask> pageTask,OrderParam param)
+        {
+            if (param == null)
+            {
+                param = new OrderParam()
+                {
+                    PropertyName = "ID",
+                    Method = OrderMethod.Asc
+                };
+            }
+            Page<ImplementTask> page = manager.FindPageList(pageTask,param);
+            return page;
+        }
+    }
+}

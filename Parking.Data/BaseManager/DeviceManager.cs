@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Parking.Auxiliary;
+using System.Linq.Expressions;
 
 namespace Parking.Data
 {
@@ -38,6 +39,21 @@ namespace Parking.Data
         {
             return base._repository.Find(dev => dev.Warehouse == warehouse && dev.DeviceCode == code);
         }
-       
+        
+        public List<Device> FindList(Expression<Func<Device, bool>> where)
+        {
+            return _repository.FindList(where).ToList();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="where"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)
+        {
+            return _repository.FindList(where, param).ToList();
+        }
     }
 }

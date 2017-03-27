@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Parking.Data;
 using Parking.Auxiliary;
+using System.Linq.Expressions;
 
 namespace Parking.Core
 {
@@ -29,6 +30,22 @@ namespace Parking.Core
         {
             return manager.GetDeviceByCode(code,warehouse);
         }
+
+        public Response UpdateSMG(Device smg)
+        {
+            return manager.Update(smg);
+        }
+
+        public List<Device> FindList(Expression<Func<Device, bool>> where)
+        {
+            return manager.FindList(where);
+        }
+
+        public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)
+        {
+            return manager.FindList(where, param);
+        }
+
 
     }
 }

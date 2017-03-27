@@ -49,24 +49,71 @@ namespace Parking.Data
             return _dbContext.Set<TEntity>().Where(where).Take(number);
         }
 
-        public IQueryable<TEntity> FindList(Expression<Func<TEntity,bool>> where,OrderParam param,int num)
+        /// <summary>
+        /// 查找实体列表
+        /// </summary>
+        /// <param name="where">查询Lambda表达式</param>
+        /// <param name="orderParams">排序参数</param>
+        /// <param name="number">获取的记录数量【0-不启用】</param>
+        /// <returns></returns>
+        public IQueryable<TEntity> FindList(Expression<Func<TEntity, bool>> where, OrderParam[] orderParams, int number)
         {
             var _list = _dbContext.Set<TEntity>().Where(where);
-            //待写
+            var _orderParames = Expression.Parameter(typeof(TEntity), "o");
+            if (orderParams != null && orderParams.Length > 0)
+            {
+                bool _isFirstParam = true;
+                for (int i = 0; i < orderParams.Length; i++)
+                {
+                    //根据属性名获取属性
+                    var _property = typeof(TEntity).GetProperty(orderParams[i].PropertyName);
+                    //创建一个访问属性的表达式
+                    var _propertyAccess = Expression.MakeMemberAccess(_orderParames, _property);
+                    var _orderByExp = Expression.Lambda(_propertyAccess, _orderParames);
+                    string _orderName;
+                    if (_isFirstParam)
+                    {
+                        _orderName = orderParams[i].Method == OrderMethod.Asc ? "OrderBy" : "OrderByDescending";
+                        _isFirstParam = false;
+                    }
+                    else
+                    {
+                        _orderName = orderParams[i].Method == OrderMethod.Desc ? "ThenBy" : "ThenByDescending";
+                    }
 
+                    MethodCallExpression resultExp = Expression.Call(typeof(Queryable), _orderName, new Type[] { typeof(TEntity), _property.PropertyType }, _list.Expression, Expression.Quote(_orderByExp));
+                    _list = _list.Provider.CreateQuery<TEntity>(resultExp);
+                }
+            }
+            if (number > 0)
+            {
+                _list = _list.Take(number);
+            }
             return _list;
+        }
+
+        public IQueryable<TEntity> FindList(Expression<Func<TEntity,bool>> where,OrderParam orderParam, int number)
+        {
+            OrderParam[] _orderParams = null;
+            if (orderParam != null)
+            {
+                _orderParams = new OrderParam[] { orderParam };
+            }
+            return FindList(where, _orderParams, number);
         }
 
         public IQueryable<TEntity> FindList(Expression<Func<TEntity,bool>> where,OrderParam param)
         {
             return FindList(where, param, 0);
         }
+
+
         #endregion
 
         #region 分页 查找实体列表
-        public IQueryable<TEntity> FindPageList(int pageSize, int pageIndex, out int totalNumber)
+        public IQueryable<TEntity> FindPageList(int pageSize, int pageIndex, out int totalNumber,OrderParam param)
         {
-            return FindPageList(pageSize, pageIndex, out totalNumber, (TEntity) => true);
+            return FindPageList(pageSize, pageIndex, out totalNumber, (TEntity) => true, new OrderParam[] { param });
         }
 
         /// <summary>
@@ -77,7 +124,7 @@ namespace Parking.Data
         /// <param name="totalNum">总记录数</param>
         /// <param name="where">查询表达式</param>
         /// <returns></returns>
-        public IQueryable<TEntity> FindPageList(int pageSize,int pageIndex,out int totalNum,Expression<Func<TEntity,bool>> where)
+        public IQueryable<TEntity> FindPageList(int pageSize,int pageIndex,out int totalNum,Expression<Func<TEntity,bool>> where,OrderParam[] orderParams)
         {
             if (pageIndex < 1)
             {
@@ -88,6 +135,21 @@ namespace Parking.Data
                 pageSize = 10;
             }
             IQueryable<TEntity> _List = _dbContext.Set<TEntity>().Where(where);
+            var _orderParames = Expression.Parameter(typeof(TEntity), "o");
+            if (orderParams != null && orderParams.Length > 0)
+            {
+                for (int i = 0; i < orderParams.Length; i++)
+                {
+                    //根据属性名获取属性
+                    var _property = typeof(TEntity).GetProperty(orderParams[i].PropertyName);
+                    //创建一个访问属性的表达式
+                    var _propertyAccess = Expression.MakeMemberAccess(_orderParames, _property);
+                    var _orderByExp = Expression.Lambda(_propertyAccess, _orderParames);
+                    string _orderName = orderParams[i].Method == OrderMethod.Asc ? "OrderBy" : "OrderByDescending";
+                    MethodCallExpression resultExp = Expression.Call(typeof(Queryable), _orderName, new Type[] { typeof(TEntity), _property.PropertyType }, _List.Expression, Expression.Quote(_orderByExp));
+                    _List = _List.Provider.CreateQuery<TEntity>(resultExp);
+                }
+            }
             totalNum = _List.Count();
             return _List.Skip((pageIndex - 1) * pageSize).Take(pageSize);
         }

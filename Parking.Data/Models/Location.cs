@@ -15,7 +15,7 @@ namespace Parking.Data
         [Key]
         public int ID { get; set; }
         public int Warehouse { get; set; }
-        public int Address { get; set; }
+        public string Address { get; set; }
         public int LocSide { get; set; }
         public int LocColumn { get; set; }
         public int LocLayer { get; set; }

@@ -1,0 +1,13 @@
+﻿<div class="panel panel-default">
+    <div class="panel-heading">
+        <div class="panel-title"><span class="glyphicon"></span>数据管理</div>
+    </div>
+    <div class="panel-body">
+        <div class="list-group">
+            <div class="list-group-item"><span></span>@Html.ActionLink("故障处理", "TaskManager", "Manage")</div>
+            <div class="list-group-item"><span></span>@Html.ActionLink("车位维护", "CarpotManager", "Manage")</div>
+            <div class="list-group-item"><span></span>@Html.ActionLink("队列维护", "QueueManager", "Manage")</div>
+            <div class="list-group-item"><span class="glyphicon glyphicon-list"></span>  @Html.ActionLink("返回主页", "Index", "Home",new { area=""},htmlAttributes:new{ @class = "" })</div>
+        </div>
+    </div>
+</div>

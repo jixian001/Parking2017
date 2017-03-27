@@ -1,0 +1,229 @@
+﻿
+@{
+    ViewBag.Title = "系统管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li class="active">@Html.ActionLink("故障处理", "TaskManager", "Manage")</li>
+        </ol>
+
+        <div id="toolbar" class="btn-group" role="group">
+            <button id="btn_Finish" class="btn btn-info"><span></span>手动完成</button>
+            <button id="btn_Reset" class="btn btn-info"><span></span>手动复位</button>
+        </div>
+
+        <table id="taskgrid"></table>
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
+    <script>
+        $(function () {
+            var $table = $("#taskgrid");
+            $table.bootstrapTable({
+                toolbar: "#toolbar",
+                showRefresh: true,
+                showToggle: true,
+                //showColumns: true,       //是否显示所有的列
+                showFooter: false,
+                pagination: true,
+                striped: true,              //是否显示行间隔色
+                sidePagination: "server",
+                //clickToSelect:true,
+                pageNumber: 1,              //初始化加载第一页，默认第一页
+                pageSize:10,                 //每页的记录数  
+                pageList: "[5,10,20,50]",
+                method: "post",               
+                url: "@Url.Action("GetTaskList")",                
+                queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
+                queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
+                dataType:"json",
+                columns: [
+                    {
+                        title: "state",
+                        checkbox: true,
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "ID",
+                        field: "ID",
+                        visible: true,
+                        align: "center",
+                        valign: "middle",
+                        sortable:true
+                    },
+                    {
+                        title: "库区",
+                        field: "Warehouse",
+                        align: "center",
+                        valign: "middle",
+                        formatter: warehouseFormatter
+                    },
+                    {
+                        title: "作业设备",
+                        field: "DeviceCode",
+                        align: "center",
+                        valign: "middle",
+                        sortable:true,
+                        formatter:deviceFormatter
+                    },
+                    {
+                        title: "任务类型",
+                        field: "Type",
+                        align: "left",
+                        valign: "middle",
+                        formatter:typeFormatter
+                    },
+                    {
+                        title: "任务状态",
+                        field: "Status",
+                        align: "left",
+                        valign: "middle",
+                        formatter:statusFormatter
+                    },
+                    {
+                        title: "发送状态",
+                        field: "SendStatusDetail",
+                        align: "left",
+                        valign: "middle",
+                        formatter:sendDetailFormatter
+                    },
+                     {
+                         title: "涉及车厅",
+                         field: "HallCode",
+                         align: "center",
+                         valign: "middle",
+                         formatter:deviceFormatter
+                     },
+                    {
+                        title: "用户卡号",
+                        field: "HallCode",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "发送时间",
+                        field: "SendDtime",
+                        align: "left",
+                        valign: "middle",
+                        visible:false,
+                        formatter:sendDtimeFormatter
+                    },
+                    {
+                        title: "建立时间",
+                        field: "CreateDate",
+                        visible: false,
+                        formatter: sendDtimeFormatter
+                    },
+                    {
+                        title: "源地址",
+                        field: "FromLctAddress",
+                        align: "center",
+                        valign: "middle",
+                        visible: false
+                    },
+                    {
+                        title: "目的地址",
+                        field: "ToLctAddress",
+                        align: "center",
+                        valign: "middle",
+                        visible: false
+                    },
+                    {
+                        title: "Operate",
+                        field: "详情",
+                        align: "center",
+                        events:actionEvents,
+                        formatter: operateFormatter
+                    }
+                ],
+
+                formatLoadingMessage: function () {
+                    return "请稍等，正在加载中...";
+                },
+                formatNoMatches: function () {
+                    return "无符合条件的记录";
+                }
+            });
+            function queryParams(params) {
+                //return params;
+                return {
+                    pageSize: params.pageSize,  //一定包含
+                    pageIndex: params.pageNumber,  //一定包含
+                    sortOrder: params.sortOrder,
+                    sortName: params.sortName
+                };
+                //    UserName: $("#txtName").val(),
+                //    Birthday: $("#txtBirthday").val(),
+                //    Gender: $("#Gender").val(),
+                //    Address: $("#txtAddress").val(),
+                //    name: params.sortName                
+
+            }
+
+            //库区显示
+            function warehouseFormatter(value, row, index) {
+                return value+"#库";
+            }
+            //设备号
+            function deviceFormatter(value, row, index) {               
+                if(value>10){
+                    return (value-10)+"#车厅";
+                }else{
+                    return value+"#TV"
+                }
+            }
+
+            function typeFormatter(value, row, index) {
+
+                return value;
+            }
+
+            function statusFormatter(value, row, index) {
+
+                return value;
+            }
+
+            function sendDetailFormatter(value, row, index) {
+
+                return value;
+            }
+
+            function sendDtimeFormatter(value, row, index) {
+                if (value != null) {
+                    
+                }
+                return "";
+            }
+
+            function operateFormatter(value, row, index) {
+                return '<a class="detail" href="javascript:void(0)" title="detail"><i class="glyphicon glyphicon-list-alt"></i></a>';
+            }
+
+            function getHeight() {
+                return $(window).height;
+            }           
+
+        });
+
+        window.actionEvents = {
+            'click .detail': function (e, value, row, index) {
+                alert(row.ID);
+
+            }
+        };
+
+    </script>
+
+    }
+
+
+

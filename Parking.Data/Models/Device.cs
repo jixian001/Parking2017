@@ -23,7 +23,14 @@ namespace Parking.Data
         public int Layer { get; set; }
         public int Region { get; set; }
         public EnmModel Mode { get; set; }
-        public int IsAvailabe { get; set; }
+        /// <summary>
+        /// 是否启用
+        /// </summary>
+        public int IsAble { get; set; }
+        /// <summary>
+        /// 是否可接收新指令
+        /// </summary>
+        public int IsAvailabe { get; set; }        
         public int RunStep { get; set; }
         public int InStep { get; set; }
         public int OutStep { get; set; }
