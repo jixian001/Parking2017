@@ -1,0 +1,20 @@
+﻿
+.form{width:100%;margin:0px;padding:0px;border-collapse:collapse;border-width:3px 1px 1px;table-layout:fixed}
+.form .formTitle{position:relative;left:0px;text-align:right;white-space:nowrap;font-weight:normal;width:90px;padding-right:15px;}
+.form .formTitle font{color:red;position:absolute;right:0px;}
+.form .formValue{position:relative;padding:5px;width:auto;}
+.form .formValue input.form-control{height:30px;line-height:30px;padding-top:0px;padding-bottom:0px;padding-right:0px;padding-left:5px;resize: none;border-radius: 0px;box-shadow:none;}
+.form .formValue select.form-control{border-radius: 0px;box-shadow:none;}
+.form .formValue textarea.form-control{padding-left:5px;resize: none;border-radius: 0px;box-shadow:none;}
+.form .formValue .input-group .btn{padding: 4px 0px;font-size: 14px;height:30px;min-width: 30px;border-radius: 0px;}
+.form .formValue .input-group .btn .fa-ellipsis-h{margin-top: 4.5px;}
+.form .formValue.has-error .form-control.error{border-color:#e7bebe;background-color: #fffafa;}
+.form .formValue.has-error .form-control-feedback.error{color: #e46f61;top:5.5px;right: 4px;font-size:16px;cursor:pointer;z-index:99;}
+.form .formValue.has-error .form-control.success{border-color:#b0dd9c;background-color: #f3f7f1;}
+.form .formValue.has-error .form-control-feedback.success{color: #8cc474;top:5px;right: 4px;font-size:16px;}
+.form .formValue.has-error .select2-selection--single{border-color:#e7bebe;background-color: #fffafa;}
+.form .formValue.has-error .tooltip-arrow{border-left-color:#d73d32;}
+.form .formValue.has-error .tooltip-inner{background-color: #d73d32;}
+.form-button{padding: 0px;height: 40px;line-height: 36px;text-align: right;border-top: 1px solid #ddd;background-color: #eee;position: absolute;top: 100%;margin-top: -40px;width: 100%;padding-right: 6px;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;-khtml-user-select: none;user-select: none;}
+
+

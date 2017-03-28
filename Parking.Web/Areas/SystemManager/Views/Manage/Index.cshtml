@@ -8,13 +8,13 @@
     <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
     <div class="col-md-10">
         <ol class="breadcrumb">
-            <li><span class="glyphicon glyphicon-home">@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li class="active">@Html.ActionLink("故障处理", "TaskManager", "Manage")</li>
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li class="active">@Html.ActionLink("故障处理", "Index", "Manage", new { area = "SystemManager" }, htmlAttributes: new { @class = "" })</li>
         </ol>
 
-        <div id="toolbar" class="btn-group" role="group">
-            <button id="btn_Finish" class="btn btn-info"><span></span>手动完成</button>
-            <button id="btn_Reset" class="btn btn-info"><span></span>手动复位</button>
+        <div id="toolbar" class="btn-group pull-right" role="group">
+            <button id="btn_Finish" class="btn btn-default"><span></span>手动完成</button>
+            <button id="btn_Reset" class="btn btn-default"><span></span>手动复位</button>
         </div>
 
         <table id="taskgrid"></table>
@@ -29,6 +29,8 @@
             var $table = $("#taskgrid");
             $table.bootstrapTable({
                 toolbar: "#toolbar",
+                toolbarAlign: "right",
+                buttonsAligh:"right",
                 showRefresh: true,
                 showToggle: true,
                 //showColumns: true,       //是否显示所有的列
@@ -38,10 +40,10 @@
                 sidePagination: "server",
                 //clickToSelect:true,
                 pageNumber: 1,              //初始化加载第一页，默认第一页
-                pageSize:10,                 //每页的记录数  
+                pageSize:10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
-                method: "post",               
-                url: "@Url.Action("GetTaskList")",                
+                method: "post",
+                url: "@Url.Action("GetTaskList")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
                 dataType:"json",
@@ -138,9 +140,10 @@
                         visible: false
                     },
                     {
-                        title: "Operate",
-                        field: "详情",
+                        title: "详情",
+                        field:"Operate",
                         align: "center",
+                        valign: "middle",
                         events:actionEvents,
                         formatter: operateFormatter
                     }
@@ -165,7 +168,7 @@
                 //    Birthday: $("#txtBirthday").val(),
                 //    Gender: $("#Gender").val(),
                 //    Address: $("#txtAddress").val(),
-                //    name: params.sortName                
+                //    name: params.sortName
 
             }
 
@@ -174,7 +177,7 @@
                 return value+"#库";
             }
             //设备号
-            function deviceFormatter(value, row, index) {               
+            function deviceFormatter(value, row, index) {
                 if(value>10){
                     return (value-10)+"#车厅";
                 }else{
@@ -199,7 +202,7 @@
 
             function sendDtimeFormatter(value, row, index) {
                 if (value != null) {
-                    
+
                 }
                 return "";
             }
@@ -210,14 +213,74 @@
 
             function getHeight() {
                 return $(window).height;
-            }           
+            }
 
+            //手动完成
+            $("#btn_Finish").click(function () {
+                var selected = $table.bootstrapTable('getSelections');
+                if ($(selected).length > 0)
+                {
+                    BootstrapDialog.confirm("确定要执行此操作？作用域-" + $(selected).length, function (result) {
+                        if (result) {
+                            var _list = [];
+                            $.each(selected, function (index, value) {
+                                _list[index] = value.ID;
+                            });
+                            $.ajax({
+                                url: "@Url.Action("CompleteTask")",
+                                type: "GET",
+                                data: {
+                                    "ids": _list
+                                },
+                                traditional: true,
+                                success: function (msg) {
+                                    alert(msg);
+                                    $table.bootstrapTable("refresh");
+                                }
+                            });
+                        }
+                    });
+                }
+                else {
+                    BootstrapDialog.warning("请选择要操作的行！");
+                }
+            });
+
+            //手动复位
+            $("#btn_Reset").click(function () {
+                var selected = $table.bootstrapTable('getSelections');
+                if ($(selected).length > 0)
+                {
+                    BootstrapDialog.confirm("确定要执行此操作？作用域-" + $(selected).length, function (result) {
+                        if (result) {
+                            var _list = [];
+                            $.each(selected, function (index, value) {
+                                _list[index] = value.ID;
+                            });
+                            $.ajax({
+                                url: "@Url.Action("ResetTask")",
+                                type: "GET",
+                                data: {
+                                    "ids":_list
+                                },
+                                traditional: true,
+                                success: function (msg) {
+                                    alert(msg);
+                                    $table.bootstrapTable("refresh");
+                                }
+                            });
+                        }
+                    });
+                }
+                else {
+                    BootstrapDialog.warning("请选择要操作的行！");
+                }
+            })
         });
 
         window.actionEvents = {
             'click .detail': function (e, value, row, index) {
-                alert(row.ID);
-
+                window.location.href = "/SystemManager/Manage/TaskDetail?ID=" + row.ID;
             }
         };
 

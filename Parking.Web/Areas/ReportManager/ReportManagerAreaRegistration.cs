@@ -8,17 +8,17 @@ namespace Parking.Web.Areas.ReportManager
         {
             get 
             {
-                return "Report";
+                return "ReportManager";
             }
         }
 
         public override void RegisterArea(AreaRegistrationContext context) 
-        {
+        {           
             context.MapRoute(
-                "Report_default",
-                "Report/{controller}/{action}/{id}",
+                this.AreaName + "_default",
+                this.AreaName + "/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                 new string[] { "Parking.Web.Areas.ReportManager.Controllers" }
+                new string[] { "Parking.Web.Areas." + this.AreaName + ".Controllers" }
             );
         }
     }

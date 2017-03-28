@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Parking.Auxiliary;
 using Parking.Data;
+using System.Linq.Expressions;
 
 namespace Parking.Core
 {
@@ -102,9 +103,9 @@ namespace Parking.Core
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public ImplementTask GetTaskByID(int id)
+        public ImplementTask Find(Expression<Func<ImplementTask,bool>> where)
         {
-            return manager.Find(id);
+            return manager.Find(where);
         }
 
         /// <summary>
@@ -115,7 +116,7 @@ namespace Parking.Core
         /// <returns></returns>
         public ImplementTask GetTaskBySmgID(int smg,int warehouse)
         {
-            return manager.GetTaskBySmgID(smg,warehouse);
+            return manager.Find(tsk=>tsk.DeviceCode==smg&&tsk.Warehouse==warehouse);
         }
 
         /// <summary>
@@ -205,6 +206,28 @@ namespace Parking.Core
             }
             Page<ImplementTask> page = manager.FindPageList(pageTask,param);
             return page;
+        }
+
+        public Response CompleteTask(int tid)
+        {
+            manager.Delete(tid);
+            Response _resp = new Response()
+            {
+                Code = 1,
+                Message = "手动完成作业成功,ID-" + tid
+            };
+            return _resp;
+        }
+
+        public Response ResetTask(int tid)
+        {
+            manager.Delete(tid);
+            Response _resp = new Response()
+            {
+                Code = 1,
+                Message = "手动复位作业成功,ID-"+tid
+            };
+            return _resp;
         }
     }
 }

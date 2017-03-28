@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Parking.Auxiliary;
+using System.Linq.Expressions;
 
 namespace Parking.Data
 {
@@ -15,10 +16,14 @@ namespace Parking.Data
             return itaskLst.ToList();
         }
 
-        public ImplementTask GetTaskBySmgID(int code,int warehouse)
+        public ImplementTask Find(Expression<Func<ImplementTask,bool>> where)
         {
-            return _repository.Find(tsk => tsk.DeviceCode == code && tsk.Warehouse == warehouse);
+            return _repository.Find(where);
         }
 
+        public List<ImplementTask> FindList(Expression<Func<ImplementTask, bool>> where)
+        {
+            return _repository.FindList(where).ToList();
+        }
     }
 }

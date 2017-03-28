@@ -8,17 +8,17 @@ namespace Parking.Web.Areas.CustomManager
         {
             get 
             {
-                return "Custom";
+                return "CustomManager";
             }
         }
 
         public override void RegisterArea(AreaRegistrationContext context) 
         {
             context.MapRoute(
-                "Custom_default",
-                "Custom/{controller}/{action}/{id}",
+                this.AreaName + "_default",
+                this.AreaName + "/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                new string[] { "Parking.Web.Areas.CustomManager.Controllers" }
+                new string[] { "Parking.Web.Areas." + this.AreaName + ".Controllers" }
             );
         }
     }

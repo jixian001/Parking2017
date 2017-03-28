@@ -8,17 +8,17 @@ namespace Parking.Web.Areas.ChargeManager
         {
             get 
             {
-                return "Charge";
+                return "ChargeManager";
             }
         }
 
         public override void RegisterArea(AreaRegistrationContext context) 
         {
             context.MapRoute(
-                "Charge_default",
-                "Charge/{controller}/{action}/{id}",
+                this.AreaName + "_default",
+                this.AreaName + "/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                new string[] { "Parking.Web.Areas.ChargeManager.Controllers" }
+                new string[] { "Parking.Web.Areas." + this.AreaName + ".Controllers" }
             );
         }
     }

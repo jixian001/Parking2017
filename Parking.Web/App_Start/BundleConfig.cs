@@ -47,8 +47,9 @@ namespace Parking.Web
             bundles.Add(new ScriptBundle("~/bundles/bootstraptable").Include(
                 "~/Scripts/bootstrap-table.js",
                 "~/Scripts/bootstrap-table-zh-CN.js"));
-            
 
+            bundles.Add(new StyleBundle("~/Content/defform").Include(
+                "~/Content/defform.css"));
         }
     }
 }

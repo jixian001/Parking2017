@@ -15,10 +15,10 @@ namespace Parking.Web.Areas.SystemManager
         public override void RegisterArea(AreaRegistrationContext context) 
         {
             context.MapRoute(
-                "SystemManager_default",
-                "SystemManager/{controller}/{action}/{id}",
+                this.AreaName+"_default",
+                this.AreaName+"/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                new string[] { "Parking.Web.Areas.SystemManager.Controllers" }
+                new string[] { "Parking.Web.Areas."+this.AreaName+".Controllers" }
             );
         }
     }

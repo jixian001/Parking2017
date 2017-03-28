@@ -24,16 +24,6 @@ namespace Parking.Data
         }
 
         /// <summary>
-        /// 查找实体,以ID号查询的
-        /// </summary>
-        /// <param name="ID"></param>
-        /// <returns></returns>
-        public virtual TEntity Find(int ID)
-        {
-            return _repository.Find(ID);
-        }
-
-        /// <summary>
         /// 查找数据列表
         /// </summary>
         public virtual IQueryable<TEntity> FindList()
@@ -111,7 +101,7 @@ namespace Parking.Data
         public virtual Response Delete(int ID)
         {
             Response _response = new Response();
-            var _entity = Find(ID);
+            var _entity =_repository.Find(ID);
             if (_entity == null)
             {
                 _response.Code = 10;

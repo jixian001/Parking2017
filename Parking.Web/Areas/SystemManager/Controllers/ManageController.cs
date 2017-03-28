@@ -17,12 +17,12 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return View();
         }
         /// <summary>
-        /// 故障处理
+        /// 故障处理,暂跟INDEX关系，后面再做细划
         /// </summary>
         /// <returns></returns>
         public ActionResult TaskManager()
         {
-            return View();
+            return RedirectToAction("Index");
         }
 
         [HttpPost]       
@@ -58,6 +58,16 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             };
             return Json(data);            
         }
+        /// <summary>
+        /// 点击详情，查看信息
+        /// </summary>
+        /// <param name="tID"></param>
+        /// <returns></returns>
+        public ActionResult TaskDetail(int ID)
+        {
+            ImplementTask task = new CWTask().Find(tsk=>tsk.ID==ID);
+            return View(task);
+        }
          
         /// <summary>
         /// 队列处理
@@ -68,10 +78,75 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return View();
         }
 
+        /// <summary>
+        /// 车位维护
+        /// </summary>
+        /// <returns></returns>
         public ActionResult CarpotManager()
         {
             return View();
         }
 
+        /// <summary>
+        /// 手动完成
+        /// </summary>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult CompleteTask(int tid)
+        {
+            Response res = new CWTask().CompleteTask(tid);
+            return Content(res.Message);
+        }
+
+        public ActionResult CompleteTask(List<int> ids)
+        {
+            if (ids == null)
+            {
+                return Content("Fail");
+            }
+            CWTask cwtask = new CWTask();
+            int count = 0;
+            foreach(int id in ids)
+            {
+               Response resp=cwtask.CompleteTask(id);
+                if (resp.Code == 1)
+                {
+                    count++;
+                }
+            }
+            return Content("操作成功,作用数量-"+count);
+        }
+
+        /// <summary>
+        /// 手动复位
+        /// </summary>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult ResetTask(int tid)
+        {
+            Response res = new CWTask().ResetTask(tid);
+            return Content(res.Message);
+        }
+
+        public ActionResult ResetTask(List<int> ids)
+        {
+            if (ids == null)
+            {
+                return Content("Fail");
+            }
+            CWTask cwtask = new CWTask();
+            int count = 0;
+            foreach (int id in ids)
+            {
+                Response resp= cwtask.ResetTask(id);
+                if (resp.Code == 1)
+                {
+                    count++;
+                }
+            }
+            return Content("操作成功,数量-"+count);
+        }
     }
 }

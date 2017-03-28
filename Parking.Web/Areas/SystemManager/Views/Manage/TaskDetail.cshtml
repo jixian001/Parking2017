@@ -1,0 +1,179 @@
+﻿@model Parking.Data.ImplementTask
+
+@{
+    ViewBag.Title = "任务详情";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>@Html.ActionLink("故障处理", "Index", "Manage", new { area = "SystemManager" }, htmlAttributes: new { @class = "" })</li>
+            <li>任务详情</li>
+        </ol>
+        <hr />
+        <div style="margin:10px 20px 20px 20px">
+            <form id="form1">
+                <table class="form">                    
+                    <tr>
+                        <th class="formTitle">库区</th>
+                        <td class="formValue">
+                            <input id="wh" name="wh" type="text" class="form-control" placeholder="@Model.Warehouse"/>
+                        </td>
+                        <th class="formTitle">设备号</th>
+                        <td class="formValue">
+                            <input id="code" name="code" type="text" class="form-control" placeholder="@Model.DeviceCode"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">类型</th>
+                        <td class="formValue">
+                            <input id="type" name="type" type="text" class="form-control"  placeholder="@Model.Type"/>
+                        </td>
+                        <th class="formTitle">状态</th>
+                        <td class="formValue">
+                            <input id="status" name="status" type="text" class="form-control" placeholder="@Model.Status"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">发送时间</th>
+                        <td class="formValue">
+                            <input id="sendDtime" name="sendDtime" type="text" class="form-control" placeholder="@Model.SendDtime"/>
+                        </td>
+                        <th class="formTitle">建立时间</th>
+                        <td class="formValue">
+                            <input id="createDate" name="createDate" type="text" class="form-control" placeholder="@Model.CreateDate"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">所用车厅</th>
+                        <td class="formValue">
+                            <input id="hallCode" name="hallCode" type="text" class="form-control" placeholder="@Model.HallCode"/>
+                        </td>
+                        <th class="formTitle">用户卡号</th>
+                        <td class="formValue">
+                            <input id="iccode" name="iccode" type="text" class="form-control" placeholder="@Model.ICCardCode"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">起始地址</th>
+                        <td class="formValue">
+                            <input id="fromLctAddress" name="fromLctAddress" type="text" class="form-control" placeholder="@Model.FromLctAddress"/>
+                        </td>
+                        <th class="formTitle">目的地址</th>
+                        <td class="formValue">
+                            <input id="toLctAddress" name="toLctAddress" type="text" class="form-control" placeholder="@Model.ToLctAddress"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">车辆辆距</th>
+                        <td class="formValue">
+                            <input id="distance" name="distance" type="text" class="form-control" placeholder="@Model.Distance" />
+                        </td>
+                        <th class="formTitle">车辆外形</th>
+                        <td class="formValue">
+                            <input id="carsize" name="carsize" type="text" class="form-control" placeholder="@Model.CarSize" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle" valign="top" style="padding-top: 5px;">
+                            发送状态
+                        </th>
+                        <td class="formValue" colspan="3">
+                            <textarea id="sendStatusDetail" name="sendStatusDetail" class="form-control" style="height: 80px;" placeholder="@Model.SendStatusDetail"></textarea>
+                        </td>                                            
+                    </tr>                   
+                </table>               
+            </form>
+        </div>
+        <div>@Html.HiddenFor(model => model.ID)</div>
+        <div>
+            <button class="btn btn-default" id="btnFinish" style="margin-left:40px;margin-right:40px">手动完成</button>
+            <button class="btn btn-default" id="btnReset">手动复位</button>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    <script>
+        $(function () {
+            var $type = $("#type");
+            var type = $type.attr("placeholder");
+            switch (type) {
+                case "SaveCar":
+                    $type.val("存车");
+                    break;
+            }
+
+            var state = $("#status").attr("placeholder");           
+            if (state == "ICarInWaitFirstSwipeCard") {
+                $("#status").val("等待刷卡");
+            }
+
+            var $sendStatus = $("#sendStatusDetail");
+            var sendStatus = $sendStatus.attr("placeholder");
+            switch (sendStatus) {
+                case "NoSend":
+                    $sendStatus.val("等待发送");
+                    break;
+                case "SendWaitAsk":
+                    $sendStatus.val("等待回应");
+                    break;
+                case "Asked":
+                    $sendStatus.val("回应完成");
+                    break;
+            }
+
+            $("#btnFinish").click(function () {
+                var $id = $("#ID").val();
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message:"<b>确定手动完成作业？ ID-"+$id+"</b>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            $.post("@Url.Action("CompleteTask")", { tid: $id }, function (msg) {
+                                alert(msg);
+                                window.location.href = "/SystemManager/Manage/Index";
+                            });
+                            self.close();
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+            });
+
+            $("#btnReset").click(function(){
+                var $id = $("#ID").val();
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message:"<b>确定手动复位作业？ ID-"+$id+"</b>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            $.post("@Url.Action("ResetTask")", { tid: $id }, function (msg) {
+                                alert(msg);
+                                window.location.href = "/SystemManager/Manage/Index";
+                            });
+                            self.close();
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+            });
+        });
+    </script>
+
+    }
