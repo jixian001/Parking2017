@@ -15,42 +15,181 @@
             <li><a href="#section4">数据出库</a></li>
             <li><a href="#section5">数据入库</a></li>
         </ol>
-        <div class="jumbotron" id="section1">
-            <p>查询存车车位</p>
-            <div>
-                <form id="frmFind">
-
-                </form>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <p class="text-center text-info">
+                    仅维护系统数据，不对设备下发任何指令。
+                </p>
+            </div>           
+            <div class="panel-body">
+                <div id="section1">
+                    <form id="frmFind" name="frmFind" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>车位查询</legend>
+                            <div class="form-group">
+                                <label for="txtIccd" class="col-md-2 control-label">用户卡号</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtIccd" name="txtIccd" placeholder="用户卡号" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtFindWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtFindWh" name="txtwh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtloc" class="col-md-2 control-label">存车车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtloc" name="txtloc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnFind" class="btn btn-default">查 询</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="section2">
+                    <form id="frmTrans" name="frmTrans" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>数据挪移</legend>
+                            <div class="form-group">
+                                <label for="txtTransWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtTransWh" name="txtTransWh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtFrom" class="col-md-2 control-label">起始车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtFrom" name="txtFrom" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtTo" class="col-md-2 control-label">目的车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtTo" name="txtTo" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnTrans" class="btn btn-default">数据挪移</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="section3">
+                    <form id="frmDis" name="frmDis" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>车位禁启用</legend>
+                            <div class="form-group">
+                                <label for="txtDisWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtDisWh" name="txtDisWh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtDisLoc" class="col-md-2 control-label">车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtDisLoc" name="txtDisLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnDis" class="btn btn-default" style="margin-right:15px">禁 用</button>
+                                    <button type="button" id="btnEnable" class="btn btn-default">启 用</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="section4">
+                    <form id="frmOut" name="frmOut" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>数据出库</legend>
+                            <div class="form-group">
+                                <label for="txtOutWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtOutWh" name="txtOutWh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtOutLoc" class="col-md-2 control-label">车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtOutLoc" name="txtOutLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnOut" class="btn btn-default">数据出库</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="section5">
+                    <form id="frmIn" name="frmIn" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>数据入库</legend>
+                            <div class="form-group">
+                                <label for="txtInWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInWh" name="txtInWh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInLoc" class="col-md-2 control-label">车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInLoc" name="txtInLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInIccd" class="col-md-2 control-label">用户卡号</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInIccd" name="txtInLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInDist" class="col-md-2 control-label">车辆轴距</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInDist" name="txtInDist" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInSize" class="col-md-2 control-label">车辆外形</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInSize" name="txtInSize" placeholder="例：111或112"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInDtime" class="col-md-2 control-label">入库时间</label>
+                                <div class="col-md-10">
+                                    <input type="date" class="form-control" id="txtInDtime" name="txtInDtime" placeholder="格式：2017-04-01 00:00"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnIn" class="btn btn-default">数据入库</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
             </div>
-        </div> 
-        <div class="jumbotron" id="section2">
-            <p>section-2</p>
-            <p>
-                iOS 是一个由苹果公司开发和发布的手机操作系统。最初是于 2007 年首次发布 iPhone、iPod Touch 和 Apple
-                TV。iOS 派生自 OS X，它们共享 Darwin 基础。OS X 操作系统是用在苹果电脑上，iOS 是苹果的移动版本。
-            </p>
-        </div>  
-        <div class="jumbotron" id="section3">
-            <p>section-3</p>
-            <p>
-                iOS 是一个由苹果公司开发和发布的手机操作系统。最初是于 2007 年首次发布 iPhone、iPod Touch 和 Apple
-                TV。iOS 派生自 OS X，它们共享 Darwin 基础。OS X 操作系统是用在苹果电脑上，iOS 是苹果的移动版本。
-            </p>
-        </div>      
-        <div class="jumbotron" id="section4">
-            <p>section-4</p>
-            <p>
-                iOS 是一个由苹果公司开发和发布的手机操作系统。最初是于 2007 年首次发布 iPhone、iPod Touch 和 Apple
-                TV。iOS 派生自 OS X，它们共享 Darwin 基础。OS X 操作系统是用在苹果电脑上，iOS 是苹果的移动版本。
-            </p>
-        </div>
-        <div class="jumbotron" id="section5">
-            <p>section-5</p>
-            <p>
-                iOS 是一个由苹果公司开发和发布的手机操作系统。最初是于 2007 年首次发布 iPhone、iPod Touch 和 Apple
-                TV。iOS 派生自 OS X，它们共享 Darwin 基础。OS X 操作系统是用在苹果电脑上，iOS 是苹果的移动版本。
-            </p>
-        </div>      
+        </div>             
     </div>
 </div>
 
+@section scripts{
+    <script>
+        $(function () {
+            $("#txtInDtime").datetimepicker({ format: 'yyyy-mm-dd hh:ii' });
+
+
+        });
+    </script>
+    }
