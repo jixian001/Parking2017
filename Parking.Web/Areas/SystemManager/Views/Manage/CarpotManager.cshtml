@@ -12,8 +12,8 @@
             <li><a href="#section1">查询车位</a></li>
             <li><a href="#section2">数据挪移</a></li>
             <li><a href="#section3">车位禁启</a></li>
-            <li><a href="#section4">数据出库</a></li>
-            <li><a href="#section5">数据入库</a></li>
+            <li><a href="#section4">数据入库</a></li>
+            <li><a href="#section5">数据出库</a></li>
         </ol>
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -35,13 +35,13 @@
                             <div class="form-group">
                                 <label for="txtFindWh" class="col-md-2 control-label">库区</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtFindWh" name="txtwh" />
+                                    <input type="text" class="form-control" id="txtFindWh" name="txtFindWh" />
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="txtloc" class="col-md-2 control-label">存车车位</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtloc" name="txtloc" />
+                                    <input type="text" class="form-control" id="txtFindloc" name="txtFindloc" />
                                 </div>
                             </div>
                             <div class="form-group">
@@ -106,8 +106,56 @@
                             </div>
                         </fieldset>
                     </form>
-                </div>
+                </div>               
                 <div id="section4">
+                    <form id="frmIn" name="frmIn" class="form-horizontal" role="form">
+                        <fieldset>
+                            <legend>数据入库</legend>
+                            <div class="form-group">
+                                <label for="txtInWh" class="col-md-2 control-label">库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInWh" name="txtInWh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInLoc" class="col-md-2 control-label">车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInLoc" name="txtInLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInDtime" class="col-md-2 control-label">入库时间</label>
+                                <div class="col-md-10">
+                                    <input type="date" class="form-control" id="txtInDtime" name="txtInDtime" placeholder="格式：2017-04-01 00:00" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInIccd" class="col-md-2 control-label">用户卡号</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInIccd" name="txtInLoc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInDist" class="col-md-2 control-label">车辆轴距</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInDist" name="txtInDist" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtInSize" class="col-md-2 control-label">车辆外形</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="txtInSize" name="txtInSize" placeholder="例：111或112"/>
+                                </div>
+                            </div>                          
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnIn" class="btn btn-default">数据入库</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="section5">
                     <form id="frmOut" name="frmOut" class="form-horizontal" role="form">
                         <fieldset>
                             <legend>数据出库</legend>
@@ -131,54 +179,6 @@
                         </fieldset>
                     </form>
                 </div>
-                <div id="section5">
-                    <form id="frmIn" name="frmIn" class="form-horizontal" role="form">
-                        <fieldset>
-                            <legend>数据入库</legend>
-                            <div class="form-group">
-                                <label for="txtInWh" class="col-md-2 control-label">库区</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtInWh" name="txtInWh" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="txtInLoc" class="col-md-2 control-label">车位</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtInLoc" name="txtInLoc" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="txtInIccd" class="col-md-2 control-label">用户卡号</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtInIccd" name="txtInLoc" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="txtInDist" class="col-md-2 control-label">车辆轴距</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtInDist" name="txtInDist" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="txtInSize" class="col-md-2 control-label">车辆外形</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtInSize" name="txtInSize" placeholder="例：111或112"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="txtInDtime" class="col-md-2 control-label">入库时间</label>
-                                <div class="col-md-10">
-                                    <input type="date" class="form-control" id="txtInDtime" name="txtInDtime" placeholder="格式：2017-04-01 00:00"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-10 col-md-offset-2">
-                                    <button type="button" id="btnIn" class="btn btn-default">数据入库</button>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
             </div>
         </div>             
     </div>
@@ -189,7 +189,232 @@
         $(function () {
             $("#txtInDtime").datetimepicker({ format: 'yyyy-mm-dd hh:ii' });
 
+            $("#btnFind").click(function () {
+                var $iccode=$("#txtIccd").val().trim();
+                if($iccode==""){
+                    BootstrapDialog.show({
+                        title:"温馨提示",
+                        message:"请输入用户卡号！"});
+                    return;
+                }               
+                var params = $("form[name='frmFind']").serialize();
+                $.get("@Url.Action("FindLocByICCard")?"+params,{}, function (data, status) {
+                    if (status == "success") {
+                        if (data.LocAddress.trim() == "")
+                        {
+                            BootstrapDialog.warning("没有找到存车车位！");
+                        }
+                        else
+                        {
+                            $("#txtFindWh").val(data.Warehouse);
+                            $("#txtFindloc").val(data.LocAddress);
+                        }
+                    } else {
+                        alert("查询异常，请联系管理员！");
+                    }
+                });
+            });
+
+            $("#btnTrans").click(function () {
+                var $wh = $("input[name='txtTransWh']")
+                if ($wh.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "库区不允许为空！"
+                    });
+                    return;
+                }
+                var $from = $("input[name='txtFrom']");
+                var $to = $("#txtTo");
+                if ($from.val().trim() == "" || $to.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "源地址或目的地址不允许为空！"
+                    });
+                    return;
+                }
+                var params = $("form[name='frmTrans']").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("TransferLoc")",
+                    cache:false,
+                    data: params,
+                    dataType: "text",
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data
+                        });
+                        $from.val("");
+                        $to.val("")
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            });
+
+            $("#btnDis").click(function () {
+                DisableLoc(true);
+            });
+
+            $("#btnEnable").click(function () {
+                DisableLoc(false);
+            });
+
+            $("#btnIn").click(function () {
+                var $wh = $("#txtInWh");
+                if ($wh.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "库区不允许为空！"
+                    });
+                    return;
+                }
+
+                var $addrs = $("#txtInLoc");
+                if ($addrs.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "入库地址不允许为空！"
+                    });
+                    return;
+                }
+                var $time = $("#txtInDtime");
+                if ($time.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "入库时间不允许为空！"
+                    });
+                    return;
+                }
+                var $iccd = $("#txtInIccd");
+                if ($iccd.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "入库卡号不允许为空！"
+                    });
+                    return;
+                }
+
+                var $dist = $("input[name='txtInDist']");
+                if ($dist.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "车辆轴距不允许为空！"
+                    });
+                    return;
+                }
+                
+                var $carsize = $("#txtInSize");
+                if ($carsize.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "车辆外形不允许为空！"
+                    });
+                    return;
+                }
+
+                var params = $("form[name='frmIn']").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("LocationIn")",
+                    cache: false,
+                    data: params,
+                    dataType: "text",
+                    success: function (data)
+                    {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data
+                        });
+                        $wh.val("");
+                        $addrs.val("")
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            });
+
+            $("#btnOut").click(function () {
+                var $wh = $("#txtOutWh");
+                if ($wh.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "库区不允许为空！"
+                    });
+                    return;
+                }
+
+                var $addrs = $("#txtOutLoc");
+                if ($addrs.val().trim() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "地址不允许为空！"
+                    });
+                    $addrs.focus();
+                    return;
+                }
+
+                var params = $("form[name='frmOut']").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("LocationOut")",
+                    cache: false,
+                    data: params,
+                    dataType: "text",
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data
+                        });
+                        $wh.val("");
+                        $addrs.val("")
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+            });
 
         });
+
+        function DisableLoc(isDis) {
+            var $wh = $("#txtDisWh");
+            var $loc = $("#txtDisLoc");
+            if ($wh.val().trim() == "") {
+                BootstrapDialog.show({
+                    title: "温馨提示",
+                    message: "库区不允许为空！"
+                });
+                return;
+            }
+            if ($loc.val().trim() == "") {
+                BootstrapDialog.show({
+                    title: "温馨提示",
+                    message: "车位地址不允许为空！"
+                });
+                return;
+            }
+            var params = $("form[name='frmDis']").serialize() + "&isDis=" + isDis;
+            $.ajax({
+                type: "GET",
+                cache: false,
+                url: "@Url.Action("DisableLocation")",
+                dataType: "text",
+                data: params,
+                success: function (data) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: data
+                    });
+                }
+            });
+        }
+
+
+
     </script>
     }

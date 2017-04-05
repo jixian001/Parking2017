@@ -30,5 +30,51 @@ namespace Parking.Core
         {
             return manager.FindLocationList(where, null);
         }
+
+        public Location FindLocation(Expression<Func<Location, bool>> where)
+        {
+            return manager.FindLocation(where);
+        }
+
+        public int TransportLoc(Location fromLoc,Location toLoc)
+        {
+            toLoc.Status = EnmLocationStatus.Occupy;
+            toLoc.CarSize = fromLoc.CarSize;
+            toLoc.WheelBase = fromLoc.WheelBase;
+            toLoc.ICCode = fromLoc.ICCode;
+            toLoc.InDate = fromLoc.InDate;
+            manager.Update(toLoc);
+
+            fromLoc.Status = EnmLocationStatus.Space;
+            fromLoc.CarSize = "";
+            fromLoc.WheelBase = 0;
+            fromLoc.ICCode = "";
+            fromLoc.InDate = DateTime.Parse("2017-1-1");
+            manager.Update(fromLoc);
+
+            return 1;
+        }
+
+        public int DisableLocation(Location loc,bool isDis)
+        {
+            if (isDis)
+            {
+                loc.Type = EnmLocationType.Disable;
+            }
+            else
+            {
+                loc.Type = EnmLocationType.Normal;
+            }
+            manager.Update(loc);
+
+            return 1;
+        }
+
+        public Response UpdateLocation(Location loc)
+        {
+            Response resp = manager.Update(loc);
+            return resp;
+        }
+
     }
 }

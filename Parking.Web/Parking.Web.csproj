@@ -292,7 +292,6 @@
     <Folder Include="Areas\ReportManager\Views\Shared\" />
     <Folder Include="Areas\SystemManager\Models\" />
     <Folder Include="Areas\SystemManager\Views\Shared\" />
-    <Folder Include="Views\Task\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
