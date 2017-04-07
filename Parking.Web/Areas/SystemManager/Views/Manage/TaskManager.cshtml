@@ -1,6 +1,6 @@
 ﻿
 @{
-    ViewBag.Title = "系统管理";
+    ViewBag.Title = "故障处理";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <br />
@@ -9,7 +9,8 @@
     <div class="col-md-10">
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li class="active">@Html.ActionLink("故障处理", "Index", "Manage", new { area = "SystemManager" }, htmlAttributes: new { @class = "" })</li>
+            <li>系统维护</li>
+            <li class="active">故障处理</li>
         </ol>
 
         <div id="toolbar" class="btn-group pull-right" role="group">
@@ -107,7 +108,7 @@
                      },
                     {
                         title: "用户卡号",
-                        field: "HallCode",
+                        field: "ICCardCode",
                         align: "center",
                         valign: "middle"
                     },
@@ -169,7 +170,6 @@
                 //    Gender: $("#Gender").val(),
                 //    Address: $("#txtAddress").val(),
                 //    name: params.sortName
-
             }
 
             //库区显示
@@ -286,7 +286,7 @@
 
     </script>
 
-    }
+ }
 
 
 

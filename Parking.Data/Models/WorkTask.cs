@@ -18,10 +18,11 @@ namespace Parking.Data
         /// 2- 主作业，暂没有报文，待分解的        
         /// </summary>
         public int IsMaster { get; set; }
+        public int Warehouse { get; set; }
+        public int DeviceCode { get; set; }
         public EnmTaskType MasterType { get; set; }
         public int TelegramType { get; set; }
-        public int SubTelegramType { get; set; }
-        public int DeviceCode { get; set; }
+        public int SubTelegramType { get; set; }       
         [StringLength(10)]
         public string FromLctAddress { get; set; }
         [StringLength(10)]

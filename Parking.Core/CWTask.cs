@@ -87,7 +87,8 @@ namespace Parking.Core
         public List<ImplementTask> GetExecuteTasks()
         {
             return manager.GetCurrentTaskList();
-        }
+        }       
+
         /// <summary>
         /// 更新作业报文的发送状态
         /// </summary>
@@ -229,5 +230,79 @@ namespace Parking.Core
             };
             return _resp;
         }
+
+        #region 队列管理
+        private WorkTaskManager manager_queue = new WorkTaskManager();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="where"></param>
+        /// <returns></returns>
+        public WorkTask FindQueue(Expression<Func<WorkTask, bool>> where)
+        {
+            return manager_queue.Find(where);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="where"></param>
+        /// <returns></returns>
+        public List<WorkTask> FindQueueList(Expression<Func<WorkTask, bool>> where)
+        {
+            return manager_queue.FindList(where);
+        }
+
+        /// <summary>
+        /// 依分页条件查询所有
+        /// </summary>
+        /// <param name="pageWork"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public Page<WorkTask> FindPageList(Page<WorkTask> pageWork, OrderParam param)
+        {
+            if (param == null)
+            {
+                param = new OrderParam()
+                {
+                    PropertyName = "ID",
+                    Method = OrderMethod.Asc
+                };
+            }
+            Page<WorkTask> page = manager_queue.FindPageList(pageWork, param);
+            return page;
+        }
+
+        /// <summary>
+        /// 依查询条件，查找相应分页信息
+        /// </summary>
+        /// <param name="pageWork"></param>
+        /// <param name="where"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public Page<WorkTask> FindPagelist(Page<WorkTask> pageWork,Expression<Func<WorkTask,bool>> where, OrderParam param)
+        {
+            if (param == null)
+            {
+                param = new OrderParam()
+                {
+                    PropertyName = "ID",
+                    Method = OrderMethod.Asc
+                };
+            }
+            Page<WorkTask> page = manager_queue.FindPageList(pageWork,where,param);
+            return page;
+        }
+        /// <summary>
+        /// 删除队列
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        public Response DeleteQueue(int ID)
+        {
+            return manager_queue.Delete(ID);
+        }
+
+        #endregion
     }
 }

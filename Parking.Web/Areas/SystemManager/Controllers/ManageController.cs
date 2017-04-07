@@ -11,31 +11,33 @@ namespace Parking.Web.Areas.SystemManager.Controllers
 {
     public class ManageController : Controller
     {
-        // GET: SystemManager/Manage/Index
-        public ActionResult Index()
-        {
-            return View();
-        }
         /// <summary>
-        /// 故障处理,暂跟INDEX关系，后面再做细划
+        /// 故障处理
         /// </summary>
         /// <returns></returns>
         public ActionResult TaskManager()
         {
-            return RedirectToAction("Index");
+            return View();
         }
-
+        /// <summary>
+        /// 故障处理
+        /// </summary>
+        /// <param name="pageSize"></param>
+        /// <param name="pageNumber"></param>
+        /// <param name="sortOrder"></param>
+        /// <param name="sortName"></param>
+        /// <returns></returns>
         [HttpPost]
-        public JsonResult GetTaskList(int? pageSize, int? pageNumber, string sortOrder, string sortName)
+        public JsonResult GetTaskList(int? pageSize, int? pageIndex, string sortOrder, string sortName)
         {
             Page<ImplementTask> page = new Page<ImplementTask>();
             if (pageSize != null)
             {
                 page.PageSize = (int)pageSize;
             }
-            if (pageNumber != null)
+            if (pageIndex != null)
             {
-                page.PageIndex = (int)pageNumber;
+                page.PageIndex = (int)pageIndex;
             }
             OrderParam orderParam = null;
             if (!string.IsNullOrEmpty(sortName))
@@ -78,7 +80,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         {
             return View();
         }
-
+        
         /// <summary>
         /// 车位维护
         /// </summary>
@@ -100,6 +102,11 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Content(res.Message);
         }
 
+        /// <summary>
+        /// 手动完成（多选）
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public ActionResult CompleteTask(List<int> ids)
         {
             if (ids == null)
@@ -131,6 +138,11 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Content(res.Message);
         }
 
+        /// <summary>
+        /// 手动复位（多选）
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public ActionResult ResetTask(List<int> ids)
         {
             if (ids == null)
@@ -149,7 +161,10 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             }
             return Content("操作成功,数量-" + count);
         }
-
+        /// <summary>
+        /// 查询存车车位
+        /// </summary>
+        /// <returns></returns>
         public ActionResult FindLocByICCard()
         {
             string iccd = Request.QueryString["txtIccd"];
@@ -165,7 +180,10 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             }
             return Json(new { Warehouse = "", LocAddress = "" }, JsonRequestBehavior.AllowGet);
         }
-
+        /// <summary>
+        /// 数据挪移
+        /// </summary>
+        /// <returns></returns>
         [HttpPost]
         public ActionResult TransferLoc()
         {
@@ -198,7 +216,10 @@ namespace Parking.Web.Areas.SystemManager.Controllers
                 return Content("操作引发异常！");
             }
         }
-
+        /// <summary>
+        /// 车位禁用
+        /// </summary>
+        /// <returns></returns>
         public ActionResult DisableLocation(string txtDisWh, string txtDisLoc, bool isDis)
         {
             if (string.IsNullOrEmpty(txtDisWh))
@@ -275,7 +296,10 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             Response resp = new CWLocation().UpdateLocation(loc);
             return Content(resp.Message);
         }
-
+        /// <summary>
+        /// 数据出库
+        /// </summary>
+        /// <returns></returns>
         [HttpPost]
         public ActionResult LocationOut()
         {
@@ -302,5 +326,91 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             Response resp = new CWLocation().UpdateLocation(loc);
             return Content(resp.Message);
         }
+
+        /// <summary>
+        /// 获取队列信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult FindQueueList(int? pageSize, int? pageIndex, string warehouse,string code)
+        {
+            CWTask cwtask = new CWTask();
+            Page<WorkTask> page = new Page<WorkTask>();
+            if (pageSize != null)
+            {
+                page.PageSize = (int)pageSize;
+            }
+            if (pageIndex != null)
+            {
+                page.PageIndex = (int)pageIndex;
+            }
+            if (!string.IsNullOrEmpty(warehouse) && !string.IsNullOrEmpty(code))
+            {
+                int wh = Convert.ToInt32(warehouse);
+                int smg = Convert.ToInt32(code);
+                page = cwtask.FindPagelist(page, (wtsk => wtsk.Warehouse == wh && wtsk.DeviceCode == smg), null);
+                var data = new
+                {
+                    total = page.TotalNumber,
+                    rows = page.ItemLists
+                };
+                return Json(data);
+            }
+            page = cwtask.FindPageList(page, null);
+            var value = new
+            {
+                total = page.TotalNumber,
+                rows = page.ItemLists
+            };           
+            return Json(value);
+        }
+        /// <summary>
+        /// 点击详情，查看信息
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        public ActionResult QueueDetail(int ID)
+        {
+            WorkTask queue = new CWTask().FindQueue(mtsk => mtsk.ID == ID);
+            return View(queue);
+        }
+
+        /// <summary>
+        /// 删除队列
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult DeleteQueue(int ID)
+        {
+            Response rsp = new CWTask().DeleteQueue(ID);
+            return Content(rsp.Message);
+        }
+
+        /// <summary>
+        /// 删除队列清单
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public ActionResult DeleteQueueList(List<int> ids)
+        {
+            if (ids == null)
+            {
+                return Content("ids为空，操作失败！");
+            }
+            CWTask cwtask = new CWTask();
+            int count = 0;
+            foreach(int id in ids)
+            {
+                Response rsp = cwtask.DeleteQueue(id);
+                if (rsp.Code == 1)
+                {
+                    count++;
+                }
+            }
+
+            return Content("删除队列成功，数量-" + count);
+        }
+
     }
 }

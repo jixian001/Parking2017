@@ -1,0 +1,123 @@
+﻿@model Parking.Data.WorkTask
+
+@{
+    ViewBag.Title = "队列信息";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>系统维护</li>
+            <li><a href="@Url.Action("QueueManager", "Manage",new { area="SystemManager"})">队列管理</a></li>           
+            <li class="active">队列详情</li>
+        </ol>
+        <hr />
+        <div style="margin:10px 20px 20px 20px">
+            <form id="form1">
+                <table class="form">
+                    <tr>
+                        <th class="formTitle">库区</th>
+                        <td class="formValue">
+                            <input id="wh" name="wh" type="text" class="form-control" placeholder="@Model.Warehouse" />
+                        </td>
+                        <th class="formTitle">设备号</th>
+                        <td class="formValue">
+                            <input id="code" name="code" type="text" class="form-control" placeholder="@Model.DeviceCode" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">是否是队列</th>
+                        <td class="formValue">
+                            <input id="type" name="type" type="text" class="form-control" placeholder="@Model.IsMaster" />
+                        </td>
+                        <th class="formTitle">队列类型</th>
+                        <td class="formValue">
+                            <input id="status" name="status" type="text" class="form-control" placeholder="@Model.MasterType" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">报文类型</th>
+                        <td class="formValue">
+                            <input id="sendDtime" name="sendDtime" type="text" class="form-control" placeholder="@Model.TelegramType" />
+                        </td>
+                        <th class="formTitle">报文子类型</th>
+                        <td class="formValue">
+                            <input id="createDate" name="createDate" type="text" class="form-control" placeholder="@Model.SubTelegramType" />
+                        </td>
+                    </tr>
+                    <tr>                       
+                        <th class="formTitle">用户卡号</th>
+                        <td class="formValue">
+                            <input id="iccode" name="iccode" type="text" class="form-control" placeholder="@Model.ICCardCode" />
+                        </td>
+                        <th class="formTitle">车重</th>
+                        <td class="formValue">
+                            <input id="hallCode" name="hallCode" type="text" class="form-control" placeholder="@Model.CarWeight" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">起始地址</th>
+                        <td class="formValue">
+                            <input id="fromLctAddress" name="fromLctAddress" type="text" class="form-control" placeholder="@Model.FromLctAddress" />
+                        </td>
+                        <th class="formTitle">目的地址</th>
+                        <td class="formValue">
+                            <input id="toLctAddress" name="toLctAddress" type="text" class="form-control" placeholder="@Model.ToLctAddress" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">车辆辆距</th>
+                        <td class="formValue">
+                            <input id="distance" name="distance" type="text" class="form-control" placeholder="@Model.Distance" />
+                        </td>
+                        <th class="formTitle">车辆外形</th>
+                        <td class="formValue">
+                            <input id="carsize" name="carsize" type="text" class="form-control" placeholder="@Model.CarSize" />
+                        </td>
+                    </tr>                   
+                </table>
+            </form>
+        </div>
+        <div>@Html.HiddenFor(model => model.ID)</div>
+        <div>            
+            <button class="btn btn-primary" id="btnDel" style="margin-left:200px">删 除</button>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    <script>
+        $(function () {
+                    
+            $("#btnDel").click(function () {
+                var mId = $("#ID").val();
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message:"<b>确定删除该队列？ ID-"+mId+"</b>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            $.post("@Url.Action("DeleteQueue")", { ID: mId }, function (msg) {
+                                alert(msg);
+                                window.location.href = "/SystemManager/Manage/QueueManager";
+                            });
+                            self.close();
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+            });
+          
+        });
+    </script>
+
+}

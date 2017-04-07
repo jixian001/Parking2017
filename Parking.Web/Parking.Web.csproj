@@ -181,6 +181,7 @@
     <Compile Include="Areas\ReportManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
     <Compile Include="Areas\SystemManager\Controllers\ManageController.cs" />
+    <Compile Include="Areas\SystemManager\Controllers\MSConfigController.cs" />
     <Compile Include="Areas\SystemManager\SystemManagerAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -226,7 +227,7 @@
     <Content Include="Areas\CustomManager\Views\web.config" />
     <Content Include="Areas\ChargeManager\Views\web.config" />
     <Content Include="Areas\ReportManager\Views\web.config" />
-    <Content Include="Areas\SystemManager\Views\Manage\Index.cshtml" />
+    <Content Include="Areas\SystemManager\Views\Manage\TaskManager.cshtml" />
     <Content Include="Areas\SystemManager\Views\Manage\_PartialSideNav.cshtml" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -238,6 +239,9 @@
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Areas\SystemManager\Views\Manage\TaskDetail.cshtml" />
     <Content Include="Areas\SystemManager\Views\Manage\CarpotManager.cshtml" />
+    <Content Include="Areas\SystemManager\Views\Manage\QueueManager.cshtml" />
+    <Content Include="Areas\SystemManager\Views\Manage\QueueDetail.cshtml" />
+    <Content Include="Areas\SystemManager\Views\MSConfig\Index.cshtml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.min.js" />
@@ -270,7 +274,6 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
-    <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
@@ -278,6 +281,7 @@
     <Content Include="Views\Account\Manage.cshtml" />
     <Content Include="Views\Shared\_Special.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
+    <Content Include="Views\Home\WeChat.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

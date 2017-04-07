@@ -11,7 +11,8 @@
     <div class="col-md-10">
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li>@Html.ActionLink("故障处理", "Index", "Manage", new { area = "SystemManager" }, htmlAttributes: new { @class = "" })</li>
+            <li>系统维护</li>
+            <li><a href="@Url.Action("TaskManager", "Manage",new { area="SystemManager"})">故障处理</a></li>
             <li>任务详情</li>
         </ol>
         <hr />
@@ -138,7 +139,7 @@
                         action: function (self) {
                             $.post("@Url.Action("CompleteTask")", { tid: $id }, function (msg) {
                                 alert(msg);
-                                window.location.href = "/SystemManager/Manage/Index";
+                                window.location.href = "/SystemManager/Manage/TaskManager";
                             });
                             self.close();
                         }
@@ -161,7 +162,7 @@
                         action: function (self) {
                             $.post("@Url.Action("ResetTask")", { tid: $id }, function (msg) {
                                 alert(msg);
-                                window.location.href = "/SystemManager/Manage/Index";
+                                window.location.href = "/SystemManager/Manage/TaskManager";
                             });
                             self.close();
                         }

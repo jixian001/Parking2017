@@ -9,11 +9,15 @@
     <div class="col-md-10">
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li><a href="#section1">查询车位</a></li>
-            <li><a href="#section2">数据挪移</a></li>
-            <li><a href="#section3">车位禁启</a></li>
-            <li><a href="#section4">数据入库</a></li>
-            <li><a href="#section5">数据出库</a></li>
+            <li>系统维护</li>
+            <li class="active">车位数据维护</li>
+            <li>
+                <a href="#section1">查询车位</a>&nbsp;| &nbsp;
+                <a href="#section2">数据挪移</a>&nbsp;| &nbsp;
+                <a href="#section3">车位禁启</a>&nbsp;| &nbsp;
+                <a href="#section4">数据入库</a>&nbsp;| &nbsp;
+                <a href="#section5">数据出库</a>
+            </li>
         </ol>
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -413,8 +417,5 @@
                 }
             });
         }
-
-
-
     </script>
     }

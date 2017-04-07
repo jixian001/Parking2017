@@ -30,14 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.DirectX">
-      <HintPath>..\引用DLL\Microsoft.DirectX.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DirectX.AudioVideoPlayback">
-      <HintPath>..\引用DLL\Microsoft.DirectX.AudioVideoPlayback.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DirectX.DirectSound">
-      <HintPath>..\引用DLL\Microsoft.DirectX.DirectSound.dll</HintPath>
+    <Reference Include="S7.Net, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d5812d469e84c693, processorArchitecture=MSIL">
+      <HintPath>..\packages\S7netplus.0.1.4\lib\net45\S7.Net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -54,8 +49,9 @@
     <Compile Include="ICCard\ICCardReader.cs" />
     <Compile Include="ICCard\ICCardRW.cs" />
     <Compile Include="ICCard\ICCardCommon.cs" />
-    <Compile Include="PLC\IPLC.cs" />
-    <Compile Include="PLC\SocketPLC.cs" />
+    <Compile Include="NuGet-PLC\S7NetPlus.cs" />
+    <Compile Include="Define-PLC\IPLC.cs" />
+    <Compile Include="Define-PLC\SocketPLC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorkFlow.cs" />
   </ItemGroup>
@@ -75,6 +71,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Led\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

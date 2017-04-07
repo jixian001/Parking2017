@@ -1,0 +1,221 @@
+﻿
+@{
+    ViewBag.Title = "队列管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>系统维护</li>
+            <li class="active">队列管理</li>
+        </ol>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                查询条件
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">库区</label>
+                    <div class="col-md-2">
+                        <input type="text" class="search_wh" name="search_wh" id="search_wh" />
+                    </div>
+                    <label class="col-md-1 col-md-offset-1 control-label" style="text-align:right;margin-top:4px">设备号</label>
+                    <div class="col-md-2">
+                        <input type="text" class="search_code" name="search_code" id="search_code" />
+                    </div>
+                    <div class="col-md-1 col-md-offset-1">
+                        <button class="btn btn-primary" id="search_btn">查询</button>
+                    </div>
+                </div>   
+            </div>          
+        </div>
+        <div>
+            <div id="toolbar" class="btn-group pull-right" role="group">
+                <button id="btn_Delete" class="btn btn-default"><span></span>删除</button>
+            </div>
+            <table id="queueGrid"></table>
+        </div>    
+    </div>
+</div>
+
+
+@section scripts{
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
+    <script>
+        $(function () {
+
+            $("#search_wh").val("");
+            $("#search_code").val("");
+
+            var $table = $("#queueGrid");
+            $table.bootstrapTable({
+                toolbar: "#toolbar",
+                toolbarAlign: "right",
+                buttonsAligh: "right",
+                showRefresh: true,  //暂不显示，当使用条件查询时，再调用刷新功能
+                showToggle: true,
+                showFooter: false,
+                pagination: true,
+                striped: true,              //是否显示行间隔色
+                sidePagination: "server",
+                //clickToSelect: true,
+                pageNumber: 1,              //初始化加载第一页，默认第一页
+                pageSize: 10,                 //每页的记录数
+                pageList: "[5,10,20,50]",
+                method: "post",
+                url: "@Url.Action("FindQueueList")",
+                queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
+                queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
+                dataType: "json",
+                columns: [
+                    {
+                        title: "state",
+                        checkbox: true,
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "ID",
+                        field: "ID",
+                        visible: true,
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "库区",
+                        field: "Warehouse",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "作业设备",
+                        field: "DeviceCode",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "任务类型",
+                        field: "MasterType",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "报文类型",
+                        field: "TelegramType",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "报文子类型",
+                        field: "SubTelegramType",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "用户卡号",
+                        field: "ICCardCode",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "源地址",
+                        field: "FromLctAddress",
+                        align: "center",
+                        valign: "middle",
+                        visible: false
+                    },
+                    {
+                        title: "目的地址",
+                        field: "ToLctAddress",
+                        align: "center",
+                        valign: "middle",
+                        visible: false
+                    },
+                    {
+                        title: "详情",
+                        field: "Operate",
+                        align: "center",
+                        valign: "middle",
+                        events: actionEvents,
+                        formatter: operateFormatter
+                    }
+                ],
+
+                formatLoadingMessage: function () {
+                    return "请稍等，正在加载中...";
+                },
+                formatNoMatches: function () {
+                    return "无符合条件的记录";
+                }
+            });
+
+            function queryParams(params) {
+                return {
+                    pageSize: params.pageSize,  //一定包含
+                    pageIndex: params.pageNumber,  //一定包含
+                    warehouse: $("input[name='search_wh']").val().trim(),
+                    code: $("input[name='search_code']").val().trim()
+                };
+            }
+
+            function operateFormatter(value, row, index) {
+                return '<a class="detail" href="javascript:void(0)" title="detail"><i class="glyphicon glyphicon-list-alt"></i></a>';
+            }
+
+            //删除
+            $("#btn_Delete").click(function () {
+
+                $("#search_wh").val("");
+                $("#search_code").val("");
+
+                var selected = $table.bootstrapTable('getSelections');
+                if ($(selected).length > 0) {
+                    BootstrapDialog.confirm("确定要删除所选队列？作用域-" + $(selected).length, function (result) {
+                        if (result) {
+                            var _list = [];
+                            $.each(selected, function (index, value) {
+                                _list[index] = value.ID;
+                            });
+                            $.ajax({
+                                url: "@Url.Action("DeleteQueueList")",
+                                type: "GET",
+                                data: {
+                                    "ids": _list
+                                },
+                                traditional: true,  //处理数组
+                                success: function (msg) {
+                                    alert(msg);
+                                    $table.bootstrapTable("refresh");
+                                }
+                            });
+                        }
+                    });
+                }
+                else
+                {
+                    BootstrapDialog.warning("请选择要操作的行！");
+                }
+            });
+
+            $("#search_btn").click(function () {
+                $table.bootstrapTable("refresh");
+                //查找完后清空查询条件
+                $("#search_wh").val("");
+                $("#search_code").val("");
+            });
+
+        });
+
+        window.actionEvents = {
+            'click .detail': function (e, value, row, index) {
+                window.location.href = "/SystemManager/Manage/QueueDetail?ID=" + row.ID;
+            }
+        };
+
+    </script>
+}
+
