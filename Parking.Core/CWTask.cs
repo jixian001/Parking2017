@@ -148,7 +148,7 @@ namespace Parking.Core
             {
                 //这里是否可以获取到ID？或者再查询一次
                 hall.TaskID = task.ID;
-                new CWDevice().UpdateSMG(hall);
+                new CWDevice().Update(hall);
             }
         }
 

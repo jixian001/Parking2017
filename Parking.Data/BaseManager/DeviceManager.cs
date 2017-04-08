@@ -35,9 +35,14 @@ namespace Parking.Data
             return base._repository.IsContains(dev => dev.DeviceCode == code&&dev.Warehouse==warehouse);
         }
 
-        public Device GetDeviceByCode(int code,int warehouse)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="where"></param>
+        /// <returns></returns>
+        public Device Find(Expression<Func<Device, bool>> where)
         {
-            return base._repository.Find(dev => dev.Warehouse == warehouse && dev.DeviceCode == code);
+            return base._repository.Find(where);
         }
         
         public List<Device> FindList(Expression<Func<Device, bool>> where)
@@ -54,6 +59,14 @@ namespace Parking.Data
         public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)
         {
             return _repository.FindList(where, param).ToList();
+        }
+
+        public Page<Device> FindPageList(Page<Device> workPage, Expression<Func<Device, bool>> where, OrderParam oparam)
+        {
+            int totalNum = 0;
+            workPage.ItemLists = _repository.FindPageList(workPage.PageSize, workPage.PageIndex, out totalNum, where, new OrderParam[] { oparam }).ToList();
+            workPage.TotalNumber = totalNum;
+            return workPage;
         }
     }
 }

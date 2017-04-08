@@ -242,6 +242,9 @@
     <Content Include="Areas\SystemManager\Views\Manage\QueueManager.cshtml" />
     <Content Include="Areas\SystemManager\Views\Manage\QueueDetail.cshtml" />
     <Content Include="Areas\SystemManager\Views\MSConfig\Index.cshtml" />
+    <Content Include="Areas\SystemManager\Views\MSConfig\Detail.cshtml" />
+    <Content Include="Areas\SystemManager\Views\MSConfig\Edit.cshtml" />
+    <Content Include="Areas\SystemManager\Views\MSConfig\_PartialSideNav.cshtml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.min.js" />

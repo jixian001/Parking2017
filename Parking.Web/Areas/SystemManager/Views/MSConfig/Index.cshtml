@@ -1,8 +1,228 @@
-﻿@model Parking.Data.Device
-
-@{
+﻿@{
     ViewBag.Title = "系统配置";
     Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                查询条件
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">库区</label>
+                    <div class="col-md-2">
+                        <input type="text" class="search_wh" name="warehouse" id="warehouse" />
+                    </div>
+                    <label class="col-md-1 col-md-offset-1 control-label" style="text-align:right;margin-top:4px">设备号</label>
+                    <div class="col-md-2">
+                        <input type="text" class="search_code" name="code" id="code" />
+                    </div>
+                    <div class="col-md-1 col-md-offset-1">
+                        <button class="btn btn-primary" id="search_btn">查询</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div id="toolbar" class="btn-group pull-right" role="group">
+                <button id="btn_Detail" class="btn btn-default"><span></span>详情</button>
+                <button id="btn_Edit" class="btn btn-default"><span></span>编辑</button>
+            </div>
+            <table id="deviceGrid"></table>
+        </div>    
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
+    <script>
+        $(function () {
+
+            $("#warehouse").val("");
+            $("#code").val("");
+
+            var $table = $("#deviceGrid");
+            $table.bootstrapTable({
+                toolbar: "#toolbar",
+                toolbarAlign: "right",
+                buttonsAligh: "right",               
+                showRefresh: true,  
+                showToggle: true,
+                showFooter: false,
+                pagination: true,
+                striped: true,              //是否显示行间隔色
+                sidePagination: "server",
+                clickToSelect: true,
+                singleSelect: true,
+                pageNumber: 1,              //初始化加载第一页，默认第一页
+                pageSize: 10,                 //每页的记录数
+                pageList: "[5,10,20,50]",
+                method: "post",
+                url: "@Url.Action("FindDeviceList")",
+                queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
+                queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
+                dataType: "json",
+                columns: [
+                    {
+                        title: "选中",
+                        checkbox: true,
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "ID",
+                        field: "ID",
+                        visible: true,
+                        align: "center",
+                        valign: "middle",
+                        sortable: true
+                    },
+                    {
+                        title: "库区",
+                        field: "Warehouse",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "作业设备",
+                        field: "DeviceCode",
+                        align: "center",
+                        valign: "middle",
+                        sortable: true
+                    },
+                    {
+                        title: "设备类型",
+                        field: "Type",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "车厅类型",
+                        field: "HallType",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "模式",
+                        field: "Mode",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "可用性",
+                        field: "IsAble",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "可接收指令",
+                        field: "IsAvailabe",
+                        align: "center",
+                        valign: "middle",                        
+                    },
+                    {
+                        title: "地址",
+                        field: "Address",
+                        align: "center",
+                        valign: "left"
+                    },
+                    {
+                        title: "所在层",
+                        field: "Layer",
+                        align: "center",
+                        valign: "left",
+                        visible: false
+                    },
+                    {
+                        title: "作业ID",
+                        field: "TaskID",
+                        align: "center",
+                        valign: "middle",
+                        sortable: true
+                    },
+                    {
+                        title: "操作",
+                        field: "Operate",
+                        align: "center",
+                        valign: "middle",
+                        events: actionEvents,
+                        formatter: operateFormatter
+                    }
+                ],
+
+                formatLoadingMessage: function () {
+                    return "请稍等，正在加载中...";
+                },
+                formatNoMatches: function () {
+                    return "无符合条件的记录";
+                }
+            });
+
+            function queryParams(params) {
+                return {
+                    pageSize: params.pageSize,  //一定包含
+                    pageIndex: params.pageNumber,  //一定包含
+                    sortOrder: params.sortOrder,
+                    sortName: params.sortName,
+                    warehouse: $("#warehouse").val(),
+                    code: $("#code").val()
+                };
+            }
+
+            function operateFormatter(value, row, index) {
+                return '<a class="detail" href="javascript:void(0)" title="更多"><i class="glyphicon glyphicon-list-alt"></i></a>&nbsp;&nbsp;&nbsp;' +
+                       '<a class="edit" href="javascript:void(0)" title="编辑"><i class="glyphicon glyphicon-book"></i></a>';
+            }
+
+            //详细信息
+            $("#btn_Detail").click(function () {
+                var selected = $table.bootstrapTable('getSelections')[0];
+                if (typeof (selected) == 'undefined') {
+                    BootstrapDialog.warning("请选择一行数据！");
+                }
+                else {
+                    var sID = selected.ID;
+                    window.location.href = "/SystemManager/MSConfig/Detail?ID=" + sID;
+                }
+
+            });
+
+            //编辑
+            $("#btn_Edit").click(function () {
+                var selected = $table.bootstrapTable('getSelections')[0];
+                if (typeof (selected) == 'undefined') {
+                    BootstrapDialog.warning("请选择一行数据！");
+                }
+                else {
+                    var sID = selected.ID;
+                    window.location.href = "/SystemManager/MSConfig/Edit?ID=" + sID;
+                }
+
+            });
+
+            //查找
+            $("#search_btn").click(function () {
+                $table.bootstrapTable("refresh");
+                //查找完后清空查询条件
+                $("#warehouse").val("");
+                $("#code").val("");
+            });
+
+        });
+
+        window.actionEvents = {
+            'click .detail': function (e, value, row, index) {
+                window.location.href = "/SystemManager/MSConfig/Detail?ID=" + row.ID;
+            },
+            'click .edit': function (e, value, row, index) {
+                window.location.href = "/SystemManager/MSConfig/Edit?ID=" + row.ID;
+            }
+        };
+
+    </script>
 }
 
 

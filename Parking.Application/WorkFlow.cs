@@ -392,7 +392,7 @@ namespace Parking.Application
                     #region 处理开机故障报文
                     if (data[2] == 1074 && data[4] == 7)
                     {
-                        cwdevice.UpdateSMG(smg);
+                        cwdevice.Update(smg);
                         this.sendData(this.packageMessage(74, 1, smg.DeviceCode, null));
                     }
                     #endregion

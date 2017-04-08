@@ -1,0 +1,72 @@
+﻿@model Parking.Data.Device
+
+@{
+    ViewBag.Title = "设置设备状态";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li><a href="@Url.Action("Index", "MSConfig",new { area="SystemManager"})">系统配置</a></li>
+            <li>设置设备状态</li>
+        </ol>
+        <div style="border:1px solid gray">
+            @using (Html.BeginForm("Edit", "MSConfig", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+                <h4 id="frmTitle" class="text-center"></h4>
+                <hr />
+                @Html.ValidationSummary("", new { @class = "text-danger" })
+                <div class="form-group">
+                    <label class="control-label col-md-2">可用性</label>
+                    <div class="col-md-10">
+                        @Html.EditorFor(model => model.IsAble, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.IsAble, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">车厅进出类型</label>
+                    <div class="col-md-10">
+                        @Html.EditorFor(model => model.HallType, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.HallType, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <input type="submit" value="提 交" class="btn btn-default" />
+                    </div>
+                </div>
+                <div>
+                    @Html.HiddenFor(model => model.ID)
+                </div>
+            }
+            <div>
+                @Html.HiddenFor(model => model.Warehouse)
+                @Html.HiddenFor(model => model.DeviceCode)
+            </div>
+        </div>
+    </div>  
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            var $id = $("#ID");
+            var $wh = $("#Warehouse");
+            var $code = $("#DeviceCode");
+            var msg = "库区&nbsp;-&nbsp;<i>" + $wh.val() + "</i>";
+            if ($code.val() > 10) {                
+                msg += "&nbsp;&nbsp;&nbsp;车厅&nbsp;-&nbsp;<i>" + $code.val() + "</i>";
+            } else {
+                msg += "&nbsp;&nbsp;&nbsp;TV&nbsp;-&nbsp;<i>" + $code.val() + "</i>";
+                $("#HallType").attr("disabled",true);
+            }           
+            $("#frmTitle").html(msg);
+        })
+    </script>
+    }
+

@@ -47,7 +47,7 @@ namespace Parking.Data
     public enum EnmHallType
     {
         Init=0,
-        Entance,
+        Entrance,
         Exit,
         EnterOrExit
     }

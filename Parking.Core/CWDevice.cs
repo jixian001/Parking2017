@@ -28,12 +28,17 @@ namespace Parking.Core
         /// <returns></returns>
         public Device SelectSMG(int code,int warehouse)
         {
-            return manager.GetDeviceByCode(code,warehouse);
+            return manager.Find(dev=>dev.Warehouse==warehouse&&dev.DeviceCode==code);
         }
 
-        public Response UpdateSMG(Device smg)
+        public Response Update(Device smg)
         {
             return manager.Update(smg);
+        }
+
+        public Device Find(Expression<Func<Device, bool>> where)
+        {
+            return manager.Find(where);
         }
 
         public List<Device> FindList(Expression<Func<Device, bool>> where)
@@ -46,6 +51,27 @@ namespace Parking.Core
             return manager.FindList(where, param);
         }
 
+        /// <summary>
+        /// 查询，分页显示
+        /// </summary>
+        /// <param name="pageWork"></param>
+        /// <param name="where"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public Page<Device> FindPageList(Page<Device> pageWork, Expression<Func<Device, bool>> where, OrderParam param)
+        {
+            if (param == null)
+            {
+                param = new OrderParam()
+                {
+                    PropertyName = "ID",
+                    Method = OrderMethod.Asc
+                };
+            }
+            Page<Device> page = manager.FindPageList(pageWork, where, param);
+
+            return page;
+        }
 
     }
 }
