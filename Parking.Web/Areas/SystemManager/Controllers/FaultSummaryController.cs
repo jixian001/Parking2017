@@ -23,5 +23,42 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Json(devlst,JsonRequestBehavior.AllowGet);
         }
 
+        public JsonResult FindStateBitList(int wh,int smg)
+        {
+            List<Alarm> stateList = new CWDevice().FindAlarmList(state => state.Warehouse == wh &&
+                                                                          state.DeviceCode == smg &&
+                                                                          state.IsBackup == 0 &&
+                                                                          state.Value == 1 &&
+                                                                          state.Color == EnmAlarmColor.Green);
+            List<string> descList = new List<string>();
+            if (stateList != null && stateList.Count > 0)
+            {
+                foreach(Alarm alarm in stateList)
+                {
+                    descList.Add(alarm.Description);
+                }
+            }
+            return Json(descList,JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult FindFaultBitList(int wh,int smg)
+        {
+            List<Alarm> alarmList = new CWDevice().FindAlarmList(state => state.Warehouse == wh &&
+                                                                         state.DeviceCode == smg &&
+                                                                         state.IsBackup == 0 &&
+                                                                         state.Value == 1 &&
+                                                                         state.Color == EnmAlarmColor.Red);
+            List<string> descList = new List<string>();
+            if (alarmList != null && alarmList.Count > 0)
+            {
+                foreach (Alarm alarm in alarmList)
+                {
+                    descList.Add(alarm.Description);
+                }
+            }
+            return Json(descList, JsonRequestBehavior.AllowGet);
+        }
+
+
     }
 }

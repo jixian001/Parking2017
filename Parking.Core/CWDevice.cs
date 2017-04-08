@@ -73,5 +73,14 @@ namespace Parking.Core
             return page;
         }
 
+        #region 报警状态位控制
+        private AlarmManager manager_alarm = new AlarmManager();
+
+        public List<Alarm> FindAlarmList(Expression<Func<Alarm, bool>> where)
+        {
+            return manager_alarm.FindList(where);
+        }
+        #endregion
+
     }
 }

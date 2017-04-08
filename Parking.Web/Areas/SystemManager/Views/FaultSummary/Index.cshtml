@@ -34,7 +34,6 @@
                     </div>
                     <div class="panel-body">
                         <div class="list-group" id="statuslist">
-
                         </div>
                     </div>
                 </div>
@@ -93,14 +92,30 @@
                     
                 }
             });          
-           
+            //后面还是用signal方式引发吧
+            //var timer=setInterval(getback, 1000);
         });
-       
+        
+        function getback() {
+            var $wh = $("#warehouse").val();
+            var $code = $("#devicecode").val();
+            if ($wh != "" && $code != "")
+            {
+                console.log("timer appear: wh-" + $wh + " code-" + $code);
+                //显示状态信息位
+                updatestate($wh, $code);
+                //显示报警位
+                updatefault($wh, $code);
+            }
+        }
+
         function sidenavClick(warehouse, code) {
             $("#loading").css("display", "none");
             $("#content").css("display", "block");
+
             $("#warehouse").val(warehouse);
             $("#devicecode").val(code);
+
             var smg = '';
             if (code > 10) {
                 smg = (code - 10).toString() + '号厅';
@@ -110,6 +125,65 @@
             $("#breaditem").text(warehouse+"号库 "+smg);
             $("#paneltitle").html(warehouse + "#库 " + "&nbsp;&nbsp;<i>" + smg + "</i>");
 
+            //显示状态信息位
+            updatestate(warehouse, code);
+
+            //显示报警位
+            updatefault(warehouse, code);
+        }
+
+        function updatestate(warehouse, code) {
+            //显示状态信息位
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("FindStateBitList", "FaultSummary")",
+                data: { wh: warehouse, smg: code },
+                dataType: "json",
+                cache: false,
+                beforeSend: function (XMLHttpRequest) {
+                    //showloading
+                },
+                success: function (data) {
+                    var html = '';
+                    $.each(data, function (index, content) {
+                        html += '<div class="list-group-item text-info text-center">' + content + '</div>'
+                    });
+                    $("#statuslist").html(html);
+                },
+                complete: function (XMLHttpRequest, textStatus) {
+                    //hideloading
+                },
+                error: function () {
+
+                }
+            });
+        }
+
+        function updatefault(warehouse, code) {
+            //显示报警位
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("FindFaultBitList", "FaultSummary")",
+                data: { wh: warehouse, smg: code },
+                dataType: "json",
+                cache: false,
+                beforeSend: function (XMLHttpRequest) {
+                    //showloading
+                },
+                success: function (data) {
+                    var html = '';
+                    $.each(data, function (index, content) {
+                        html += '<div class="list-group-item text-danger text-center">' + content + '</div>'
+                    });
+                    $("#faultlist").html(html);
+                },
+                complete: function (XMLHttpRequest, textStatus) {
+                    //hideloading
+                },
+                error: function () {
+
+                }
+            });
         }
 
     </script>
