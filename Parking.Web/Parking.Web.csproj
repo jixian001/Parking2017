@@ -180,6 +180,7 @@
     <Compile Include="Areas\CustomManager\CustomManagerAreaRegistration.cs" />
     <Compile Include="Areas\ReportManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
+    <Compile Include="Areas\SystemManager\Controllers\FaultSummaryController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\MSConfigController.cs" />
     <Compile Include="Areas\SystemManager\SystemManagerAreaRegistration.cs" />
@@ -245,6 +246,7 @@
     <Content Include="Areas\SystemManager\Views\MSConfig\Detail.cshtml" />
     <Content Include="Areas\SystemManager\Views\MSConfig\Edit.cshtml" />
     <Content Include="Areas\SystemManager\Views\MSConfig\_PartialSideNav.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\Index.cshtml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.min.js" />

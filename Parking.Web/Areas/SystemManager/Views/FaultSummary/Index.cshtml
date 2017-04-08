@@ -1,0 +1,117 @@
+﻿
+@{
+    ViewBag.Title = "故障汇总";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><span class="glyphicon"></span>故障汇总</div>
+            </div>
+            <div class="panel-body">
+                <div class="list-group" id="sidenavlist">                    
+                    <div class="list-group-item"><span class="glyphicon glyphicon-home"></span>&nbsp;@Html.ActionLink("主 页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</div>                   
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-10">
+        <div id="loading" class="text-center"><h3>尚未选择要显示的设备...</h3></div>
+        <div id="content" style="display:none">
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+                <li>故障汇总</li>
+                <li class="active" id="breaditem"></li>
+            </ol>
+            <h4 id="paneltitle" class="text-center"></h4>
+            <hr />
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">状态位显示区</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="list-group" id="statuslist">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">报警位显示区</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="list-group" id="faultlist">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* 用于保存当前所选的设备，用于定时刷新 *@
+<div>
+    <input type="hidden" value="" id="warehouse" name="warehouse" />
+    <input type="hidden" value="" id="devicecode" name="devicecode" />
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("GetDeviceList", "FaultSummary")",
+                dataType: "json",
+                cache: false,
+                beforeSend: function (XMLHttpRequest) {
+                   //showloading
+                },
+                success: function (data) {
+                    var html = '';
+                    $.each(data, function (index, comment) {
+                        var wh=comment['Warehouse'];
+                        var code = comment['DeviceCode'];
+                        var smg = '';
+                        if (code > 10) {
+                            smg = (code - 10).toString() + '号厅';
+                        } else {
+                            smg = code + '号TV';
+                        }
+                        var msg='sidenavClick('+wh+','+code+')';
+                        html += '<div class="list-group-item"><a href="javascript:void(0)" onclick="'+msg+'"><span class="text-danger">' + wh + '号库</span>&nbsp;&nbsp;' + smg + "</a></div>";
+                    });                   
+                    $("#sidenavlist").append(html);
+                },
+                complete:function(XMLHttpRequest,textStatus){
+                    //hideloading
+                },
+                error: function () {
+                    
+                }
+            });          
+           
+        });
+       
+        function sidenavClick(warehouse, code) {
+            $("#loading").css("display", "none");
+            $("#content").css("display", "block");
+            $("#warehouse").val(warehouse);
+            $("#devicecode").val(code);
+            var smg = '';
+            if (code > 10) {
+                smg = (code - 10).toString() + '号厅';
+            } else {
+                smg = code + '号TV';
+            }
+            $("#breaditem").text(warehouse+"号库 "+smg);
+            $("#paneltitle").html(warehouse + "#库 " + "&nbsp;&nbsp;<i>" + smg + "</i>");
+
+        }
+
+    </script>
+
+    }

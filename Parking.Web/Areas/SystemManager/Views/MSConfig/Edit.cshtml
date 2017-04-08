@@ -55,18 +55,25 @@
 @section scripts{
     <script>
         $(function () {
+            init();
+
+        });
+
+        //初始化数据
+        function init() {
             var $id = $("#ID");
             var $wh = $("#Warehouse");
             var $code = $("#DeviceCode");
             var msg = "库区&nbsp;-&nbsp;<i>" + $wh.val() + "</i>";
-            if ($code.val() > 10) {                
+            if ($code.val() > 10) {
                 msg += "&nbsp;&nbsp;&nbsp;车厅&nbsp;-&nbsp;<i>" + $code.val() + "</i>";
             } else {
                 msg += "&nbsp;&nbsp;&nbsp;TV&nbsp;-&nbsp;<i>" + $code.val() + "</i>";
-                $("#HallType").attr("disabled",true);
-            }           
+                $("#HallType").attr("disabled", true);
+            }
             $("#frmTitle").html(msg);
-        })
+        }
+        
     </script>
     }
 
