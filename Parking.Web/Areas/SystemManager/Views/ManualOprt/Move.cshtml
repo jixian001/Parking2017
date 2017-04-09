@@ -1,0 +1,105 @@
+﻿
+@{
+    ViewBag.Title = "手动移动";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">
+        @Html.Partial("_PartialSideNav")
+    </div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>手动指令</li>
+            <li class="active">移动指令</li>
+        </ol>
+        <h4>移动下发</h4>
+        <hr />
+        <div class="row">
+            <form id="frm" name="frm" class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label for="warehouse" class="control-label col-md-2">库区</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="warehouse" name="warehouse" placeholder="输入库区号，例：1、2等" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="code" class="col-md-2 control-label">移动设备</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="code" name="code" placeholder="输入移动设备号" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address" class="col-md-2 control-label">目的地址</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="address" name="address" placeholder="移动的目的地址" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-10 col-md-offset-2">
+                        <button type="button" id="btnConfig" class="btn btn-default">确 认</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            $("#btnConfig").click(function () {
+                var $wh = $("#warehouse").val().trim();
+                if ($wh == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入库区号！"
+                    });
+                    return;
+                }
+                var $code = $("#code").val().trim();
+                if ($code == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入设备号！"
+                    });
+                    return;
+                }
+                var $toaddrs = $("#address").val().trim();
+                if ($toaddrs == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入目的地址！"
+                    });
+                    return;
+                }
+
+                var params = $("form").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("Move")",
+                    data: params,
+                    dataType: "json",                   
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnConfig").text("提交中...");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.message
+                        });
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnConfig").text("确 定");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+            });
+        });
+
+    </script>
+}

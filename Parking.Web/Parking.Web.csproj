@@ -182,7 +182,9 @@
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
     <Compile Include="Areas\SystemManager\Controllers\FaultSummaryController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\ManageController.cs" />
+    <Compile Include="Areas\SystemManager\Controllers\ManualOprtController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\MSConfigController.cs" />
+    <Compile Include="Areas\SystemManager\Models\ReturnModel.cs" />
     <Compile Include="Areas\SystemManager\SystemManagerAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -247,6 +249,11 @@
     <Content Include="Areas\SystemManager\Views\MSConfig\Edit.cshtml" />
     <Content Include="Areas\SystemManager\Views\MSConfig\_PartialSideNav.cshtml" />
     <Content Include="Areas\SystemManager\Views\FaultSummary\Index.cshtml" />
+    <Content Include="Areas\SystemManager\Views\ManualOprt\Index.cshtml" />
+    <Content Include="Areas\SystemManager\Views\ManualOprt\_PartialSideNav.cshtml" />
+    <Content Include="Areas\SystemManager\Views\ManualOprt\Transport.cshtml" />
+    <Content Include="Areas\SystemManager\Views\ManualOprt\Move.cshtml" />
+    <Content Include="Areas\SystemManager\Views\ManualOprt\TempGet.cshtml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.min.js" />
@@ -299,7 +306,6 @@
     <Folder Include="Areas\ReportManager\Models\" />
     <Folder Include="Areas\ReportManager\Views\Manage\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
-    <Folder Include="Areas\SystemManager\Models\" />
     <Folder Include="Areas\SystemManager\Views\Shared\" />
   </ItemGroup>
   <ItemGroup>

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title</title>
+    <title>@ViewBag.Title - 车库管理系统</title>
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/bootstrapplugin")
     @Scripts.Render("~/bundles/modernizr")
@@ -37,7 +37,7 @@
                             <li><a href="@Url.Action("Index", "MSConfig",new { area="SystemManager"})">系统配置</a></li>
                             <li class="divider"></li>
                             <li><a href="@Url.Action("Index", "FaultSummary",new { area="SystemManager"})">故障汇总</a></li>
-                            <li><a href="#">手动指令</a></li>
+                            <li><a href="@Url.Action("Index", "ManualOprt",new { area="SystemManager"})">手动指令</a></li>
                         </ul>
                     </li>
                     <li class="dropdown">

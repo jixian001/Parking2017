@@ -1,0 +1,116 @@
+﻿
+@{
+    ViewBag.Title = "手动出库";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">
+        @Html.Partial("_PartialSideNav")
+    </div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>手动指令</li>
+            <li class="active">出库指令</li>            
+        </ol>
+       
+        <h4>手动出库</h4>
+        <hr />        
+        <div class="row">            
+            <form id="frm" name="frm" class="form-horizontal" role="form">              
+                <div class="form-group">
+                    <label for="warehouse" class="control-label col-md-2">库区</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="warehouse" name="warehouse" placeholder="输入库区号，例：1、2等"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address" class="col-md-2 control-label">取车车位</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="address" name="address" placeholder="取车位地址" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="hallID" class="col-md-2 control-label">出库车厅</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="hallID" name="hallID" placeholder="车厅号，例：11、12、13等" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-10 col-md-offset-2">
+                        <button type="button" id="btnConfig" class="btn btn-default">确 认</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br />
+        <div class="row" id="disp"></div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            $("#btnConfig").click(function () {
+                var $wh = $("#warehouse").val().trim();
+                if ($wh == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入库区号！"
+                    });
+                    return;
+                }
+                var $addr = $("#address").val().trim();
+                if ($addr == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入取车车位！"
+                    });
+                    return;
+                }
+                var $hall = $("#hallID").val().trim();
+                if ($hall == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入出库车厅！"
+                    });
+                    return;
+                }
+
+                var params = $("form").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("GetCar")",
+                    data: params,
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnConfig").text("提交中...");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.message
+                        });
+                        wlog($addr, $hall, data.message);
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnConfig").text("确 定");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+            });
+        });
+
+        function wlog(addrs,hall,msg) {
+            var mytime = new Date();
+            var time = mytime.toLocaleTimeString();
+            $("#disp").append('<p class="text-info">' + time + '&nbsp;&nbsp;&nbsp;<i>车位</i>：' + addrs + ' &nbsp;&nbsp;<i>车厅</i>：' + hall + '&nbsp;&nbsp;<i>结果</i>：'+msg+'</p>');
+        }
+
+    </script>
+    }

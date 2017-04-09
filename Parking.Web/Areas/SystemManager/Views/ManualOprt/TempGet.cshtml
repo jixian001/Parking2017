@@ -1,0 +1,175 @@
+﻿
+@{
+    ViewBag.Title = "临时取物";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">
+        @Html.Partial("_PartialSideNav")
+    </div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>手动指令</li>
+            <li class="active">临时取物</li>
+        </ol>
+        
+        <h4>取物指令</h4>
+        <hr />
+        <div class="row">
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label for="iccode" class="col-md-2 control-label">用户卡号</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="iccode" name="iccode" placeholder="请输入用户卡号" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="warehouse" class="control-label col-md-2">出库库区</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="warehouse" name="warehouse" disabled/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address" class="control-label col-md-2">车位地址</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="address" name="address" disabled />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="hallID" class="col-md-2 control-label">出库车厅</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="hallID" name="hallID"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-10 col-md-offset-2">
+                        <button type="button" id="btnFind" class="btn btn-default">查询</button>
+                        <button type="button" id="btnConfig" class="btn btn-default">确认取物</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+        <div class="row" id="disp"></div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            $("#btnFind").click(function () {
+                var $wh = $('input[name="warehouse"]');
+                var $hall = $('input[name="hallID"]');
+                var $addrs = $('input[name="address"]');
+                $wh.val("");
+                $hall.val("");
+                $addrs.val("");
+
+                var $iccd = $("#iccode").val().trim();
+                if ($iccd == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入用户卡号！"
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("TempFind")",
+                    data: {iccode:$iccd},
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFind").text("提交中...");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.message
+                        });
+                        var cd = data.code;
+                        if (cd == 1)
+                        {                          
+                            $wh.val(data.warehouse);
+                            $hall.val(data.hallID);
+                            $addrs.val(data.locaddrs);
+                            var mytime = new Date();
+                            var time = mytime.toLocaleTimeString();
+                            $("#disp").append('<p class="text-info">' + time + '&nbsp;&nbsp;&nbsp;查找成功-<i>车位</i>：' + data.locaddrs + ' &nbsp;&nbsp;<i>出车车厅</i>：' + data.hallID + '&nbsp;&nbsp;<i>库区</i>：' + data.warehouse + '</p>');
+                        }                        
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFind").text("查找");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            });
+
+            $("#btnConfig").click(function () {
+                var $wh = $('input[name="warehouse"]');
+                var $hall = $('input[name="hallID"]');               
+
+                var $iccd = $("#iccode");
+                if ($iccd.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入用户卡号！"
+                    });
+                    return;
+                }
+                if ($wh.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请点击<查找>按钮，再进行取物确认！"
+                    });
+                    return;
+                }
+                if ($hall.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入出库车厅"
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("TempGet")",
+                    data: { iccode: $iccd.val(), warehouse: $wh.val(), hallID:$hall.val()},
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnConfig").text("提交中...");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.message
+                        });
+                        var cd = data.code;
+                        if (cd == 1) {
+                            $wh.val("");                            
+                            var mytime = new Date();
+                            var ctime = mytime.toLocaleTimeString();
+                            $("#disp").append('<p class="text-info">' + ctime + '&nbsp;&nbsp;&nbsp;取物操作成功-<i>卡号</i>：' + $iccd.val() + '</p>');
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnConfig").text("确认取物");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+        });
+
+        });
+      
+    </script>
+}
