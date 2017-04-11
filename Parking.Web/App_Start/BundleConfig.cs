@@ -50,6 +50,13 @@ namespace Parking.Web
 
             bundles.Add(new StyleBundle("~/Content/defform").Include(
                 "~/Content/defform.css"));
+
+            bundles.Add(new StyleBundle("~/Content/bootstrapselect").Include(
+                "~/Content/bootstrap-select/css/bootstrap-select.css"));
+
+            bundles.Add(new ScriptBundle("~/bundles/bootstrapselect").Include(
+                "~/Content/bootstrap-select/js/bootstrap-select.js",
+                "~/Content/bootstrap-select/js/defaults-zh_CN.js"));
         }
     }
 }

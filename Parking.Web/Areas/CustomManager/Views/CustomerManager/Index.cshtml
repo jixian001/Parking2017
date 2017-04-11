@@ -1,57 +1,87 @@
 ﻿
 @{
-    ViewBag.Title = "队列管理";
+    ViewBag.Title = "顾客管理";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 <br />
 <div class="row">
     <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
     <div class="col-md-10">
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li>系统维护</li>
-            <li class="active">队列管理</li>
+            <li>顾客管理</li>
+            <li class="active">IC卡管理</li>
         </ol>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                查询条件
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    车主查询
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="col-md-2 control-label" for="goods" style="text-align:right;margin-top:4px">查询条件</label>
+                        <div class="col-md-2">
+                            <select id="goods" name="goods" class="selectpicker show-tick form-control">
+                                <option value="0">---请选择---</option>                               
+                            </select>
+                        </div>
+                        <label class="col-md-2 control-label" for="content" style="text-align:right;margin-top:4px">查询数据</label>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" name="content" id="content" />
+                        </div>
+                        <div class="col-md-2 col-md-offset-1">
+                            <button class="btn btn-primary" id="search_btn">查询</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body">
-                <div class="form-group">
-                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">库区</label>
-                    <div class="col-md-2">
-                        <input type="text" class="form-control" name="search_wh" id="search_wh" />
-                    </div>
-                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">设备号</label>
-                    <div class="col-md-2">
-                        <input type="text" class="form-control" name="search_code" id="search_code" />
-                    </div>
-                    <div class="col-md-1 col-md-offset-1">
-                        <button class="btn btn-primary" id="search_btn">查询</button>
-                    </div>
-                </div>   
-            </div>          
+            <div>
+                <div id="toolbar" class="btn-group pull-right" role="group">                   
+                    <a class="btn btn-default" role="button" href="@Url.Action("Add","CustomerManager")">添 加</a>
+                    <button id="btnModify" class="btn btn-default">修 改</button>
+                    <button id="btnDelete" class="btn btn-default">删 除</button>                   
+                </div>               
+            </div> 
+            <table id="custGrid"></table> 
         </div>
-        <div>
-            <div id="toolbar" class="btn-group pull-right" role="group">
-                <button id="btn_Delete" class="btn btn-default"><span></span>删除</button>
-            </div>
-            <table id="queueGrid"></table>
-        </div>    
     </div>
 </div>
 
-
 @section scripts{
-    @Styles.Render("~/Content/bootstraptable")
-    @Scripts.Render("~/bundles/bootstraptable")
     <script>
         $(function () {
+            var $goods = $("#goods");
+            $goods.selectpicker({});
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetSelectName")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
 
-            $("#search_wh").val("");
-            $("#search_code").val("");
+                    },
+                    success: function (data) {
+                        var html = '<option value="0">---请选择---</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $goods.empty();
+                        $goods.append(html);
+                        $goods.selectpicker('render');
+                        $goods.selectpicker('refresh');
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
 
-            var $table = $("#queueGrid");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            }, 500);
+
+            var $table = $("#custGrid");
             $table.bootstrapTable({
                 toolbar: "#toolbar",
                 toolbarAlign: "right",
@@ -62,12 +92,12 @@
                 pagination: true,
                 striped: true,              //是否显示行间隔色
                 sidePagination: "server",
-                //clickToSelect: true,
+                clickToSelect: true,
                 pageNumber: 1,              //初始化加载第一页，默认第一页
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
                 method: "post",
-                url: "@Url.Action("FindQueueList")",
+                url: "@Url.Action("FindCustomList")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
                 dataType: "json",
@@ -157,65 +187,30 @@
                 return {
                     pageSize: params.pageSize,  //一定包含
                     pageIndex: params.pageNumber,  //一定包含
-                    warehouse: $("input[name='search_wh']").val(),
-                    code: $("input[name='search_code']").val()
+                    sortOrder: params.sortOrder,
+                    sortName: params.sortName,
+                    warehouse: $("#warehouse").val(),
+                    code: $("#code").val()
                 };
             }
 
             function operateFormatter(value, row, index) {
-                return '<a class="detail" href="javascript:void(0)" title="detail"><i class="glyphicon glyphicon-list-alt"></i></a>';
+                return '<a class="detail" href="javascript:void(0)" title="修改"><i class="glyphicon glyphicon-edit"></i></a>&nbsp;&nbsp;&nbsp;' +
+                       '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
             }
 
-            //删除
-            $("#btn_Delete").click(function () {
-
-                $("#search_wh").val("");
-                $("#search_code").val("");
-
-                var selected = $table.bootstrapTable('getSelections');
-                if ($(selected).length > 0) {
-                    BootstrapDialog.confirm("确定要删除所选队列？作用域-" + $(selected).length, function (result) {
-                        if (result) {
-                            var _list = [];
-                            $.each(selected, function (index, value) {
-                                _list[index] = value.ID;
-                            });
-                            $.ajax({
-                                url: "@Url.Action("DeleteQueueList")",
-                                type: "GET",
-                                data: {
-                                    "ids": _list
-                                },
-                                traditional: true,  //处理数组
-                                success: function (msg) {
-                                    alert(msg);
-                                    $table.bootstrapTable("refresh");
-                                }
-                            });
-                        }
-                    });
-                }
-                else
-                {
-                    BootstrapDialog.warning("请选择要操作的行！");
-                }
-            });
-
-            $("#search_btn").click(function () {
-                $table.bootstrapTable("refresh");
-                //查找完后清空查询条件
-                $("#search_wh").val("");
-                $("#search_code").val("");
-            });
 
         });
 
         window.actionEvents = {
             'click .detail': function (e, value, row, index) {
-                window.location.href = "/SystemManager/Manage/QueueDetail?ID=" + row.ID;
+                window.location.href = "/CustomManager/CustomerManager/Modify?ID=" + row.ID;
+            },
+            'click .delete': function (e, value, row, index) {
+                window.location.href = "/CustomManager/CustomerManager/Delete?ID=" + row.ID;
             }
         };
 
     </script>
-}
 
+    }

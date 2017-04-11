@@ -43,8 +43,8 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">顾客管理<strong class="caret"></strong></a>
                         <ul class="dropdown-menu">
-                            <li><a href="#">IC卡管理</a></li>
-                            <li><a href="#">车主管理</a></li>
+                            <li><a href="@Url.Action("ICCard", "Manage",new { area="CustomManager"})">IC卡管理</a></li>
+                            <li><a href="@Url.Action("Index", "CustomerManager", new { area="CustomManager"})">车主管理</a></li>
                         </ul>
                     </li>
                     <li class="dropdown">

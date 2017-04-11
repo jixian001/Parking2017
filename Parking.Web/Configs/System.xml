@@ -5,7 +5,10 @@
   <!--主plc连接的数量-->
   <PlcCount>1</PlcCount>
   <PLCRefresh>500</PLCRefresh>
+  
   <ICcdRefresh>1000</ICcdRefresh>
+  <!--客户端刷卡器的IP地址，客户端统一设置 -->
+  <ICCardIPAddress>192.168.0.20</ICCardIPAddress>
   <!--区分库区，区分车厅-->
   <setting>
     <!--开始设定库区信息-->

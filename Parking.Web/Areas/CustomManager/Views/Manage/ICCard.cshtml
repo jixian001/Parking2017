@@ -1,0 +1,361 @@
+﻿@{
+    ViewBag.Title = "IC卡管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>顾客管理</li>
+            <li class="active">IC卡管理</li>
+        </ol>
+        <div class="row">
+            <fieldset>
+                <legend>查询</legend>
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label for="physiccode" class="col-md-2 control-label">物理卡号</label>
+                        <div class="col-md-10">
+                            <input type="text" class="form-control" id="physiccode" name="physiccode" disabled/>
+                        </div>
+                    </div>                  
+                    <div class="form-group">
+                        <label for="iccode" class="control-label col-md-2">用户卡号</label>
+                        <div class="col-md-10">
+                            <input type="text" class="form-control" id="iccode" name="iccode"  placeholder="请输入4位用户卡号" />
+                        </div>
+                    </div>                 
+                    <div class="form-group">
+                        <div class="col-md-10 col-md-offset-2">
+                            <button type="button" id="btnRead" class="btn btn-default">读 卡</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <button type="button" id="btnMake" class="btn btn-default">制 卡</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <button type="button" id="btnFind" class="btn btn-default">查 询</button>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <br />
+        <div class="row">
+            <fieldset>
+                <legend>IC卡信息</legend>
+                <div style="margin:10px 20px 20px 20px">
+                    <form id="form1">
+                        <table class="form">
+                            <tr>
+                                <th class="formTitle">用户卡号</th>
+                                <td class="formValue">
+                                    <input id="uiccd" name="uiccd" type="text" class="form-control" placeholder="用户卡号"/>
+                                </td>
+                                <th class="formTitle">制卡时间</th>
+                                <td class="formValue">
+                                    <input id="createtime" name="createtime" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">卡类型</th>
+                                <td class="formValue">
+                                    <input id="type" name="type" type="text" class="form-control" />
+                                </td>
+                                <th class="formTitle">挂失时间</th>
+                                <td class="formValue">
+                                    <input id="losstime" name="losstime" type="text" class="form-control"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">卡状态</th>
+                                <td class="formValue">
+                                    <input id="status" name="status" type="text" class="form-control" />
+                                </td>
+                                <th class="formTitle">注销时间</th>
+                                <td class="formValue">
+                                    <input id="disposetime" name="disposetime" type="text" class="form-control" />
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <th class="formTitle">绑定车位</th>
+                                <td class="formValue">
+                                    <input id="locaddrs" name="locaddrs" type="text" class="form-control"/>
+                                </td>
+                                <th class="formTitle">库区</th>
+                                <td class="formValue">
+                                    <input id="warehouse" name="warehouse" type="text" class="form-control" />
+                                </td>
+                            </tr>  
+                            <tr>                               
+                                <th class="formTitle">使用期限</th>
+                                <td class="formValue">
+                                    <input id="deadline" name="deadline" type="text" class="form-control" />
+                                </td>
+                                <th class="formTitle"></th>
+                                <td class="formValue"></td>
+                            </tr>                             
+                        </table>
+                    </form>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-10 col-md-offset-2">
+                        <button type="button" id="btnLoss" class="btn btn-default">挂 失</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <button type="button" id="btnCancelLoss" class="btn btn-default">取消挂失</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <button type="button" id="btnDispose" class="btn btn-default">注 销</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <button type="button" id="btnChangedt" class="btn btn-default">修改期限</button>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+</div>
+<div style="display:none">   
+    <input type="hidden" id="ipaddrs" value="" />
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    <script>       
+        $(function () {
+            //获取客户端IP地址
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("GetIccdIPAddress")",
+                dataType: "text",
+                cache: false,
+                beforeSend: function (XMLHttpRequest) {
+
+                },
+                success: function (data) {
+                    $("#ipaddrs").val(data);
+                },
+                complete: function (XMLHttpRequest, textStatus) {
+
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                }
+            });
+
+            //读卡
+            $("#btnRead").click(function () {
+                var $phys = $("#physiccode");
+                var $iccd = $("#iccode");
+                $phys.val("");
+                $iccd.val("");
+                //var addrs = $("#ipaddrs").val();
+                //暂时先使用后台读卡方式
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("ReadCard")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnRead").text("查询中...");
+                    },
+                    success: function (data) {
+                        if (data.code == 1) {
+                            $phys.val(data.physccode);
+                            $iccd.val(data.iccode);
+                        } else {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: "读卡失败，请检查卡片是否放在卡机上或联系供应商！"
+                            });
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnRead").text("读 卡");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            });
+
+            //制卡或修改
+            $("#btnMake").click(function () {
+                var $phys = $("#physiccode");
+                if ($phys.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请先读卡!"
+                    });
+                    return;
+                }
+                var $iccd = $("#iccode");
+                if ($iccd.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入用户卡号!"
+                    });
+                    return;
+                }
+               
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("MakeCard")",
+                    data: { "physccode": $phys.val(), "iccode": $iccd.val() },
+                    dataType: "json",
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnMake").text("制卡中...");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.Message
+                        });
+                        if (data.Code == 1) {
+                            $phys.val("");
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnMake").text("制 卡");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });                
+            });
+
+            //查询
+            $("#btnFind").click(function () {
+                var $iccd = $("#iccode");
+                if ($iccd.val() == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入用户卡号!"
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("FindCard")",
+                    data: {"iccode": $iccd.val() },
+                    dataType: "json",
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFind").text("查询中...");
+                    },
+                    success: function (iccd) {
+                        var code = iccd.UserCode;
+                        if (code == null)
+                        {
+                            $("input[name='uiccd']").val(iccd.UserCode);
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: "找不到该卡号信息"
+                            });
+                        }
+                        else
+                        {
+                            $("input[name='uiccd']").val(iccd.UserCode);
+                            $("input[name='createtime']").val(iccd.CreateDate);
+
+                            $("input[name='type']").val(iccd.Type);
+                            $("input[name='losstime']").val(iccd.LossDate);
+
+                            $("input[name='status']").val(iccd.Status);
+                            $("input[name='disposetime']").val(iccd.LogoutDate);
+
+                            $("input[name='locaddrs']").val(iccd.LocAddress);
+                            $("input[name='warehouse']").val(iccd.Warehouse);
+
+                            $("input[name='deadline']").val(iccd.Deadline);
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFind").text("查 询");
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+            });
+
+            //挂失
+            $("#btnLoss").click(function () {
+                var code = $("#uiccd").val();
+                if (code == "") {                   
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "用户卡号不允许为空，请先执行查询操作！"
+                    });
+                }
+                HandleCard(code, 1);
+            });
+
+            //取消挂失
+            $("#btnCancelLoss").click(function () {
+                var code = $("#uiccd").val();
+                if (code == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "用户卡号不允许为空，请先执行查询操作！"
+                    });
+                }
+                HandleCard(code, 2);
+            });
+
+            //注销
+            $("#btnDispose").click(function () {
+                var code = $("#uiccd").val();
+                if (code == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "用户卡号不允许为空，请先执行查询操作！"
+                    });
+                }
+                HandleCard(code, 3);
+            });
+
+            //卡操作函数
+            function HandleCard(iccode, type) {
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("HandleCard")",
+                    data: { "iccode": iccode,"type":type },
+                    dataType: "json",
+                    beforeSend: function (XMLHttpRequest) {                        
+                    },
+                    success: function (data) {
+
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.Message
+                        });
+                        //改变显示状态
+                        if (data.Code == 1) {
+                            var iccd = data.Data;                           
+                            $("input[name='type']").val(iccd.Type);
+                            $("input[name='losstime']").val(iccd.LossDate);
+                            $("input[name='status']").val(iccd.Status);
+                            $("input[name='disposetime']").val(iccd.LogoutDate);
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+
+                });
+            }
+            //修改用户卡使用期限
+            $("#btnChangedt").click(function () {
+                var iccode = $("#uiccd").val();
+                if (iccode == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "用户卡号不允许为空，请先执行查询操作！"
+                    });
+                }
+                window.location.href = "/CustomManager/Manage/ChangeDeadline?iccode=" + iccode;
+            });
+
+        });
+
+    </script>
+}
+

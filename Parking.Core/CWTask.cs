@@ -178,7 +178,7 @@ namespace Parking.Core
             #endregion
             
             //暂以卡号为准
-            ICCard iccd = new CWICCard().SelectICCdByUserCode(htsk.ICCardCode);
+            ICCard iccd = new CWICCard().Find(ic=>ic.UserCode==htsk.ICCardCode);
             if (iccd == null)
             {
                 //上位控制系统故障
