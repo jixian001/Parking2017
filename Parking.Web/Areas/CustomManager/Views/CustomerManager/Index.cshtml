@@ -23,15 +23,15 @@
                         <label class="col-md-2 control-label" for="goods" style="text-align:right;margin-top:4px">查询条件</label>
                         <div class="col-md-2">
                             <select id="goods" name="goods" class="selectpicker show-tick form-control">
-                                <option value="0">---请选择---</option>                               
+                                <option value="0">请选择</option>                               
                             </select>
                         </div>
                         <label class="col-md-2 control-label" for="content" style="text-align:right;margin-top:4px">查询数据</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" name="content" id="content" />
+                            <input type="text" class="form-control" name="content" id="content" placeholder="输入查询内容" />
                         </div>
                         <div class="col-md-2 col-md-offset-1">
-                            <button class="btn btn-primary" id="search_btn">查询</button>
+                            <button class="btn btn-primary" id="search">查询</button>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                 <div id="toolbar" class="btn-group pull-right" role="group">                   
                     <a class="btn btn-default" role="button" href="@Url.Action("Add","CustomerManager")">添 加</a>
                     <button id="btnModify" class="btn btn-default">修 改</button>
-                    <button id="btnDelete" class="btn btn-default">删 除</button>                   
+                    <button id="btnDelete" class="btn btn-default">删 除</button>                                      
                 </div>               
             </div> 
             <table id="custGrid"></table> 
@@ -49,6 +49,8 @@
 </div>
 
 @section scripts{
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
     <script>
         $(function () {
             var $goods = $("#goods");
@@ -63,7 +65,8 @@
 
                     },
                     success: function (data) {
-                        var html = '<option value="0">---请选择---</option>';
+                        $("#content").val("");
+                        var html = '<option value="0">请选择</option>';
                         $.each(data, function (index, obj) {
                             html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
                         });
@@ -89,10 +92,11 @@
                 showRefresh: true,  //暂不显示，当使用条件查询时，再调用刷新功能
                 showToggle: true,
                 showFooter: false,
+                showColumns:true,    //显示所有列
                 pagination: true,
                 striped: true,              //是否显示行间隔色
                 sidePagination: "server",
-                clickToSelect: true,
+                //clickToSelect: true,
                 pageNumber: 1,              //初始化加载第一页，默认第一页
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
@@ -113,54 +117,69 @@
                         field: "ID",
                         visible: true,
                         align: "center",
+                        sortable:true,
+                        valign: "middle"
+                    },
+                    {
+                        title: "姓名",
+                        field: "UserName",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "卡号",
+                        field: "UserCode",
+                        align: "center",
+                        valign: "middle",
+                        sortable: true
+                    },
+                    {
+                        title: "卡类型",
+                        field: "Type",
+                        align: "left",
+                        valign: "middle",
+                        sortable: true
+                    },
+                    {
+                        title: "卡状态",
+                        field: "Status",
+                        align: "left",
                         valign: "middle"
                     },
                     {
                         title: "库区",
                         field: "Warehouse",
-                        align: "center",
-                        valign: "middle"
-                    },
-                    {
-                        title: "作业设备",
-                        field: "DeviceCode",
-                        align: "center",
-                        valign: "middle"
-                    },
-                    {
-                        title: "任务类型",
-                        field: "MasterType",
                         align: "left",
                         valign: "middle"
                     },
                     {
-                        title: "报文类型",
-                        field: "TelegramType",
-                        align: "left",
-                        valign: "middle"
-                    },
-                    {
-                        title: "报文子类型",
-                        field: "SubTelegramType",
-                        align: "left",
-                        valign: "middle"
-                    },
-                    {
-                        title: "用户卡号",
-                        field: "ICCardCode",
-                        align: "center",
-                        valign: "middle"
-                    },
-                    {
-                        title: "源地址",
-                        field: "FromLctAddress",
+                        title: "车位",
+                        field: "LocAddress",
                         align: "center",
                         valign: "middle",
-                        visible: false
+                        sortable: true
                     },
                     {
-                        title: "目的地址",
-                        field: "ToLctAddress",
+                        title: "手机",
+                        field: "MobilePhone",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "车牌",
+                        field: "PlateNum",
+                        align: "center",
+                        valign: "middle"
+                    },                   
+                    {
+                        title: "家庭住址",
+                        field: "FamilyAddress",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "使用期限",
+                        field: "Deadline",
                         align: "center",
                         valign: "middle",
                         visible: false
@@ -184,13 +203,15 @@
             });
 
             function queryParams(params) {
+                var name=$("#goods option:selected").val(); //value值
+                var content=$("#content").val();
                 return {
                     pageSize: params.pageSize,  //一定包含
                     pageIndex: params.pageNumber,  //一定包含
                     sortOrder: params.sortOrder,
                     sortName: params.sortName,
-                    warehouse: $("#warehouse").val(),
-                    code: $("#code").val()
+                    queryName: name,
+                    queryValue: content
                 };
             }
 
@@ -199,15 +220,35 @@
                        '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
             }
 
+            $("#search").click(function () {
+                var $content = $("#content");
+                var name = $("#goods option:selected").val(); //value值
+                if (name != "0") {                    
+                    if ($content.val() == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
+                    }
+                }
+                $table.bootstrapTable("refresh");
+                $content.val("");
+            });
+
 
         });
 
         window.actionEvents = {
             'click .detail': function (e, value, row, index) {
-                window.location.href = "/CustomManager/CustomerManager/Modify?ID=" + row.ID;
+                window.location.href = "/CustomManager/CustomerManager/Edit?ID=" + row.ID;
             },
             'click .delete': function (e, value, row, index) {
-                window.location.href = "/CustomManager/CustomerManager/Delete?ID=" + row.ID;
+                BootstrapDialog.confirm("<p class='text-center'>确定要删除用户<b>&nbsp;&lt;&nbsp;" + row.UserName + "&nbsp;&gt;&nbsp;</b>的记录？</p>", function (result) {
+                    if (result) {
+                        window.location.href = "/CustomManager/CustomerManager/Delete?ID=" + row.ID;
+                    }
+                });               
             }
         };
 

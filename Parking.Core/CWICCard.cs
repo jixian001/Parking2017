@@ -28,13 +28,18 @@ namespace Parking.Core
         /// <returns></returns>
         public ICCard FindFixLocationByAddress(int warehouse,string address)
         {
-            return manager.FindICCard(iccd => (iccd.Type == EnmICCardType.FixedLocation || iccd.Type == EnmICCardType.VIP) &&
+            return manager.Find(iccd => (iccd.Type == EnmICCardType.FixedLocation || iccd.Type == EnmICCardType.VIP) &&
                                               iccd.Warehouse == warehouse && iccd.LocAddress == address);
+        }
+
+        public ICCard Find(int id)
+        {
+            return manager.Find(id);
         }
 
         public ICCard Find(Expression<Func<ICCard, bool>> where)
         {
-            return manager.FindICCard(where);
+            return manager.Find(where);
         }
 
         public Response Update(ICCard iccd)
@@ -42,5 +47,30 @@ namespace Parking.Core
             return manager.Update(iccd);
         }
 
+        public List<ICCard> FindIccdList(Expression<Func<ICCard, bool>> where)
+        {
+            return manager.FindList(where);
+        }
+
+        #region 顾客
+
+        private CustomerManager manager_cust = new CustomerManager();
+
+        public Customer FindCust(int ID)
+        {
+            return manager_cust.Find(ID);
+        }
+
+        public Customer FindCust(Expression<Func<Customer, bool>> where)
+        {
+            return manager_cust.Find(where);
+        }
+
+        public List<Customer> FindCustList(Expression<Func<Customer, bool>> where)
+        {
+            return manager_cust.FindList(where);
+        }
+
+        #endregion
     }
 }
