@@ -1,6 +1,6 @@
 ﻿
 @{
-    ViewBag.Title = "顾客管理";
+    ViewBag.Title = "车主管理";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -11,7 +11,7 @@
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
             <li>顾客管理</li>
-            <li class="active">IC卡管理</li>
+            <li class="active">车主管理</li>
         </ol>
         <div class="row">
             <div class="panel panel-default">
@@ -97,6 +97,7 @@
                 striped: true,              //是否显示行间隔色
                 sidePagination: "server",
                 //clickToSelect: true,
+                singleSelect: true,   //单选
                 pageNumber: 1,              //初始化加载第一页，默认第一页
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
@@ -107,7 +108,7 @@
                 dataType: "json",
                 columns: [
                     {
-                        title: "state",
+                        title: "单选",
                         checkbox: true,
                         align: "center",
                         valign: "middle"
@@ -235,7 +236,64 @@
                 $table.bootstrapTable("refresh");
                 $content.val("");
             });
+             
+            $("#btnDelete").click(function () {
+                $("#content").val("");
+                var selected = $table.bootstrapTable('getSelections')[0];
+                if (typeof (selected) == 'undefined')
+                {
+                    BootstrapDialog.warning("请选择一行数据！");
+                }
+                else
+                {
+                    var sID = selected.ID;
+                    BootstrapDialog.confirm("<p class='text-center'>确定要删除用户<b>&nbsp;&lt;&nbsp;" + selected.UserName + "&nbsp;&gt;&nbsp;</b>的记录？</p>", function (result) {
+                        if (result)
+                        {
+                            $.ajax({
+                                type: "GET",
+                                url: "@Url.Action("Delete")",
+                                data: { ID: sID },
+                                dataType: "json",
+                                cache: false,
+                                beforeSend: function (XMLHttpRequest) {
+                                    $("#btnDelete").text("删除中");
+                                },
+                                success: function (data) {
+                                    if (data.code == 1)
+                                    {
+                                        BootstrapDialog.show({
+                                            title: "温馨提示",
+                                            message: data.message
+                                        });
+                                    }
+                                    else
+                                    {                                        
+                                        $table.bootstrapTable("refresh");
+                                    }
+                                },
+                                complete: function (XMLHttpRequest, textStatus) {
+                                    $("#btnDelete").text("删除");
+                                },
+                                error: function (XMLHttpRequest, textStatus, errorThrown) {
 
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            $("#btnModify").click(function () {
+                var selected = $table.bootstrapTable('getSelections')[0];
+                if (typeof (selected) == 'undefined') {
+                    BootstrapDialog.warning("请选择一行数据！");
+                }
+                else {
+                    var sID = selected.ID;
+                    window.location.href = "/CustomManager/CustomerManager/Edit?ID=" + sID;
+                }
+            });
 
         });
 
@@ -245,8 +303,35 @@
             },
             'click .delete': function (e, value, row, index) {
                 BootstrapDialog.confirm("<p class='text-center'>确定要删除用户<b>&nbsp;&lt;&nbsp;" + row.UserName + "&nbsp;&gt;&nbsp;</b>的记录？</p>", function (result) {
-                    if (result) {
-                        window.location.href = "/CustomManager/CustomerManager/Delete?ID=" + row.ID;
+                    if (result)
+                    {
+                        $.ajax({
+                            type: "GET",
+                            url: "@Url.Action("Delete")",
+                            data: { ID: row.ID },
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+
+                            },
+                            success: function (data) {
+                                if (data.code == 1) {
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: data.Message
+                                    });
+                                }
+                                else {
+                                    window.location.href = "/CustomManager/CustomerManager/Index";
+                                }
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                            }
+                        });                       
                     }
                 });               
             }

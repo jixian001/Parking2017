@@ -60,17 +60,21 @@ namespace Parking.Data
 
     public enum EnmICCardType
     {
+        [Display(Name ="请选择")]
         Init = 0,  //初始
+        [Display(Name ="临时卡")]
         Temp,    //临时
+        [Display(Name = "定期卡")]
         Periodical,   //定期
+        [Display(Name = "固定卡")]
         FixedLocation,  //固定卡
         VIP,     //贵宾卡，不需要充值，直接放行
     }
     public enum EnmICCardStatus
     {
-        Init = 0,
-        Lost,     //挂失
-        Normal,   //正常
+        Init = 0,       
+        Lost,     //挂失       
+        Normal,   //正常      
         Disposed  //注销
     }
 }

@@ -56,6 +56,22 @@ namespace Parking.Core
 
         private CustomerManager manager_cust = new CustomerManager();
 
+        public Response Add(Customer cust)
+        {
+            return manager_cust.Add(cust);
+        }
+
+        public Response UpdateCust(Customer cust)
+        {
+            return manager_cust.Update(cust);
+        }
+
+        public Response Delete(int ID)
+        {
+
+            return manager_cust.Delete(ID);
+        }
+
         public Customer FindCust(int ID)
         {
             return manager_cust.Find(ID);
