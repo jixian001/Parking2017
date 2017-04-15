@@ -4,8 +4,7 @@
   <ChargeEnable>0</ChargeEnable>
   <!--主plc连接的数量-->
   <PlcCount>1</PlcCount>
-  <PLCRefresh>500</PLCRefresh>
-  
+  <PLCRefresh>500</PLCRefresh>  
   <ICcdRefresh>1000</ICcdRefresh>
   <!--客户端刷卡器的IP地址，客户端统一设置 -->
   <ICCardIPAddress>192.168.0.20</ICCardIPAddress>
@@ -24,7 +23,9 @@
         S7:[S7 connection_1]DB1003,B0,54;
         S7:[S7 connection_1]DB1023,B0,54
       </ConnectItem>
-
+      <!--库区车位边列层，以‘-’分开-->
+      <LocInfo>2-40-3</LocInfo>
+      <!--车厅-->
       <halls count="2">
         <hall>
           <ID>11</ID>

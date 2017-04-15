@@ -89,10 +89,10 @@
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/signalr")
     @Scripts.Render("~/bundles/plugin")
-    @Scripts.Render("~/bundles/bootstrapselect")
-    @RenderSection("scripts", required: false)
-
+    @Scripts.Render("~/bundles/bootstrapselect")    
     <script src="~/signalr/hubs"></script>
+
+    @RenderSection("scripts", required: false)
 
 </body>
 </html>

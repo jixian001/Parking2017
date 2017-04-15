@@ -5,6 +5,9 @@ using System.Web;
 using System.Web.Mvc;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using Parking.Auxiliary;
+using Parking.Data;
+using Parking.Core;
 
 namespace Parking.Web.Controllers
 {
@@ -30,6 +33,21 @@ namespace Parking.Web.Controllers
             return View();
         }
 
+        public JsonResult GetDeviceList()
+        {
+            List<Device> devices = new CWDevice().FindList(smg=>true);
+            if (devices == null)
+            {
+                devices = new List<Device>();
+            }
+            return Json(devices,JsonRequestBehavior.AllowGet);
+        }
+
+        
+
+
+
+
         /*
          * signalr 推送调用
          *  Task.Factory.StartNew(()=> {
@@ -37,5 +55,8 @@ namespace Parking.Web.Controllers
          *       hubs.Clients.All.getMessage(message);
          *   });
          */
+
+
+
     }
 }

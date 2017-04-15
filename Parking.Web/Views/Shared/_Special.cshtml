@@ -17,7 +17,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
-                </button>
+                </button>               
                 <a class="navbar-brand" href="javascript:void(0)" data-toggle="modal" data-target="#svcModal">应用程序</a>
             </div>
             <div class="navbar-collapse collapse">
@@ -111,10 +111,10 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/signalr")
-    @Scripts.Render("~/bundles/plugin")
-    @RenderSection("scripts", required: false)
-
+    @Scripts.Render("~/bundles/plugin")  
     <script src="~/signalr/hubs"></script>
     @Scripts.Render("~/bundles/defsignalr")
+
+    @RenderSection("scripts", required: false)
 </body>
 </html>

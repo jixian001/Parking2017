@@ -224,7 +224,16 @@
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\common.css" />
     <Content Include="Content\defform.css" />
+    <Content Include="Content\devform.css" />
+    <Content Include="Content\jquery-seat-charts\jquery.seat-charts.css" />
+    <Content Include="Content\jquery-seat-charts\jquery.seat-charts.js" />
+    <Content Include="Content\jquery-seat-charts\jquery.seat-charts.min.js" />
+    <Content Include="Content\jquery-seat-charts\Style.css" />
+    <Content Include="Content\Picture\first.png" />
+    <Content Include="Content\Picture\second.png" />
+    <Content Include="Content\Picture\three.png" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />

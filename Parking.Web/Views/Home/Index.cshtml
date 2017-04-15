@@ -2,4 +2,163 @@
     Layout = "~/Views/Shared/_Special.cshtml";
     ViewBag.Title = "主页";
 }
+<div class="row">
+    <div id="myCarousel" class="carousel slide">
+        <ol class="carousel-indicators">
+            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+            <li data-target="#myCarousel" data-slide-to="1"></li>
+            <li data-target="#myCarousel" data-slide-to="2"></li>
+        </ol>
+        <div class="carousel-inner">
+            <div class="item active" align="center">
+                <img src="~/Content/Picture/first.png" alt="First slide" style="height:200px" />
+            </div>
+            <div class="item" align="center">
+                <img src="~/Content/Picture/second.png" alt="Second slide" style="height:200px" />
+            </div>
+            <div class="item" align="center">
+                <img src="~/Content/Picture/three.png" alt="Three slide" style="height:200px" />
+            </div>
+        </div>
+        <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
+        <a class="carousel-control right" href="#myCarousel" data-slide="next">&rsaquo;</a>
+    </div>
+</div>
+<br />
+<div class="row">
+    <span class="text-primary">车位分布</span>
+</div>
+<div class="row seat bger">
+    <div class="seat wrapper">
+        <div class="col-md-10" id="seat">
+            @* 平面移动库 *@
+            <div id="PPY">
+                @* 1号库 *@
+                <input type="hidden" value="1" id="wh1" name="wh1" />
+                <div id="L3-map">
+                    <span>三层</span>
+                    <hr />
+                </div>
+                <div id="L2-map">
+                    <span>二层</span>
+                    <hr />
+                </div>
+                <div id="L1-map">
+                    <span>一层</span>
+                    <hr />
+                </div>
+            </div>
+            @*  巷道堆垛 *@
+            <div id="PXD" style="display:none">
+                @* 1号库 *@
+                <input type="hidden" value="1" id="wh1" name="wh1" />
+                <div id="layout-map">                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">  
+           <div class="bookdetail" id="details">
 
+           </div>        
+        </div>
+    </div>
+</div>
+<div class="row">
+    <span class="text-primary">设备信息</span>
+</div>
+<div id="devices" class="row bger">
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/loccharts")
+    @Scripts.Render("~/bundles/loccharts")
+    @Styles.Render("~/Content/common")
+    @Styles.Render("~/Content/devform")
+    <script>
+        $(function () {
+
+            //加载车位信息
+            //目前先手动设置，到后面，改为ajax试试
+            var side = 2, column = 30, layer = 3;
+
+            //先设置3层
+
+
+
+
+            setTimeout(function () {
+
+                var $devs = $("#devices");
+                //获取设备信息，显示出来
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetDeviceList")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $devs.html('<p class="text-info text-center">努力加载中...</p>');
+                    },
+                    success: function (data) {
+                        var i = 0;
+                        var html = '';
+                        $.each(data, function (index, obj) {
+                            if (i == 0) {
+                                html = '<div class="row">';
+                            }
+                            else if (i % 4 == 0) {
+                                html += '</div><div class="row">';
+                            }
+                            html += '<div class="col-md-3"><div class="dev">';
+                            var info = '<table class="form" id="' + obj.DeviceCode + '">';
+
+                            info += '<tr><th class="formTitle">' + "设备" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="code" value="' + obj.DeviceCode + '" disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "地址" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="address" value=" ' + obj.Address + '" disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "模式" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="mode"  value="' + obj.Mode + '" disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "是否可用" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="able" value="' + obj.IsAble + '" disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "接收指令" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="accept" value="' + obj.IsAvailabe + '" disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "自动步" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="step" value="' + obj.RunStep + '"  disabled/></td></tr>';
+                            if (obj.DeviceCode < 10) {
+                                info += '<tr><th class="formTitle">' + "装载步进" + '</th>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="loadstep" value="' + obj.InStep + '"  disabled/></td></tr>';
+                                info += '<tr><th class="formTitle">' + "卸载步进" + '</th>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="unloadstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
+                            } else {
+                                info += '<tr><th class="formTitle">' + "存车步进" + '</th>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="instep" value="' + obj.InStep + '"  disabled/></td></tr>';
+                                info += '<tr><th class="formTitle">' + "取车步进" + '</th>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="outstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
+                            }
+
+                            info += '</table>';
+
+                            html += info + '</div></div>';
+                            i++;
+                        });
+                        html += '</div>';
+                        $devs.html(html);
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+                var wd = $("#seat").height();
+                $("#details").css("height", wd);
+
+
+
+            }, 800);
+
+        });
+    </script>
+
+    }
