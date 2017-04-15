@@ -14,7 +14,7 @@
 }
 
 div.seatCharts-container{
-    border: 2px solid #ccd232;
+    border: 1px solid #ccd232;
     width:auto;
     padding:0px;
     float:left;
@@ -24,7 +24,7 @@ div.seatCharts-cell{
     color:#182C4E;
     height:30px;
     width:30px;
-    margin:3px;
+    margin:3px;    /*注意，这个值会动态影响布局，在修改时，要同步修改*/
     text-align:center;
     font-size:12px;
 }
@@ -53,4 +53,30 @@ div.seatCharts-seat.unavailable {
 div.seatCharts-legend{
     padding-left:0px;
     bottom:0;
-} 
+}
+
+/*自定义车位显示颜色*/
+div.seatCharts-seat.hall {
+	background-color: #ccd232;
+}
+div.seatCharts-seat.disable {
+	background-color: #ccc;
+}
+div.seatCharts-seat.invalid {
+	background-color: #808080;
+}
+div.seatCharts-seat.temp {
+	background-color: #a6c8f6;
+}
+div.seatCharts-seat.disabletemp {
+	background-color: #064970;
+}
+div.seatCharts-seat.occupy {
+	background-color: #3a78c3;
+}
+div.seatCharts-seat.entering {
+	background-color: #f787e7;
+}
+div.seatCharts-seat.outing {
+	background-color: #e25959;
+}

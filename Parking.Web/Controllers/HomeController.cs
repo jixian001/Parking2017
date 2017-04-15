@@ -40,10 +40,44 @@ namespace Parking.Web.Controllers
             {
                 devices = new List<Device>();
             }
+            
             return Json(devices,JsonRequestBehavior.AllowGet);
         }
-
         
+        /// <summary>
+        /// 查询车位
+        /// </summary>
+        /// <param name="locinfo">库区_边_列_层</param>
+        /// <returns></returns>
+        public JsonResult GetLocation(string locinfo)
+        {
+            string[] info = locinfo.Split('_');
+            if (info.Length < 4)
+            {
+                var nback = new {
+                    code = 0,
+                    data = "数据长度不正确," + locinfo
+                };
+                return Json(nback,JsonRequestBehavior.AllowGet);
+            }
+            int wh = Convert.ToInt32(info[0]);
+            string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2,'0');
+            Location lctn = new CWLocation().FindLocation(lc=>lc.Address==address&&lc.Warehouse==wh);
+            if (lctn == null)
+            {
+                var nback = new
+                {
+                    code = 0,
+                    data = "找不到车位，"+locinfo
+                };
+                return Json(nback, JsonRequestBehavior.AllowGet);
+            }
+            var ret = new {
+                code=1,
+                data=lctn
+            };
+            return Json(ret, JsonRequestBehavior.AllowGet);
+        }
 
 
 

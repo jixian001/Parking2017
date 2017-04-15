@@ -1,5 +1,5 @@
 div.seatCharts-container {
-	/*min-width: 700px;*/
+	min-width: initial;
 }
 div.seatCharts-cell {
 	height: 16px;

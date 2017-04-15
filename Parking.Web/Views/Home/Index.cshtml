@@ -36,15 +36,15 @@
                 @* 1号库 *@
                 <input type="hidden" value="1" id="wh1" name="wh1" />
                 <div id="L3-map">
-                    <span>三层</span>
+                    <span>&nbsp;&nbsp; 三层</span>
                     <hr />
                 </div>
                 <div id="L2-map">
-                    <span>二层</span>
+                    <span>&nbsp;&nbsp;二层</span>
                     <hr />
                 </div>
                 <div id="L1-map">
-                    <span>一层</span>
+                    <span>&nbsp;&nbsp;一层</span>
                     <hr />
                 </div>
             </div>
@@ -56,9 +56,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">  
-           <div class="bookdetail" id="details">
-
+        <div class="col-md-2">
+           <div class="booking-details" id="details">
+               <br />
+               <br /> 
+               <h3 class="text-center">已选中的车位(<span id="addr">0</span>)：</h3>
+               <ul id="selected-seats"></ul>
+               <br />
+               <br />
+               
            </div>        
         </div>
     </div>
@@ -79,13 +85,219 @@
 
             //加载车位信息
             //目前先手动设置，到后面，改为ajax试试
-            var side = 2, column = 30, layer = 3;
-
+            var side = 2, column = 20, layer = 3;
+            var warehouse = $("input[name='wh1']").val();
+            //计算，固定div及设置cell宽度
+            var width = $('#seat').width()-20;           
             //先设置3层
+            var l3_map = [];
+            for (var i = 0; i < side + 1; i++)
+            {
+                var row = '';
+                for (var j = 0; j < column; j++)
+                {
+                    if (i == side-1) {
+                        row += '_';
+                        continue;
+                    }
+                    row += 'e';
+                }
+                l3_map.push(row);
+            }
+           
+            var l3_sc = $('#L3-map').seatCharts({
+                map: l3_map,
+                seats: {                    
+                    e: {                      
+                        classes: 'normal-class', //your custom CSS class
+                        category: '正常'
+                    }
+                },
+                naming: {
+                    top: false,
+                    left: false,
+                    getLabel: function (character, row, column) {
+                        return column;
+                    },
+                    getId: function (character, row, column) {
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return warehouse + '_' + rw + '_' + column + '_' + 3;
+                    }
+                },
+                click: function () {                    
+                    var msg = this.settings.id;
+                    var arr = msg.split("_");
+                    if (arr.length < 4)
+                    {
+                        alert(this.settings.id + " 数组长度不对！");
+                        return;
+                    }
+                    displayInfo(msg);
 
+                    return this.status();
+                },
+                blur: function () {
+                    return this.status();
+                }
+            });
 
+            var l2_sc = $('#L2-map').seatCharts({
+                map: l3_map,
+                seats: {
+                    e: {
+                        classes: 'economy-class', //your custom CSS class
+                        category: '经济舱'
+                    }
+                },
+                naming: {
+                    top: false,
+                    left: false,
+                    getLabel: function (character, row, column) {
+                        return column;
+                    },
+                    getId: function (character, row, column) {
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return warehouse + '_' + rw + '_' + column + '_' + 2;
+                    }
+                },
+                click: function () {
+                    $('#cart-item-' + this.settings.id).remove();
+                    var msg = this.settings.id;
+                    var arr = msg.split("_");
+                    if (arr.length < 4)
+                    {
+                        alert(this.settings.id + " 数组长度不对！");
+                        return;
+                    }
+                    displayInfo(msg);
+                    return this.status();
+                },
+                blur: function () {
+                    return this.status();
+                }
+            });
 
+            var l1_sc = $('#L1-map').seatCharts({
+                map: l3_map,
+                seats: {
+                    e: {
+                        classes: 'economy-class', //your custom CSS class
+                        category: '经济舱'
+                    }
+                },
+                naming: {
+                    top: false,
+                    left: false,
+                    getLabel: function (character, row, column) {
+                        return column;
+                    },
+                    getId: function (character, row, column) {
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return warehouse + '_' + rw + '_' + column + '_' + 1;
+                    }
+                },
+                click: function () {
+                    
+                    var msg = this.settings.id;
+                    var arr = msg.split("_");
+                    if (arr.length < 4)
+                    {
+                        alert(this.settings.id + " 数组长度不对！");
+                        return;
+                    }
+                    displayInfo(msg);
+                    return this.status();
+                },
+                blur: function () {
+                    return this.status();
+                }
+            });
 
+            //动态修改单元格宽高
+            $('div .seatCharts-container').width(width);
+            var $seatcell = $('div .seatCharts-cell');
+            var cellMargin = 3;
+            var cell = (width - column * (cellMargin * 2)) / column;
+            $('div .seatCharts-cell').width(cell);
+            $('div .seatCharts-cell').height(cell);
+
+            //单击单元格时，显示车位信息
+            function displayInfo(msg) {
+                console.log("selected location :"+msg);
+                var $disp = $("#selected-seats");
+                var $addrs = $("#addr");
+                $addrs.text('');
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetLocation")",
+                    data: { locinfo:msg},
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $addrs.text('0');
+                        $disp.html('<li>加载中...</li>');
+                    },
+                    success: function (nback) {                        
+                        if (nback.code == 1)
+                        {
+                            var obj = nback.data;
+                            $addrs.text(obj.Address);
+                            var html = '<li>库区：' + obj.Warehouse + '</li>';
+                            $disp.html(html);
+                            html = '<li>地址：' + obj.LocSide + '边' + obj.LocColumn + '列' + obj.LocLayer + '层</li>';
+                            $disp.append(html);
+                            html = '<li>类型：' + obj.Type + '</li>';
+                            $disp.append(html);
+                            html = '<li>状态：' + obj.Status + '</li>';
+                            $disp.append(html);
+                            html = '<li>车位尺寸：<b>' + obj.LocSize + '</b></li>';
+                            $disp.append(html);
+                            html = '<li>用户卡号：' + obj.ICCode + '</li>';
+                            $disp.append(html);
+                            html = '<li>轴距：' + obj.WheelBase + '</li>';
+                            $disp.append(html);
+                            html = '<li>车辆外形：' + obj.CarSize + '</li>';
+                            $disp.append(html);
+                            html = '<li>车牌：' + obj.PlateNum + '</li>';
+                            $disp.append(html);
+                            html = '<li>入库时间：<br/>' + obj.InDate + '</li>';
+                            $disp.append(html);
+                        }
+                        else
+                        {
+                            $disp.html('<li>' + nback.data + '</li>');
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+                return 'selected';
+            }
+            
+            //测试车位颜色显示
+            var addrs1 = '1_1_1_3', addrs2 = '1_1_2_2', addrs3 = '1_2_2_1';
+            l3_sc.get([addrs1]).status('entering');
+            l2_sc.get([addrs2]).status('occupy');
+            l1_sc.get([addrs3]).status('outing');
+
+            var ad1 = '1_1_2_3', ad2 = '1_1_3_3', ad3 = '1_2_5_3'
+            l3_sc.get([ad1, ad2, ad3]).status('unavailable');
+
+            //加载设备信息
             setTimeout(function () {
 
                 var $devs = $("#devices");
@@ -153,8 +365,6 @@
 
                 var wd = $("#seat").height();
                 $("#details").css("height", wd);
-
-
 
             }, 800);
 

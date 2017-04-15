@@ -16,8 +16,13 @@
 .form .formValue.has-error .tooltip-inner{background-color: #d73d32;}
 .form-button{padding: 0px;height: 40px;line-height: 36px;text-align: right;border-top: 1px solid #ddd;background-color: #eee;position: absolute;top: 100%;margin-top: -40px;width: 100%;padding-right: 6px;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;-khtml-user-select: none;user-select: none;}
 
-.bookdetail{
+.booking-details{
     background-color:azure;
-    padding:2px;
+    padding:1px;
     margin:1px;
+}
+
+.booking-details h3 {
+	margin: 5px 5px 0 0;
+	font-size: 14px;
 }

@@ -50,10 +50,9 @@ namespace Parking.Auxiliary
 
     public class XMLHelper
     {
-        private static string path;
+       
         static XMLHelper()
-        {
-            path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+        {            
         }
 
         /// <summary>
@@ -66,6 +65,7 @@ namespace Parking.Auxiliary
         {
             try
             {
+                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -98,6 +98,7 @@ namespace Parking.Auxiliary
         {
             try
             {
+                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -140,6 +141,7 @@ namespace Parking.Auxiliary
         {
             try
             {
+                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
