@@ -8,7 +8,7 @@ using Parking.Data;
 using Parking.Application;
 using Parking.Core;
 
-namespace Parking.Web.Signalr
+namespace Parking.Web
 {
     public class ParkingSingleton
     {

@@ -26,3 +26,41 @@
 	margin: 5px 5px 0 0;
 	font-size: 14px;
 }
+
+.lbl {
+    height: 40px;
+    width: 40px;
+    float: left;
+    border-radius: 5px;
+    margin: 5px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 14px;
+    color:white;
+}
+
+/*自定义车位显示颜色，要注意与Style里面同步*/
+.lblhall{
+    background-color: #ccd232;
+}
+.lbldisable{
+    background-color: #5e4f4f;
+}
+.lblinvalid{
+    background-color: #ccc;
+}
+.lbltemp {
+	background-color: #a6c8f6;
+}
+.lbldisabletemp {
+	background-color: #064970;
+}
+.lbloccupy {
+	background-color: #3a78c3;
+}
+.lblentering {
+	background-color: #f787e7;
+}
+.lblouting {
+	background-color: #e25959;
+}

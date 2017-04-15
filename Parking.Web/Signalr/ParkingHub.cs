@@ -5,7 +5,7 @@ using System.Web;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 
-namespace Parking.Web.Signalr
+namespace Parking.Web
 {
     /// <summary>
     /// 使用骆驼命名法

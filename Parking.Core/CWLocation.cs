@@ -55,8 +55,24 @@ namespace Parking.Core
             return 1;
         }
 
-        public int DisableLocation(Location loc,bool isDis)
+        public Response DisableLocation(int warehouse,string addrs,bool isDis)
         {
+            Response _resp = new Response();
+            Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == warehouse && lc.Address == addrs);
+            if (loc == null)
+            {
+                _resp.Code = 0;
+                _resp.Message = "找不到车位-" + addrs;
+                return _resp;
+            }
+            if (loc.Type == EnmLocationType.Invalid ||
+                loc.Type == EnmLocationType.Hall ||
+                loc.Type == EnmLocationType.ETV)
+            {
+                _resp.Code = 0;
+                _resp.Message = "当前车位-" + addrs + "无效，不允许操作！";
+                return _resp;
+            }          
             if (isDis)
             {
                 loc.Type = EnmLocationType.Disable;
@@ -65,9 +81,13 @@ namespace Parking.Core
             {
                 loc.Type = EnmLocationType.Normal;
             }
-            manager.Update(loc);
+            _resp=  manager.Update(loc);
 
-            return 1;
+            if (_resp.Code == 1)
+            {
+                MainCallback.FileWatch.OnLocationChange(loc);
+            }
+            return _resp;
         }
 
         public Response UpdateLocation(Location loc)

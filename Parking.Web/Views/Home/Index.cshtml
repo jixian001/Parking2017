@@ -59,12 +59,29 @@
         <div class="col-md-2">
            <div class="booking-details" id="details">
                <br />
-               <br /> 
+               <input type="hidden" id="lctn" name="lctn" />
                <h3 class="text-center">已选中的车位(<span id="addr">0</span>)：</h3>
                <ul id="selected-seats"></ul>
                <br />
+               <div id="oprt" class="text-center" style="display:none">
+                   <button class="checkout-button" id="btnenable">启用</button>
+                   <button class="checkout-button" id="btndisable">禁用</button>                  
+               </div>
                <br />
-               
+
+               <div class="text-info">
+                   <a data-toggle="collapse" href="#one">颜色定义</a>
+               </div>
+               <div id="one" class="panel-collapse collapse text-center">
+                   <div class="lbl lblhall">车厅</div>
+                   <div class="lbl lbldisable">禁用</div>
+                   <div class="lbl lblinvalid">无效</div>
+                   <div class="lbl lbltemp">缓存</div>
+                   <div class="lbl lbldisabletemp">缓禁</div>
+                   <div class="lbl lbloccupy">占用</div>
+                   <div class="lbl lblentering">入库</div>
+                   <div class="lbl lblouting">出库</div>
+               </div> 
            </div>        
         </div>
     </div>
@@ -232,9 +249,11 @@
 
             //单击单元格时，显示车位信息
             function displayInfo(msg) {
-                console.log("selected location :"+msg);
+                console.log("selected location :" + msg);
+                $("input[name='lctn']").val(msg);
                 var $disp = $("#selected-seats");
                 var $addrs = $("#addr");
+                var $btn = $("#oprt");
                 $addrs.text('');
                 $.ajax({
                     type: "GET",
@@ -245,6 +264,7 @@
                     beforeSend: function (XMLHttpRequest) {
                         $addrs.text('0');
                         $disp.html('<li>加载中...</li>');
+                        $btn.css("display","none");
                     },
                     success: function (nback) {                        
                         if (nback.code == 1)
@@ -255,7 +275,7 @@
                             $disp.html(html);
                             html = '<li>地址：' + obj.LocSide + '边' + obj.LocColumn + '列' + obj.LocLayer + '层</li>';
                             $disp.append(html);
-                            html = '<li>类型：' + obj.Type + '</li>';
+                            html = '<li id="li_type">类型：' + obj.Type + '</li>';
                             $disp.append(html);
                             html = '<li>状态：' + obj.Status + '</li>';
                             $disp.append(html);
@@ -271,6 +291,8 @@
                             $disp.append(html);
                             html = '<li>入库时间：<br/>' + obj.InDate + '</li>';
                             $disp.append(html);
+
+                            $btn.css("display", "block");
                         }
                         else
                         {
@@ -286,17 +308,8 @@
                 });
 
                 return 'selected';
-            }
-            
-            //测试车位颜色显示
-            var addrs1 = '1_1_1_3', addrs2 = '1_1_2_2', addrs3 = '1_2_2_1';
-            l3_sc.get([addrs1]).status('entering');
-            l2_sc.get([addrs2]).status('occupy');
-            l1_sc.get([addrs3]).status('outing');
-
-            var ad1 = '1_1_2_3', ad2 = '1_1_3_3', ad3 = '1_2_5_3'
-            l3_sc.get([ad1, ad2, ad3]).status('unavailable');
-
+            }            
+          
             //加载设备信息
             setTimeout(function () {
 
@@ -366,7 +379,288 @@
                 var wd = $("#seat").height();
                 $("#details").css("height", wd);
 
+                //初始化车位数据
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetLocationList")",
+                    dataType: "json",
+                    cache: false,
+                    success: function (resp) {                       
+                        if (resp.code == 1) {
+                            $.each(resp.data, function (index, obj) {
+                                var whs = obj.Warehouse;                                
+                                if (whs == 1)
+                                {
+                                    var ly = obj.LocLayer;
+                                    var clmn = obj.LocColumn;
+                                    var sd = obj.LocSide;
+                                    var mark = whs + '_' + sd + '_' + clmn + '_' + ly;
+                                    var color = setlocationcolor(obj.Type, obj.Status);                                   
+                                    if (ly == 1) 
+                                    {
+                                        l1_sc.get([mark]).status(color);
+                                    }
+                                    else if (ly == 2)
+                                    {
+                                        l2_sc.get([mark]).status(color);
+                                    }
+                                    else if (ly == 3)
+                                    {
+                                        l3_sc.get([mark]).status(color);
+                                    }
+                                }
+
+                            });
+                        }
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+
+
             }, 800);
+
+            function setlocationcolor(type, status)
+            {
+                var color = 'available';
+                if (type == 1)
+                {
+                    //正常
+                    switch (status) {
+                        case 1:
+                            color = 'available';
+                            break;
+                        case 2:
+                            color = 'occupy';
+                            break;
+                        case 3:
+                            color = 'entering';
+                            break;
+                        case 4:
+                            color = 'outing';
+                            break;
+                        default:
+                            color = 'available';
+                            break;
+                    }
+                }
+                else if (type == 2)
+                {
+                    //车厅
+                    color = 'hall';
+                }
+                else if (type == 3)
+                {
+                    //禁用
+                    color = 'disable';
+                }
+                else if (type ==5)
+                {
+                    //无效
+                    color = 'unavailable';
+                }
+                else if (type ==6) {
+                    //缓存车位                  
+                    switch (status) {
+                        case 1:
+                            color = 'temp';
+                            break;
+                        case 2:
+                            color = 'occupy';
+                            break;
+                        case 3:
+                            color = 'entering';
+                            break;
+                        case 4:
+                            color = 'outing';
+                            break;
+                        default:                           
+                            break;
+                    }
+                }
+                else if (type == 7) {
+                    //禁用缓存车位
+                    color = 'disabletemp';
+                }
+                return color;
+            }
+
+            //启用
+            $("#btnenable").click(function () {
+                var addrs = $("#lctn").val();
+                disloaction(addrs, false);
+            });
+            //禁用
+            $("#btndisable").click(function () {
+                var addrs = $("#lctn").val();
+                disloaction(addrs, true);
+            });
+
+            function disloaction(lctn, dis)
+            {               
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("ManualDisLocation")",
+                    data: { "info":lctn,"isdis":dis},
+                    dataType: "json",
+                    cache: false,                   
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.Message
+                        });                       
+                    }
+                });
+            }
+
+            /*
+             *signalr 引入
+             *
+            */
+            var hubs = $.connection.parkingHub;
+
+            //供服务端调用的方法定义
+            $.extend(hubs.client, {
+                serveOpened: function () {
+                    $("#svcStatus").html("启动中...");
+                    $("#svcRun").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
+                    $("#svcStop").addClass("btn-info").prop("disabled", false);
+                },
+
+                serveClosed: function () {
+                    $("#svcStatus").html("已停止...");
+                    $("#svcRun").addClass("btn-info").prop("disabled", false);
+                    $("#svcStop").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
+                },
+
+                //Define a function to get 'location updated' events               
+                feedbackLocInfo: function (lctn) {                    
+                    
+                    var whs = lctn.Warehouse;
+                    if (whs == 1)
+                    {
+                        var ly = lctn.LocLayer;
+                        var clmn = lctn.LocColumn;
+                        var sd = lctn.LocSide;
+                        var mark = whs + '_' + sd + '_' + clmn + '_' + ly;
+                        var color = setlocationcolor(lctn.Type, lctn.Status);
+                        if (ly == 1) {
+                            l1_sc.get([mark]).status(color);
+                        }
+                        else if (ly == 2) {
+                            l2_sc.get([mark]).status(color);
+                        }
+                        else if (ly == 3) {
+                            l3_sc.get([mark]).status(color);
+                        }
+                    }
+                    //更新车位显示区域
+                    var adrs = lctn.Warehouse + '_' + sd + '_' + clmn + '_' + ly;
+                    if ($("#lctn").val() == adrs) {                       
+                        var $disp = $("#selected-seats");
+
+                        var html = '<li>库区：' + lctn.Warehouse + '</li>';
+                        $disp.html(html);
+                        html = '<li>地址：' + lctn.LocSide + '边' + lctn.LocColumn + '列' + lctn.LocLayer + '层</li>';
+                        $disp.append(html);
+                        html = '<li id="li_type">类型：' + lctn.Type + '</li>';
+                        $disp.append(html);
+                        html = '<li>状态：' + lctn.Status + '</li>';
+                        $disp.append(html);
+                        html = '<li>车位尺寸：<b>' + lctn.LocSize + '</b></li>';
+                        $disp.append(html);
+                        html = '<li>用户卡号：' + lctn.ICCode + '</li>';
+                        $disp.append(html);
+                        html = '<li>轴距：' + lctn.WheelBase + '</li>';
+                        $disp.append(html);
+                        html = '<li>车辆外形：' + lctn.CarSize + '</li>';
+                        $disp.append(html);
+                        html = '<li>车牌：' + lctn.PlateNum + '</li>';
+                        $disp.append(html);
+                        html = '<li>入库时间：<br/>' + lctn.InDate + '</li>';
+                        $disp.append(html);
+
+                    }
+
+                }
+            });
+
+            //添加客户端调用
+            $("#svcRun").click(function () {
+                checkLogin("run");
+            });
+
+            $("#svcStop").click(function () {
+                BootstrapDialog.show({
+                    title: "友情提示",
+                    message: "<p class='text-danger text-center'>你确定要关闭后台服务？ <span class='text-info'>关闭后将无法对设备进行自动控制！</span></p>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            checkLogin("stop");
+                            self.close();
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+            });
+
+            //检查客户端
+            function checkLogin(name) {
+                $.ajax({
+                    url: "/Account/Validate",
+                    type: "GET",
+                    cache: false,
+                    dataType: "text",
+                    success: function (data, state) {
+
+                        if (data == "true") {
+                            if (name == "run") {
+                                hubs.server.openServe();
+                            }
+                            else if (name == "stop") {
+                                hubs.server.closeServe();
+                            }
+                        }
+                        else {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: "<p class='text-info text-center'>请登陆后，再执行操作！</p>",
+                                buttons: [{
+                                    label: "关闭",
+                                    action: function (self) {
+                                        self.close();
+                                    }
+                                }]
+                            });
+                        }
+                    },
+                    error: function (er) {
+                        console.log(er);
+                    }
+                });
+            }
+
+            //start the connection
+            $.connection.hub.start()
+                            .then(function () {
+                                return hubs.server.getStatus();
+                            })
+                            .done(function (status) {
+                                if (status == "Close") {
+                                    hubs.client.serveClosed();
+                                } else if (status == "Open") {
+                                    hubs.client.serveOpened();
+                                }
+                            });
+           
+            //signalr 结束
+
 
         });
     </script>

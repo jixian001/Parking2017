@@ -8,14 +8,32 @@ using Microsoft.AspNet.SignalR.Hubs;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
+using System.Threading.Tasks;
 
 namespace Parking.Web.Controllers
 {
     public class HomeController : Controller
-    {       
+    {        
         public HomeController()
         {
+            //订阅事件
+            MainCallback.FileWatch.LctnWatchEvent += FileWatch_LctnWatchEvent;
+        }
 
+        /*
+        * signalr 推送调用
+        *  Task.Factory.StartNew(()=> {
+        *       var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+        *       hubs.Clients.All.getMessage(message);
+        *   });
+        */
+
+        private void FileWatch_LctnWatchEvent(Location loc)
+        {
+            Task.Factory.StartNew(()=> {
+                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+                hubs.Clients.All.feedbackLocInfo(loc);
+            });
         }
 
         public ActionResult Index()
@@ -77,20 +95,49 @@ namespace Parking.Web.Controllers
                 data=lctn
             };
             return Json(ret, JsonRequestBehavior.AllowGet);
+        }        
+        
+        [HttpPost]
+        public JsonResult ManualDisLocation(string info,bool isdis)
+        {
+            Response _resp = new Response();
+            string[] msg = info.Split('_');
+            if (msg.Length < 4)
+            {
+                _resp.Code = 0;
+                _resp.Message = "数据长度不正确," + info;
+                return Json(_resp);
+            }
+            int wh = Convert.ToInt16(msg[0]);
+            string address = msg[1] + msg[2].PadLeft(2, '0') + msg[3].PadLeft(2, '0');
+            _resp = new CWLocation().DisableLocation(wh, address, isdis);
+            return Json(_resp);
         }
 
+        /// <summary>
+        /// 初始化界面用
+        /// </summary>
+        /// <returns></returns>
+        public JsonResult GetLocationList()
+        {
+            List<Location> locList = new CWLocation().FindLocationList(lc => true);
+            if (locList == null || locList.Count == 0)
+            {
+                var resp = new {
+                    code=0,
+                    data=""
+                };
+                return Json(resp, JsonRequestBehavior.AllowGet);
+            }
+            var nback = new
+            {
+                code = 1,
+                data = locList
+            };
+            return Json(nback,JsonRequestBehavior.AllowGet);
+        }
 
-
-
-        /*
-         * signalr 推送调用
-         *  Task.Factory.StartNew(()=> {
-         *       var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-         *       hubs.Clients.All.getMessage(message);
-         *   });
-         */
-
-
+        
 
     }
 }

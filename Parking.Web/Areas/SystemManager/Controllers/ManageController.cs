@@ -238,15 +238,8 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("当前车位-" + txtDisLoc + "无效，不允许操作！");
             }
-            int nback = new CWLocation().DisableLocation(loc, isDis);
-            if (nback == 1)
-            {
-                return Content("操作成功！");
-            }
-            else
-            {
-                return Content("操作引发异常！");
-            }
+            Response resp = new CWLocation().DisableLocation(wh,txtDisLoc, isDis);
+            return Content(resp.Message);
         }
 
         /// <summary>

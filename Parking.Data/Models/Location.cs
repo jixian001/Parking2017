@@ -59,23 +59,23 @@ namespace Parking.Data
     public enum EnmLocationType
     {
         Init = 0,  //初始
-        Normal,    //正常
-        Hall,      //车厅
-        Disable,   //禁用
-        ETV,       //ETV
+        Normal,    //正常 1
+        Hall,      //车厅 2
+        Disable,   //禁用 3
+        ETV,       //ETV 4
         Invalid,   //无效车位-5
-        Temporary,  //缓存车位
-        TempDisable //缓存车位，禁用时用
+        Temporary,  //缓存车位 6
+        TempDisable //缓存车位，禁用时用 7
     }
 
     public enum EnmLocationStatus
     {
         Init = 0,  //初始
-        Space,     //空闲
+        Space,     //空闲 1
         Occupy,    //占用-2
         Entering,  //正在入库-3
         Outing,    //正在出库-4
-        TempGet,   //临时取物车位
+        TempGet,   //临时取物车位 
         Idleness   //无效车位-6
     }
 }

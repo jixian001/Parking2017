@@ -60,10 +60,10 @@ div.seatCharts-seat.hall {
 	background-color: #ccd232;
 }
 div.seatCharts-seat.disable {
-	background-color: #ccc;
+	background-color: #5e4f4f;
 }
 div.seatCharts-seat.invalid {
-	background-color: #808080;
+	background-color: #ccc;
 }
 div.seatCharts-seat.temp {
 	background-color: #a6c8f6;
@@ -79,4 +79,9 @@ div.seatCharts-seat.entering {
 }
 div.seatCharts-seat.outing {
 	background-color: #e25959;
+}
+
+.checkout-button {	
+	margin: 5px;
+	font-size: 15px;
 }
