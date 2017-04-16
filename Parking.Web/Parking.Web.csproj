@@ -231,13 +231,13 @@
     <Content Include="Content\jquery-seat-charts\jquery.seat-charts.js" />
     <Content Include="Content\jquery-seat-charts\jquery.seat-charts.min.js" />
     <Content Include="Content\jquery-seat-charts\Style.css" />
-    <Content Include="Content\Picture\first.png" />
-    <Content Include="Content\Picture\second.png" />
-    <Content Include="Content\Picture\three.png" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Image\first.jpg" />
+    <Content Include="Image\second.jpg" />
+    <Content Include="Image\three.jpg" />
     <Content Include="Scripts\bootstrap-datetimepicker.js" />
     <Content Include="Scripts\bootstrap-datetimepicker.min.js" />
     <Content Include="Scripts\bootstrap-dialog.js" />
@@ -282,6 +282,7 @@
     <Content Include="Content\bootstrap-select\js\bootstrap-select.js.map" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Add.cshtml" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Edit.cshtml" />
+    <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\bootstrap-table-zh-CN.js" />
@@ -357,6 +358,9 @@
       <Project>{70e3e367-f88a-4c6a-999e-5757bf4e6a9f}</Project>
       <Name>Parking.Data</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

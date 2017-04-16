@@ -11,13 +11,13 @@
         </ol>
         <div class="carousel-inner">
             <div class="item active" align="center">
-                <img src="~/Content/Picture/first.png" alt="First slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/first.jpg")" alt="First slide" style="height:200px" />
             </div>
             <div class="item" align="center">
-                <img src="~/Content/Picture/second.png" alt="Second slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/second.jpg")" alt="Second slide" style="height:200px" />
             </div>
             <div class="item" align="center">
-                <img src="~/Content/Picture/three.png" alt="Three slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/three.jpg")" alt="Three slide" style="height:200px" />
             </div>
         </div>
         <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
@@ -422,7 +422,7 @@
                 var wd = $("#seat").height();
                 $("#details").css("height", wd);
 
-            }, 800);
+            }, 600);
 
             function setlocationcolor(type, status)
             {
