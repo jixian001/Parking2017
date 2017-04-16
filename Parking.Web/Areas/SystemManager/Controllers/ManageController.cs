@@ -226,18 +226,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("库区为空，传输数据丢失！");
             }
-            int wh = Convert.ToInt32(txtDisWh);
-            Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == wh && lc.Address == txtDisLoc);
-            if (loc == null)
-            {
-                return Content("找不到车位-" + txtDisLoc);
-            }
-            if (loc.Type == EnmLocationType.Invalid ||
-                loc.Type == EnmLocationType.Hall ||
-                loc.Type == EnmLocationType.ETV)
-            {
-                return Content("当前车位-" + txtDisLoc + "无效，不允许操作！");
-            }
+            int wh = Convert.ToInt32(txtDisWh);           
             Response resp = new CWLocation().DisableLocation(wh,txtDisLoc, isDis);
             return Content(resp.Message);
         }
@@ -282,10 +271,14 @@ namespace Parking.Web.Areas.SystemManager.Controllers
                 return Content("入库轴距为空，操作失败！");
             }
             string carsize = Request.Form["txtInSize"];
+            string plate = Request.Form["txtInPlate"];
+
+            loc.Status = EnmLocationStatus.Occupy;
             loc.ICCode = iccd;
             loc.WheelBase = Convert.ToInt32(distance);
             loc.CarSize = carsize;
-            loc.InDate = dt;
+            loc.PlateNum = plate;
+            loc.InDate = dt;           
             Response resp = new CWLocation().UpdateLocation(loc);
             return Content(resp.Message);
         }
@@ -312,6 +305,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("找不到车位-" + Addrs);
             }
+            loc.Status = EnmLocationStatus.Space;
             loc.ICCode = "";
             loc.WheelBase = 0;
             loc.CarSize = "";

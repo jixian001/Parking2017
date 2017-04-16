@@ -32,7 +32,7 @@
     <div class="seat wrapper">
         <div class="col-md-10" id="seat">
             @* 平面移动库 *@
-            <div id="PPY">
+            <div id="PPY" style="display:none">
                 @* 1号库 *@
                 <input type="hidden" value="1" id="wh1" name="wh1" />
                 <div id="L3-map">
@@ -68,20 +68,22 @@
                    <button class="checkout-button" id="btndisable">禁用</button>                  
                </div>
                <br />
-
-               <div class="text-info">
-                   <a data-toggle="collapse" href="#one">颜色定义</a>
+               <div style="border:1px solid #808080">
+                   <div class="text-info text-center">
+                       <a data-toggle="collapse" href="#one">车位颜色定义</a>
+                   </div>
+                   <div id="one" class="panel-collapse collapse text-center">                      
+                           <div class="lbl lblhall">车厅</div>
+                           <div class="lbl lbldisable">禁用</div>
+                           <div class="lbl lblinvalid">无效</div>
+                           <div class="lbl lbltemp">缓存</div>
+                           <div class="lbl lbldisabletemp">缓禁</div>
+                           <div class="lbl lbloccupy">占用</div>
+                           <div class="lbl lblentering">入库</div>
+                           <div class="lbl lblouting">出库</div>
+                           <div class="lbl lblspace">空闲</div>                      
+                   </div>
                </div>
-               <div id="one" class="panel-collapse collapse text-center">
-                   <div class="lbl lblhall">车厅</div>
-                   <div class="lbl lbldisable">禁用</div>
-                   <div class="lbl lblinvalid">无效</div>
-                   <div class="lbl lbltemp">缓存</div>
-                   <div class="lbl lbldisabletemp">缓禁</div>
-                   <div class="lbl lbloccupy">占用</div>
-                   <div class="lbl lblentering">入库</div>
-                   <div class="lbl lblouting">出库</div>
-               </div> 
            </div>        
         </div>
     </div>
@@ -289,7 +291,7 @@
                             $disp.append(html);
                             html = '<li>车牌：' + obj.PlateNum + '</li>';
                             $disp.append(html);
-                            html = '<li>入库时间：<br/>' + obj.InDate + '</li>';
+                            html = '<li>入库时间：<br/>' +formatDate(obj.InDate) + '</li>';
                             $disp.append(html);
 
                             $btn.css("display", "block");
@@ -376,9 +378,6 @@
                     }
                 });
 
-                var wd = $("#seat").height();
-                $("#details").css("height", wd);
-
                 //初始化车位数据
                 $.ajax({
                     type: "GET",
@@ -418,6 +417,10 @@
                     }
                 });
 
+                $("#PPY").css("display","block");
+
+                var wd = $("#seat").height();
+                $("#details").css("height", wd);
 
             }, 800);
 
@@ -513,6 +516,30 @@
                     }
                 });
             }
+            //Date(1391141532000)的字符串转换成javascript中的日期对象
+            function formatDate(dt)
+            {
+                var milliseconds = parseInt(dt.replace(/\D/igm, ""));
+                var newdate = new Date(milliseconds).Format("yyyy-MM-dd hh:mm:ss");
+                return newdate.toLocaleString();
+            }
+
+            Date.prototype.Format = function (fmt) { //author: meizz 
+                var o = {
+                    "M+": this.getMonth() + 1, //月份 
+                    "d+": this.getDate(), //日 
+                    "h+": this.getHours(), //小时 
+                    "m+": this.getMinutes(), //分 
+                    "s+": this.getSeconds(), //秒 
+                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+                    "S": this.getMilliseconds() //毫秒 
+                };
+                if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+                for (var k in o)
+                    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                return fmt;
+            }
+
 
             /*
              *signalr 引入
