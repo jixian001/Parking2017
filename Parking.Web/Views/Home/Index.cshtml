@@ -336,8 +336,10 @@
                                 html += '</div><div class="row">';
                             }
                             html += '<div class="col-md-3"><div class="dev">';
-                            var info = '<table class="form" id="' + obj.DeviceCode + '">';
+                            var info = '<table class="form" id="' +obj.Warehouse+'-'+ obj.DeviceCode + '">';
 
+                            info += '<tr><th class="formTitle">' + "库区" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="wh" value="' + obj.Warehouse + '" disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "设备" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="code" value="' + obj.DeviceCode + '" disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "地址" + '</th>';

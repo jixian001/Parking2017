@@ -73,8 +73,8 @@ namespace Parking.Data
     public enum EnmICCardStatus
     {
         Init = 0,       
-        Lost,     //挂失       
-        Normal,   //正常      
-        Disposed  //注销
+        Lost,     //挂失-1       
+        Normal,   //正常-2      
+        Disposed  //注销-3
     }
 }
