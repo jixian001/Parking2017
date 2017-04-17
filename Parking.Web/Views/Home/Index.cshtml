@@ -336,7 +336,8 @@
                                 html += '</div><div class="row">';
                             }
                             html += '<div class="col-md-3"><div class="dev">';
-                            var info = '<table class="form" id="' +obj.Warehouse+'-'+ obj.DeviceCode + '">';
+                            var tags = obj.Warehouse + '-' + obj.DeviceCode;
+                            var info = '<table class="form" id="' +tags + '">';
 
                             info += '<tr><th class="formTitle">' + "库区" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="wh" value="' + obj.Warehouse + '" disabled/></td></tr>';
@@ -354,9 +355,9 @@
                             info += '<td class="formValue"><input type="text" class="form-control" id="step" value="' + obj.RunStep + '"  disabled/></td></tr>';
                             if (obj.DeviceCode < 10) {
                                 info += '<tr><th class="formTitle">' + "装载步进" + '</th>';
-                                info += '<td class="formValue"><input type="text" class="form-control" id="loadstep" value="' + obj.InStep + '"  disabled/></td></tr>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="instep" value="' + obj.InStep + '"  disabled/></td></tr>';
                                 info += '<tr><th class="formTitle">' + "卸载步进" + '</th>';
-                                info += '<td class="formValue"><input type="text" class="form-control" id="unloadstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
+                                info += '<td class="formValue"><input type="text" class="form-control" id="outstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
                             } else {
                                 info += '<tr><th class="formTitle">' + "存车步进" + '</th>';
                                 info += '<td class="formValue"><input type="text" class="form-control" id="instep" value="' + obj.InStep + '"  disabled/></td></tr>';
@@ -563,7 +564,8 @@
                     $("#svcStop").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
                 },
 
-                //Define a function to get 'location updated' events               
+                //Define a function to get 'location updated' events
+                //车位信息推送
                 feedbackLocInfo: function (lctn) {                    
                     
                     var whs = lctn.Warehouse;
@@ -609,10 +611,33 @@
                         $disp.append(html);
                         html = '<li>入库时间：<br/>' + lctn.InDate + '</li>';
                         $disp.append(html);
-
                     }
+                    console.log("location addrs-"+adrs+" callback");
+                },
+
+                //设备信息推送
+                feedbackDevice: function (smg) {
+                   
+                    //先查询DIV是否已加载完成
+                    var wh = smg.Warehouse;
+                    var code = smg.DeviceCode;
+                    var name = wh + '-' + code;                   
+                    var obj = $("table[id='" + name + "']");
+                    if (obj.length == 0) {
+                        console.log("feedback deviec info ,but device region no exist");
+                        return;
+                    }
+                    console.log(name+" object exist");
+                    $("table[id='" + name + "'] input[id='address']").val(smg.Address);                   
+                    $("table[id='" + name + "'] input[id='mode']").val(smg.Mode);
+                    $("table[id='" + name + "'] input[id='able']").val(smg.IsAble);
+                    $("table[id='" + name + "'] input[id='accept']").val(smg.IsAvailabe);
+                    $("table[id='" + name + "'] input[id='step']").val(smg.RunStep);
+                    $("table[id='" + name + "'] input[id='instep']").val(smg.InStep);
+                    $("table[id='" + name + "'] input[id='outstep']").val(smg.OutStep);
 
                 }
+
             });
 
             //添加客户端调用

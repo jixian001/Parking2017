@@ -11,7 +11,7 @@ namespace Parking.Data
 {
     public class Repository<TEntity> where TEntity:class
     {
-        public DbContext _dbContext { get; set; }
+        public DbContext _dbContext { get; set; }        
 
         private Repository()
         {
@@ -178,7 +178,13 @@ namespace Parking.Data
 
         public int Update(TEntity entity)
         {
-            return Update(entity, true);
+            int nback= Update(entity, true);
+            if (nback > 0)
+            {
+                //事件引发，回推数据
+                MainCallback<TEntity>.Instance().OnChange(entity);
+            }
+            return nback;
         }
         #endregion
 

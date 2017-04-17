@@ -17,7 +17,9 @@ namespace Parking.Web.Controllers
         public HomeController()
         {
             //订阅事件
-            MainCallback.FileWatch.LctnWatchEvent += FileWatch_LctnWatchEvent;
+            MainCallback<Location>.Instance().WatchEvent+= FileWatch_LctnWatchEvent;
+
+            MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
         }
 
         /*
@@ -28,6 +30,10 @@ namespace Parking.Web.Controllers
         *   });
         */
 
+        /// <summary>
+        /// 推送车位信息
+        /// </summary>
+        /// <param name="loc"></param>
         private void FileWatch_LctnWatchEvent(Location loc)
         {
             Task.Factory.StartNew(()=> {
@@ -36,6 +42,17 @@ namespace Parking.Web.Controllers
             });
         }
 
+        /// <summary>
+        /// 推送设备信息
+        /// </summary>
+        /// <param name="entity"></param>
+        private void FileWatch_DeviceWatchEvent(Device entity)
+        {
+            Task.Factory.StartNew(() => {
+                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+                hubs.Clients.All.feedbackDevice(entity);
+            });
+        }
         public ActionResult Index()
         {
             return View();

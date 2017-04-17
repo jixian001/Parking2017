@@ -46,7 +46,6 @@
     <Compile Include="CWLocation.cs" />
     <Compile Include="CWRecord.cs" />
     <Compile Include="CWTaskTransfer.cs" />
-    <Compile Include="MainCallback.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schedule\AllocateLoc\AllocateLocation.cs" />
     <Compile Include="Schedule\AllocateTV\AllocateTV.cs" />

@@ -81,12 +81,7 @@ namespace Parking.Core
             {
                 loc.Type = EnmLocationType.Normal;
             }
-            _resp=  manager.Update(loc);
-
-            if (_resp.Code == 1)
-            {
-                MainCallback.FileWatch.OnLocationChange(loc);
-            }
+            _resp=  manager.Update(loc);            
             return _resp;
         }
 

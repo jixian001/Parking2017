@@ -61,6 +61,7 @@
     <Compile Include="BaseManager\OperateLogManager.cs" />
     <Compile Include="BaseManager\TelegramLogManager.cs" />
     <Compile Include="BaseManager\WorkTaskManager.cs" />
+    <Compile Include="MainCallback.cs" />
     <Compile Include="Models\Alarm.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Device.cs" />
