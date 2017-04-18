@@ -54,21 +54,34 @@ namespace Parking.Core
         }
 
         /// <summary>
-        /// 外形检测上报处理
+        /// 外形检测上报处理(1001,101)
         /// </summary>
         /// <param name="tsk"></param>
         /// <param name="distance"></param>
         /// <param name="carSize"></param>
-        public void DealICheckCar(ImplementTask tsk,int distance,string carSize)
+        public void DealICheckCar(ImplementTask tsk,int distance,string carSize,int weight)
         {
             if (tsk.Type == EnmTaskType.TempGet)
             {
-
+                //注意要刷卡后，将源地址车位与目的地址车位互换下
+                Location tolct = new CWLocation().FindLocation(lc => lc.Warehouse == tsk.Warehouse && lc.Address == tsk.ToLctAddress);
+                if (tolct.Status != EnmLocationStatus.TempGet)
+                {
+                    //取物车位不可用，则临时分配
+                    motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize,weight);
+                }
+                else
+                {
+                    motsk.ITempDealCheckCar(tsk, tolct, distance, carSize,weight);
+                }                
             }
             else
             {
-
+                motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize,weight);
             }
         }
+
+
+
     }
 }

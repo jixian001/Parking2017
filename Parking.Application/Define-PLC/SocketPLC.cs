@@ -45,7 +45,7 @@ namespace Parking.Application
             Byte = 1,
             Word = 2,
             DWord = 3,
-            Int16 = 4,
+            Int = 4,
             DInt,
             Real,
             String,
@@ -94,7 +94,8 @@ namespace Parking.Application
                 return isConnect;
             }
             set
-            {;
+            {
+                ;
             }
         }
 
@@ -202,7 +203,7 @@ namespace Parking.Application
         /// </summary>
         /// <param name="itemName"></param>
         /// <returns>DataType dataType, int DB, int startByteAdr, int count</returns>
-        public object ReadData(string itemName, VarType varType)
+        public object ReadData(string itemName, string varType)
         {
             DataType dataType = DataType.Init;
             int DB = 0;
@@ -256,7 +257,10 @@ namespace Parking.Application
             }
             count = Convert.ToInt32(lstItems[2]);
 
-            return Read(dataType, DB, startByteAddrs,varType, count);
+            VarType vtype = VarType.Byte;
+            Enum.TryParse<VarType>(varType, out vtype);
+
+            return Read(dataType, DB, startByteAddrs,vtype, count);
         }
 
         /// <summary>
@@ -443,7 +447,7 @@ namespace Parking.Application
                         return rdBytes;
                     }
                    
-                case VarType.Int16:
+                case VarType.Int:
                     cntBytes = varCount * 2;
                     rdBytes = readBytesValue(dataType, DB, startByteAddr, cntBytes);
                     if (rdBytes == null)

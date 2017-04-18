@@ -21,10 +21,13 @@
         S7:[S7 connection_1]DB1002,INT0,50;
         S7:[S7 connection_1]DB1002,INT100,1;
         S7:[S7 connection_1]DB1003,B0,54;
-        S7:[S7 connection_1]DB1023,B0,54
+        S7:[S7 connection_1]DB1005,B0,54;
+        S7:[S7 connection_1]DB1007,B0,54;
+        S7:[S7 connection_1]DB1023,B0,54;
+        S7:[S7 connection_1]DB1025,B0,54;
       </ConnectItem>
       <!--库区车位边列层，以‘-’分开-->
-      <LocInfo>2-40-3</LocInfo>
+      <LocInfo>2-20-3</LocInfo>
       <!--车厅-->
       <halls count="2">
         <hall>

@@ -105,8 +105,8 @@ namespace Parking.Data
         TMUORWaitforUnload,
 
         //TV
-        TWaitforLoad,//车厅开始下降,等待执行装载(等待下发13-1)
-        TWaitforUnload,  // 装载完成等待卸载
+        TWaitforLoad,//等待执行装载(等待下发13-1)
+        TWaitforUnload,  // 等待卸载
         TWaitforMove,// 等待移动
 
         LoadFinishing,//装载完成

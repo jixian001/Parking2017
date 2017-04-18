@@ -14,7 +14,7 @@ namespace Parking.Application
 
         bool IsConnected { get; set; }
 
-        object ReadData(string itemName, SocketPlc.VarType varType);
+        object ReadData(string itemName, string varType);
 
         int WriteData(string itemName,object value);
     }

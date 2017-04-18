@@ -35,6 +35,9 @@ namespace Parking.Core
             {
                 soundsList.Add(sfile);
             }
+            //做下记录吧
+            Log log = LogFactory.GetLogger("CWTask AddNofication");
+            log.Info(DateTime.Now.ToString() + "  warehouse-" + warehouse + "   hallID-" + hallID + " make sound, file name-" + soundFile);
         }
 
         /// <summary>
@@ -158,7 +161,7 @@ namespace Parking.Core
         /// <param name="hallID"></param>
         /// <param name="distance"></param>
         /// <param name="carSize"></param>
-        public void IDealCheckedCar(ImplementTask htsk, int hallID,int distance,string checkCode)
+        public void IDealCheckedCar(ImplementTask htsk, int hallID,int distance,string checkCode,int weight)
         {
             htsk.CarSize = checkCode;
             htsk.Distance = distance;
@@ -171,7 +174,6 @@ namespace Parking.Core
                 htsk.Status =EnmTaskStatus.ISecondSwipedWaitforCarLeave;
                 //更新任务信息
                 manager.Update(htsk);
-                //
                 this.AddNofication(htsk.Warehouse,htsk.DeviceCode, "60.wav");
                 return;
             }
@@ -187,11 +189,130 @@ namespace Parking.Core
                 return;
             }
             Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
-            int smgID;
-            Location lct = new AllocateLocation().IAllocateLocation(checkCode, iccd,hall, out smgID);
+            int tvID=0;
+            Location lct = new AllocateLocation().IAllocateLocation(checkCode, iccd, hall, out tvID);
+            if (lct == null)
+            {
+                htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
+                //更新任务信息
+                manager.Update(htsk);               
+                this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "62.wav");
+                return;
+            }
+            if (tvID == 0)
+            {
+                htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;               
+                manager.Update(htsk);
+                this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "42.wav");
+                return;
+            }
+            //再判断下车位尺寸
+            if (string.Compare(lct.LocSize, checkCode) < 0)
+            {
+                htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
+                manager.Update(htsk);
+                this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "63.wav");
+                return;
+            }
+            //补充车位信息
+            lct.WheelBase = distance;
+            lct.CarSize = checkCode;
+            lct.InDate = DateTime.Now;
+            lct.Status = EnmLocationStatus.Entering;
+            lct.ICCode = iccd.UserCode;
+            Response resp = new CWLocation().UpdateLocation(lct);
+            Log log = LogFactory.GetLogger("CWTask IDealCheckedCar");
+            if (resp.Code == 1)
+            {               
+                log.Info(DateTime.Now.ToString()+" 更新车位-"+lct.Address+"数据，iccode-"+lct.ICCode+" status-"+lct.Status.ToString());
+            }
 
+            htsk.ToLctAddress = lct.Address;
+            htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
+            resp = manager.Update(htsk);
+            //添加TV的存车装载，将其加入队列中
+            WorkTask queue = new WorkTask() {
+                IsMaster=1,
+                Warehouse=lct.Warehouse,
+                DeviceCode=tvID,
+                MasterType=EnmTaskType.SaveCar,
+                TelegramType=13,
+                SubTelegramType=1,
+                FromLctAddress=hall.Address,
+                ToLctAddress=lct.Address,
+                ICCardCode=iccd.UserCode,
+                Distance=distance,
+                CarSize=checkCode,
+                CarWeight=weight
+            };
+            resp = manager_queue.Add(queue);
+            if (resp.Code == 1)
+            {
+                log.Info(DateTime.Now.ToString() + " 队列中添加TV装载作业，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
+            }
+        }
 
+        /// <summary>
+        /// 临时取物刷卡转存时，处理外形检测上报
+        /// </summary>
+        public void ITempDealCheckCar(ImplementTask htsk,Location lct, int distance,string carsize, int weight)
+        {
+            Log log = LogFactory.GetLogger("CWTask ITempDealCheckCar");
+            //平面移动的
+            Device smg = new CWDevice().Find(de=>de.Warehouse==lct.Warehouse&&de.Layer==lct.LocLayer);
+            if (smg == null)
+            {
+                this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "42.wav");
+                log.Error("系统故障，找不到TV");
+                return;
+            }
+            ICCard iccd = new CWICCard().Find(ic=>ic.UserCode==htsk.ICCardCode);
+            if (iccd == null)
+            {
+                log.Error("系统故障，找不到卡号-"+htsk.ICCardCode);
+                return;
+            }
+            //补充车位信息
+            lct.WheelBase = distance;
+            lct.CarSize = carsize;
+            lct.InDate = DateTime.Now;
+            lct.ICCode = iccd.UserCode;
+            lct.Status = EnmLocationStatus.Entering;           
+            Response resp = new CWLocation().UpdateLocation(lct);           
+            if (resp.Code == 1)
+            {
+                log.Info(DateTime.Now.ToString() + " 转存更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
+            }
 
+            htsk.CarSize = carsize;
+            htsk.Distance = distance;
+            htsk.SendDtime = DateTime.Now;
+            htsk.ToLctAddress = lct.Address;
+            htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
+            htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            resp = manager.Update(htsk);
+
+            //添加TV的存车装载，将其加入队列中
+            WorkTask queue = new WorkTask()
+            {
+                IsMaster = 1,
+                Warehouse = lct.Warehouse,
+                DeviceCode = smg.DeviceCode,
+                MasterType = EnmTaskType.SaveCar,
+                TelegramType = 13,
+                SubTelegramType = 1,
+                FromLctAddress = htsk.FromLctAddress,
+                ToLctAddress = lct.Address,
+                ICCardCode = iccd.UserCode,
+                Distance = distance,
+                CarSize = carsize,
+                CarWeight = weight
+            };
+            resp = manager_queue.Add(queue);
+            if (resp.Code == 1)
+            {
+                log.Info(DateTime.Now.ToString() + " 队列中添加TV装载作业，转存，车位-" + lct.Address + "，iccode-" + lct.ICCode);
+            }
 
         }
 

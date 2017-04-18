@@ -36,6 +36,12 @@ namespace Parking.Core
             return manager.Update(smg);
         }
 
+        public void UpdateSMGStatus(Device smg,int state)
+        {
+            smg.IsAble = state;
+            Update(smg);
+        }
+
         public Device Find(Expression<Func<Device, bool>> where)
         {
             return manager.Find(where);

@@ -12,8 +12,8 @@ namespace Parking.Application
     public class WorkFlow
     {
         private int warehouse;
-        private string ipAddrs;
-        private SocketPlc plcAccess;
+        private string ipAddrs;       
+        private IPLC plcAccess;
         private string[] s7_Connection_Items = null;
 
         private CWTask cwtask = new CWTask();
@@ -28,7 +28,8 @@ namespace Parking.Application
         {
             ipAddrs = ipaddrs;
             warehouse = wh;
-            plcAccess = new SocketPlc(ipAddrs);
+            //plcAccess = new SocketPlc(ipAddrs);
+            plcAccess = new S7NetPlus(ipaddrs);
 
             messageID = (short)(new Random()).Next(1, 4000);        
         }
@@ -39,12 +40,13 @@ namespace Parking.Application
             set { s7_Connection_Items = value; }
         }
 
-        public void ConnectPLC()
+        public bool ConnectPLC()
         {
             if (plcAccess != null)
             {
-                plcAccess.ConnectPLC();
+                return plcAccess.ConnectPLC();
             }
+            return false;
         }
 
         public void DisConnect()
@@ -354,7 +356,7 @@ namespace Parking.Application
                             }
                             if (data[2] == 1001 && data[4] == 101)
                             {
-
+                                new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealICheckCar(task, data[25], data[23].ToString(),data[26]);
                             }
                         }
                         #endregion
@@ -392,7 +394,8 @@ namespace Parking.Application
                     #region 处理开机故障报文
                     if (data[2] == 1074 && data[4] == 7)
                     {
-                        cwdevice.Update(smg);
+                        //更新设备为不可用
+                        cwdevice.UpdateSMGStatus(smg, 0);
                         this.sendData(this.packageMessage(74, 1, smg.DeviceCode, null));
                     }
                     #endregion
@@ -425,7 +428,7 @@ namespace Parking.Application
                 return;
             }
             string recvFlag = s7_Connection_Items[1];
-            object recvBuffFlag = plcAccess.ReadData(recvFlag, SocketPlc.VarType.Int16);
+            object recvBuffFlag = plcAccess.ReadData(recvFlag, (SocketPlc.VarType.Int).ToString());
             if (recvBuffFlag == null)
             {
                 return;
@@ -434,7 +437,7 @@ namespace Parking.Application
             if (Convert.ToInt16(recvBuffFlag) == 9999)
             {
                 string recvBuff = s7_Connection_Items[0];
-                object recvData = plcAccess.ReadData(recvBuff, SocketPlc.VarType.Int16);
+                object recvData = plcAccess.ReadData(recvBuff, (SocketPlc.VarType.Int).ToString());
                 if (recvBuff != null)
                 {
                     //清空标志字                    
@@ -469,7 +472,7 @@ namespace Parking.Application
                 }
                 string sendbuff = s7_Connection_Items[3];
                 //先读发送缓冲区标志字
-                object sendFlag = plcAccess.ReadData(sendbuff, SocketPlc.VarType.Int16);
+                object sendFlag = plcAccess.ReadData(sendbuff, (SocketPlc.VarType.Int).ToString());
                 if (sendFlag != null)
                 {
                     //可以发送报文
@@ -577,6 +580,10 @@ namespace Parking.Application
             return messageID;
         }      
 
+        /// <summary>
+        /// 判断连接是否正常，不正常，进行重连
+        /// </summary>
+        /// <returns></returns>
         private bool JudgeSocketAvailabe()
         {
             Log log = LogFactory.GetLogger("WorkFlow.JudgeSocketAvailabe");
