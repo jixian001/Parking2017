@@ -198,7 +198,7 @@ namespace Parking.Application
                                 }
                                 else
                                 {
-                                    log.Info("取物时，车厅不可接收新指令。iccard-" + task.ICCardCode + "  hallID-" + smg.DeviceCode + " address-" + task.FromLctAddress);
+                                    log.Info("取物时，车厅不可接收新指令. iccard-" + task.ICCardCode + "  hallID-" + smg.DeviceCode + " address-" + task.FromLctAddress);
                                 }
                             }
                             else if (task.Status == EnmTaskStatus.TempEVDownFinishing)
@@ -209,7 +209,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
                                 }
                             }
-                            else if (task.Status == EnmTaskStatus.TempWaitforEVUp)
+                            else if (task.Status == EnmTaskStatus.TempOCarOutWaitforDrive)
                             {
                                 bool nback = this.sendData(this.packageMessage(2, 2, smg.DeviceCode, task));
                                 if (nback)
@@ -303,7 +303,7 @@ namespace Parking.Application
                                 }
                                 else
                                 {
-                                    log.Info("移动时，TV不可接收新指令。");
+                                    log.Info("移动时，TV不可接收新指令.作业类型-"+task.Type);
                                 }
                             }
                             else if (task.Status == EnmTaskStatus.MoveFinishing)
@@ -382,7 +382,7 @@ namespace Parking.Application
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IEVDownFinishing);
                             }
                         }
-                        else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforEVDown)
+                        else if (task.Status == EnmTaskStatus.IEVDownFinishing)
                         {
                             if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
                             {
@@ -396,7 +396,7 @@ namespace Parking.Application
                                  task.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize ||
                                  task.Status == EnmTaskStatus.ICheckCarFail)
                         {
-                            if (data[2] == 1003 && data[3] == 4)
+                            if (data[2] == 1001 && data[3] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
                             }
@@ -437,6 +437,32 @@ namespace Parking.Application
                                 }
                             }
                         }
+                        else if (task.Status == EnmTaskStatus.OWaitforEVUp)
+                        {
+                            if (data[2] == 1003 && data[3] == 1)
+                            {
+                                cwtask.ODealEVUp(task);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.OCarOutWaitforDriveaway)
+                        {
+                            if (data[2] == 3 && data[3] == 54 && data[4] == 9999)
+                            {
+                                cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                            }
+                            if(data[2] == 1003 && data[3] == 4)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.OHallFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.OHallFinishing)
+                        {
+                            if (data[2] == 3 && data[3] == 55 && data[4] == 9999)
+                            {
+                                //完成作业，释放设备
+                                cwtask.DealCompleteTask(task);
+                            }
+                        }
                         #endregion
                         #region 取物
                         else if (task.Status == EnmTaskStatus.TempWaitforEVDown)
@@ -461,6 +487,32 @@ namespace Parking.Application
                                 {
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.TempWaitforEVUp)
+                        {
+                            if(data[2] == 1002 && data[3] == 1)
+                            {
+                                cwtask.ODealEVUp(task);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.TempOCarOutWaitforDrive)
+                        {
+                            if (data[2] == 2 && data[3] == 2 && data[4] == 9999)
+                            {
+                                cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                            }
+                            if (data[2] == 1002 && data[3] == 4)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.TempHallFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.TempHallFinishing)
+                        {
+                            if (data[2] == 2 && data[3] == 55 && data[4] == 9999)
+                            {
+                                //完成作业，释放设备
+                                cwtask.DealCompleteTask(task);
                             }
                         }
                         #endregion

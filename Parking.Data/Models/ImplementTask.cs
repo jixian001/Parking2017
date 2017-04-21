@@ -86,15 +86,16 @@ namespace Parking.Data
         OWaitforEVDown,   //出库开始，升降机等待下降(等待下发3-1)
         OEVDownFinishing,//升降机下降完成（取）
         OEVDownWaitforTVLoad,//升降机下降等待装载（3，54，9999）
-        OWaitforEVUp,//出车卸载完成，等待升降机上升
-        OCarOutWaitforDriveaway,// 车已取出，等待用户开车(等待下发2-1)
+        OWaitforEVUp,//出车卸载完成，等待升降机上升(1003,1)
+        OCarOutWaitforDriveaway,// 车已取出，等待用户开车(等待下发3-2)
         OHallFinishing,  //确认车辆离开（3，55）
 
         //取物，车厅
         TempWaitforEVDown,  //暂时取车
         TempEVDownFinishing,  //升降机下降完成
         TempEVDownWaitforTVLoad,//升降机下降等待装载（3，54，9999）
-        TempWaitforEVUp,//出车卸载完成，等待升降机上升(1002,4)       
+        TempWaitforEVUp,//出车卸载完成，等待升降机上升(1002,1)  
+        TempOCarOutWaitforDrive,     // 车已取出，等待用户开车(下发2-2)
         TempHallFinishing,  //确认车辆离开（2，55）
         
         Finished,   //作业完成
