@@ -22,7 +22,8 @@ namespace Parking.Data
         public int DeviceCode { get; set; }
         public EnmTaskType MasterType { get; set; }
         public int TelegramType { get; set; }
-        public int SubTelegramType { get; set; }       
+        public int SubTelegramType { get; set; }  
+        public int HallCode { get; set; }             
         [StringLength(10)]
         public string FromLctAddress { get; set; }
         [StringLength(10)]

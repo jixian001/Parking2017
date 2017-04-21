@@ -18,7 +18,8 @@ namespace Parking.Auxiliary
         //}
         public static Log GetLogger(Type type)
         {
-            return new Log(LogManager.GetLogger(type));
+            Log log = new Log(LogManager.GetLogger(type));
+            return log;
         }
         public static Log GetLogger(string str)
         {

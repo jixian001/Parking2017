@@ -10,12 +10,6 @@ namespace Parking.Data
 {
     public class CurrentTaskManager:BaseManager<ImplementTask>
     {
-       public List<ImplementTask> GetCurrentTaskList()
-        {
-            IQueryable<ImplementTask> itaskLst= _repository.FindList(tsk => tsk.IsComplete == 0);
-            return itaskLst.ToList();
-        }
-
         public ImplementTask Find(Expression<Func<ImplementTask,bool>> where)
         {
             return _repository.Find(where);

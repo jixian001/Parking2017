@@ -98,7 +98,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         [HttpPost]
         public ActionResult CompleteTask(int tid)
         {
-            Response res = new CWTask().CompleteTask(tid);
+            Response res = new CWTask().ManualCompleteTask(tid);
             return Content(res.Message);
         }
 
@@ -117,7 +117,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             int count = 0;
             foreach (int id in ids)
             {
-                Response resp = cwtask.CompleteTask(id);
+                Response resp = cwtask.ManualCompleteTask(id);
                 if (resp.Code == 1)
                 {
                     count++;
@@ -134,7 +134,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         [HttpPost]
         public ActionResult ResetTask(int tid)
         {
-            Response res = new CWTask().ResetTask(tid);
+            Response res = new CWTask().ManualResetTask(tid);
             return Content(res.Message);
         }
 
@@ -153,7 +153,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             int count = 0;
             foreach (int id in ids)
             {
-                Response resp = cwtask.ResetTask(id);
+                Response resp = cwtask.ManualResetTask(id);
                 if (resp.Code == 1)
                 {
                     count++;

@@ -34,7 +34,16 @@ namespace Parking.Data
         public int RunStep { get; set; }
         public int InStep { get; set; }
         public int OutStep { get; set; }
+        /// <summary>
+        /// 用于存放当前正在执行的作业
+        /// </summary>
         public int TaskID { get; set; }
+        /// <summary>
+        /// 即将要执行的作业ID，也在作业也在执行队列中
+        /// 目的：多TV时，用于装载完成后，如果执行避让作业，
+        ///       则将当前作业ID放至这个字段，TaskID存放避让作业ID
+        /// </summary>
+        public int SoonTaskID { get; set; }
     }
     #region 枚举类型
     public enum EnmSMGType

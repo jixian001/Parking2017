@@ -87,9 +87,14 @@ namespace Parking.Core
             return null;
         }
 
-        public List<ImplementTask> GetExecuteTasks()
+        /// <summary>
+        /// 获取
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <returns></returns>
+        public List<ImplementTask> GetExecuteTasks(int warehouse)
         {
-            return manager.GetCurrentTaskList();
+            return manager.FindList(tsk => tsk.Warehouse == warehouse && tsk.IsComplete == 0);
         }       
 
         /// <summary>
@@ -100,6 +105,21 @@ namespace Parking.Core
         public void UpdateSendStatusDetail(ImplementTask task,EnmTaskStatusDetail detail)
         {
             task.SendStatusDetail = detail;
+            task.SendDtime = DateTime.Now;
+            manager.Update(task);
+        }
+
+        /// <summary>
+        /// 更新作业状态
+        /// </summary>
+        /// <param name="task"></param>
+        /// <param name="status"></param>
+        public void DealUpdateTaskStatus(ImplementTask task, EnmTaskStatus status)
+        {
+            task.Status = status;
+            task.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            task.SendDtime = DateTime.Now;
+            manager.Update(task);
         }
 
         /// <summary>
@@ -113,14 +133,14 @@ namespace Parking.Core
         }
 
         /// <summary>
-        /// 依设备查找任务
+        /// 获取正在执行的作业
         /// </summary>
         /// <param name="smg"></param>
         /// <param name="warehouse"></param>
         /// <returns></returns>
-        public ImplementTask GetTaskBySmgID(int smg,int warehouse)
+        public ImplementTask GetImplementTaskBySmgID(int smg,int warehouse)
         {
-            return manager.Find(tsk=>tsk.DeviceCode==smg&&tsk.Warehouse==warehouse);
+            return manager.Find(tsk => tsk.DeviceCode == smg && tsk.Warehouse == warehouse && tsk.IsComplete == 0);
         }
 
         /// <summary>
@@ -330,8 +350,18 @@ namespace Parking.Core
             return page;
         }
 
-        public Response CompleteTask(int tid)
+        /// <summary>
+        /// 手动完成作业
+        /// </summary>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        public Response ManualCompleteTask(int tid)
         {
+            //车位信息完善
+
+            //设备信息完善
+            
+
             manager.Delete(tid);
             Response _resp = new Response()
             {
@@ -341,8 +371,17 @@ namespace Parking.Core
             return _resp;
         }
 
-        public Response ResetTask(int tid)
+        /// <summary>
+        /// 手动复位作业
+        /// </summary>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        public Response ManualResetTask(int tid)
         {
+            //车位信息完善
+
+            //设备信息完善
+
             manager.Delete(tid);
             Response _resp = new Response()
             {
@@ -350,6 +389,339 @@ namespace Parking.Core
                 Message = "手动复位作业成功,ID-"+tid
             };
             return _resp;
+        }
+
+        /// <summary>
+        /// 中途退出，任务完成
+        /// </summary>
+        /// <param name="task"></param>
+        public void ICancelInAndDeleteTask(ImplementTask task)
+        {
+            CWDevice cwdevice = new CWDevice();
+            Device hall = cwdevice.Find(dev => dev.Warehouse == task.Warehouse && dev.DeviceCode == task.DeviceCode);
+            if (hall != null)
+            {
+                hall.TaskID = 0;
+                new CWDevice().Update(hall);
+            }
+            task.Status = EnmTaskStatus.Finished;
+            task.IsComplete = 1;
+            manager.Update(task);
+        }
+
+        /// <summary>
+        /// 处理取车、取物车辆离开
+        /// </summary>
+        /// <param name="task"></param>
+        public void ODealCarDriveaway(ImplementTask task)
+        {
+            if (task.Type == EnmTaskType.TempGet)
+            {
+                //释放车位
+                Location lct = new CWLocation().FindLocation(l=>l.Warehouse==task.Warehouse&&l.Address==task.FromLctAddress);
+                if (lct != null)
+                {
+                    if (lct.Status == EnmLocationStatus.Entering ||
+                        lct.Status == EnmLocationStatus.Outing)
+                    {
+                    }
+                    else
+                    {
+                        lct.Status = EnmLocationStatus.Space;
+                        new CWLocation().UpdateLocation(lct);
+                    }
+                }
+            }
+            CWDevice cwdevice = new CWDevice();
+            Device hall = cwdevice.Find(dev => dev.Warehouse == task.Warehouse && dev.DeviceCode == task.DeviceCode);
+            if (hall != null)
+            {
+                hall.TaskID = 0;
+                new CWDevice().Update(hall);
+            }
+            task.Status = EnmTaskStatus.Finished;
+            task.IsComplete = 1;
+            manager.Update(task);
+        }
+
+        /// <summary>
+        /// 处理装载完成（1013，1）
+        /// </summary>
+        /// <param name="etsk"></param>
+        /// <param name="distance"></param>
+        public void DealLoadFinishing(ImplementTask etsk,int distance)
+        {
+            Log log = LogFactory.GetLogger("CWTask.DealLoadFinishing");
+            CWLocation cwlocation = new CWLocation();
+            CWDevice cwdevice = new CWDevice();
+            
+            Location frLct = null;
+            Location toLct = null;
+            #region 存车
+            if (etsk.Type == EnmTaskType.SaveCar)
+            {
+                #region 将车厅作业完成
+                Device hall = cwdevice.Find(cd=>cd.Warehouse==etsk.Warehouse&&cd.DeviceCode==etsk.HallCode);
+                if (hall != null)
+                {
+                    ImplementTask halltask = Find(tt=>tt.Warehouse==hall.Warehouse&&tt.DeviceCode==hall.DeviceCode);
+                    if (halltask != null)
+                    {
+                        halltask.Status = EnmTaskStatus.Finished;
+                        halltask.IsComplete = 1;
+                        manager.Update(halltask);
+                    }
+                    hall.TaskID = 0;
+                    cwdevice.Update(hall);
+                }
+                else
+                {
+                    log.Error("存车装载完成，要复位车厅设备时，车厅设备为NULL");
+                }
+                #endregion              
+                #region 更新下车位信息
+                toLct = cwlocation.FindLocation(l => l.Address == etsk.ToLctAddress && l.Warehouse == etsk.Warehouse);
+                if (toLct != null)
+                {
+                    toLct.WheelBase = distance;
+                    toLct.Status = EnmLocationStatus.Entering;
+                    cwlocation.UpdateLocation(toLct);
+                }
+                else
+                {
+                    log.Error("存车装载完成，要更新存车位信息，但车位为NULL，address-"+etsk.ToLctAddress);
+                }
+                #endregion
+            }
+            #endregion
+            #region 取车 取物
+            else if (etsk.Type == EnmTaskType.GetCar||
+                     etsk.Type==EnmTaskType.TempGet)
+            {              
+                #region 更新下车位信息
+                frLct = cwlocation.FindLocation(l => l.Address == etsk.FromLctAddress && l.Warehouse == etsk.Warehouse);
+                if (toLct != null)
+                {
+                    frLct.WheelBase = distance;
+                    frLct.Status = EnmLocationStatus.Outing;
+                    cwlocation.UpdateLocation(frLct);
+                }
+                else
+                {
+                    log.Error("存车装载完成，要更新存车位信息，但车位为NULL，address-" + etsk.ToLctAddress);
+                }
+                #endregion
+            }
+            #endregion
+            #region 挪移
+            else if (etsk.Type == EnmTaskType.Transpose)
+            {
+                int warehouse = etsk.Warehouse;
+                string fradrs = etsk.FromLctAddress;
+                string toadrs = etsk.ToLctAddress;
+                frLct = cwlocation.FindLocation(lt=>lt.Warehouse==warehouse&&lt.Address==fradrs);
+                toLct = cwlocation.FindLocation(lt => lt.Warehouse == warehouse && lt.Address == toadrs);
+                if (frLct == null || toLct == null)
+                {
+                    log.Error("挪移装载完成，源车位或目的车位为空，from address-" + etsk.FromLctAddress + "  to address-" + etsk.ToLctAddress);
+                }
+                else
+                {
+                    toLct.Status = EnmLocationStatus.Entering;
+                    toLct.WheelBase = frLct.WheelBase;
+                    toLct.CarSize = frLct.CarSize;
+                    toLct.PlateNum = frLct.PlateNum;
+                    toLct.InDate = frLct.InDate;
+                    toLct.ICCode = frLct.ICCode;
+
+                    frLct.Status = EnmLocationStatus.Outing;
+                    frLct.WheelBase = 0;
+                    frLct.CarSize = "";
+                    frLct.PlateNum = "";
+                    frLct.InDate = DateTime.Parse("2017-1-1");
+
+                    cwlocation.UpdateLocation(toLct);
+                    cwlocation.UpdateLocation(frLct);
+                }
+            }
+            #endregion
+
+            etsk.Status = EnmTaskStatus.LoadFinishing;
+            etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            etsk.SendDtime = DateTime.Now;
+            etsk.Distance = distance;
+            manager.Update(etsk);
+        }
+
+        /// <summary>
+        /// 收到（13，51，9999）
+        /// 将存车装载完成，生成卸载指令，加入队列中
+        /// </summary>
+        /// <param name="tsk"></param>
+        public void DealLoadFinished(ImplementTask tsk)
+        {
+            Log log = LogFactory.GetLogger("CWTask.DealLoadFinished");
+            //将当前装载作业置完成，
+            tsk.Status = EnmTaskStatus.WillWaitForUnload;
+            tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
+            tsk.SendDtime = DateTime.Now;
+
+            manager.Update(tsk);
+            //生成卸载指令，加入队列
+            WorkTask queue = new WorkTask() {
+                IsMaster=1,
+                Warehouse=tsk.Warehouse,
+                DeviceCode=tsk.DeviceCode,
+                MasterType=tsk.Type,
+                TelegramType=14,
+                SubTelegramType=1,
+                HallCode=tsk.HallCode,
+                FromLctAddress=tsk.FromLctAddress,
+                ToLctAddress=tsk.ToLctAddress,
+                ICCardCode=tsk.ICCardCode,
+                Distance=tsk.Distance,
+                CarSize=tsk.CarSize,
+                CarWeight=tsk.CarWeight
+            };
+            manager_queue.Add(queue);
+        }
+
+        /// <summary>
+        /// 处理卸载完成（1014，1）
+        /// </summary>
+        /// <param name="etsk"></param>
+        public void DealUnLoadFinishing(ImplementTask etsk)
+        {
+            Log log = LogFactory.GetLogger("CWTask.DealUnLoadFinishing");
+            CWLocation cwlocation = new CWLocation();
+            CWDevice cwdevice = new CWDevice();
+
+            int warehouse = etsk.Warehouse;
+            string fraddrs = etsk.FromLctAddress;
+            string toaddrs = etsk.ToLctAddress;
+
+            Location frLct = null;
+            Location toLct = null;
+
+            if (etsk.Type == EnmTaskType.SaveCar)
+            {
+                toLct = cwlocation.FindLocation(l => l.Warehouse == warehouse &&l.Address==toaddrs);
+                if (toLct != null)
+                {
+                    toLct.Status = EnmLocationStatus.Occupy;
+                    toLct.ICCode = etsk.ICCardCode;
+                    toLct.WheelBase = etsk.Distance;
+                    toLct.CarSize = etsk.CarSize;
+
+                    cwlocation.UpdateLocation(toLct);
+                }
+            }
+            else if (etsk.Type == EnmTaskType.GetCar ||
+                     etsk.Type == EnmTaskType.TempGet)
+            {
+                #region 释放车位
+                frLct = cwlocation.FindLocation(l=>l.Warehouse==warehouse&&l.Address==fraddrs);
+                if (frLct != null)
+                {
+                    frLct.WheelBase = 0;
+                    frLct.CarSize = "";
+                    frLct.ICCode = "";
+                    if (etsk.Type == EnmTaskType.TempGet)
+                    {
+                        frLct.Status = EnmLocationStatus.TempGet;
+                    }
+                    else
+                    {
+                        frLct.Status = EnmLocationStatus.Space;
+                        frLct.InDate = DateTime.Parse("2017-1-1");
+                    }
+                }
+                #endregion
+                #region 修改车厅作业状态
+                Device hall = cwdevice.Find(cd => cd.Warehouse == etsk.Warehouse && cd.DeviceCode == etsk.HallCode);
+                if (hall != null)
+                {
+                    ImplementTask halltask = Find(tt => tt.Warehouse == hall.Warehouse && tt.DeviceCode == hall.DeviceCode);
+                    if (halltask != null)
+                    {
+                        halltask.Status = EnmTaskStatus.OWaitforEVUp;
+                        halltask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+                        halltask.SendDtime = DateTime.Now;
+                        manager.Update(halltask);
+                    }                   
+                }
+                else
+                {
+                    log.Error("卸载完成，要操作车厅设备时，车厅设备为NULL");
+                }
+                #endregion
+            }
+            else if (etsk.Type == EnmTaskType.Transpose)
+            {
+                frLct = cwlocation.FindLocation(lt => lt.Warehouse == warehouse && lt.Address == fraddrs);
+                toLct = cwlocation.FindLocation(lt => lt.Warehouse == warehouse && lt.Address == toaddrs);
+                if (frLct == null || toLct == null)
+                {
+                    log.Error("挪移卸载完成，源车位或目的车位为空，from address-" + etsk.FromLctAddress + "  to address-" + etsk.ToLctAddress);
+                }
+                else
+                {
+                    toLct.Status = EnmLocationStatus.Occupy;
+                    frLct.Status = EnmLocationStatus.Space;                   
+                    cwlocation.UpdateLocation(toLct);
+                    cwlocation.UpdateLocation(frLct);
+                }
+            }
+
+            etsk.Status = EnmTaskStatus.UnLoadFinishing;
+            etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            etsk.SendDtime = DateTime.Now;
+            manager.Update(etsk);
+        }
+       
+        /// <summary>
+        /// 处理移动完成（1011，1）
+        /// </summary>
+        /// <param name="etsk"></param>
+        public void DealMoveFinishing(ImplementTask etsk)
+        {
+            Log log = LogFactory.GetLogger("CWTask.DealMoveFinishing");
+            etsk.Status = EnmTaskStatus.MoveFinishing;
+            etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            etsk.SendDtime = DateTime.Now;
+            manager.Update(etsk);
+        }
+
+        /// <summary>
+        /// 处理作业完成（14，51）（11，51）
+        /// </summary>
+        /// <param name="tsk"></param>
+        public void DealCompleteTask(ImplementTask tsk)
+        {
+            Log log = LogFactory.GetLogger("CWTask.DealCompleteTask");
+            tsk.Status = EnmTaskStatus.Finished;
+            tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
+            tsk.SendDtime = DateTime.Now;
+            tsk.IsComplete = 1;
+            manager.Update(tsk);
+
+            CWDevice cwdevice = new CWDevice();
+            Device smg =cwdevice.Find(dd => dd.Warehouse == tsk.Warehouse && dd.DeviceCode == tsk.DeviceCode);
+            if (smg == null)
+            {
+                log.Error("完成作业时，找不到设备号，DeviceCode-"+tsk.DeviceCode);
+            }
+            ImplementTask remaintask = Find(tt => tt.ID != tsk.ID &&
+                                                tt.DeviceCode == tsk.DeviceCode &&
+                                                tt.Warehouse == tsk.Warehouse && 
+                                                tt.IsComplete == 0);
+            if (remaintask == null)
+            {
+                smg.SoonTaskID = 0;
+            }
+            smg.TaskID = 0;
+            cwdevice.Update(smg);
+
         }
 
         #region 队列管理

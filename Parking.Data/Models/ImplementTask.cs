@@ -106,12 +106,14 @@ namespace Parking.Data
 
         //TV
         TWaitforLoad,//等待执行装载(等待下发13-1)
-        TWaitforUnload,  // 等待卸载
+        TWaitforUnload,  //等待执行卸载
         TWaitforMove,// 等待移动
 
         LoadFinishing,//装载完成
         UnLoadFinishing,//卸载完成
         MoveFinishing,//移动完成
+
+        WillWaitForUnload, //装载完成后，将其更新为等待卸载，同时生成卸载指令
     }
 
 }

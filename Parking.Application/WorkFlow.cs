@@ -57,14 +57,20 @@ namespace Parking.Application
             }
         }
 
+        /// <summary>
+        /// 队列下发
+        /// </summary>
         public void TaskAssign()
         {
 
         }
 
+        /// <summary>
+        /// 报文发送
+        /// </summary>
         public void SendMessage()
         {
-            List<ImplementTask> tasks =cwtask.GetExecuteTasks();
+            List<ImplementTask> tasks =cwtask.GetExecuteTasks(warehouse);
             if (tasks == null)
             {
                 return;
@@ -320,6 +326,9 @@ namespace Parking.Application
             }
         }
 
+        /// <summary>
+        /// 报文接收
+        /// </summary>
         public void ReceiveMessage()
         {
             Log log = LogFactory.GetLogger("WorkFlow.ReceiveMessage");
@@ -335,10 +344,10 @@ namespace Parking.Application
                 Device smg = cwdevice.SelectSMG(data[6], data[1]);
                 if (smg == null)
                 {
-                    log.Error("无效报文，找不到相关设备。deviceCode-"+data[6]+" warehouse-"+data[1]);
+                    log.Error("无效报文，找不到相关设备. deviceCode-"+data[6]+" warehouse-"+data[1]);
                     return;
                 }
-                ImplementTask task = cwtask.GetTaskBySmgID(smg.DeviceCode, smg.Warehouse);
+                ImplementTask task = cwtask.GetImplementTaskBySmgID(smg.DeviceCode, smg.Warehouse);
                 if (task != null)
                 {
                     if (smg.Type == EnmSMGType.Hall)
@@ -351,20 +360,109 @@ namespace Parking.Application
                             {
                                 if (data[2] == 1 && data[3] == 9 && data[4] == 9999)
                                 {
-                                    cwtask.UpdateSendStatusDetail(task,EnmTaskStatusDetail.Asked);
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
                             if (data[2] == 1001 && data[4] == 101)
                             {
-                                new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealICheckCar(task, data[25], data[23].ToString(),data[26]);
+                                new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealICheckCar(task, data[25], data[23].ToString(), data[26]);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforEVDown)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 1 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1001 && data[4] == 54)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IEVDownFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforEVDown)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 1 && data[3] == 54 && data[4] == 9999)
+                                {
+                                    cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IEVDownFinished);
+                                }
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard ||
+                                 task.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize ||
+                                 task.Status == EnmTaskStatus.ICheckCarFail)
+                        {
+                            if (data[2] == 1003 && data[3] == 4)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.IHallFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 1 && data[3] == 55 && data[4] == 9999)
+                                {
+                                    new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealCarLeave(task);
+                                }
                             }
                         }
                         #endregion
                         #region 取车
-
+                        else if (task.Status == EnmTaskStatus.OWaitforEVDown)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 3 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1003 && data[3] == 54)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.OEVDownFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.OEVDownFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 3 && data[3] == 54 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                        }
                         #endregion
                         #region 取物
-
+                        else if (task.Status == EnmTaskStatus.TempWaitforEVDown)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 2 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1002 && data[3] == 54)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.TempEVDownFinishing);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.TempEVDownFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 2 && data[3] == 54 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                        }
                         #endregion
                         #endregion
                     }
@@ -372,13 +470,88 @@ namespace Parking.Application
                     {
                         #region
                         #region 装载
-
+                        if (task.Status == EnmTaskStatus.TWaitforLoad)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 13 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1013 && data[3] == 1)
+                            {
+                                //处理装载完成
+                                cwtask.DealLoadFinishing(task, data[25]);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.LoadFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 13 && data[3] == 51 && data[4] == 9999)
+                                {
+                                    //处理装载完成
+                                    cwtask.DealLoadFinished(task);
+                                }
+                            }
+                        }
                         #endregion
                         #region 卸载
-
+                        else if (task.Status == EnmTaskStatus.TWaitforUnload)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 14 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1014 && data[3] == 1)
+                            {
+                                //处理卸载完成
+                                cwtask.DealUnLoadFinishing(task);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.UnLoadFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 14 && data[3] == 51 && data[4] == 9999)
+                                {
+                                    //处理作业完成
+                                    cwtask.DealCompleteTask(task);
+                                }
+                            }
+                        }
                         #endregion
                         #region 移动
-
+                        else if (task.Status == EnmTaskStatus.TWaitforMove)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 11 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1011 && data[3] == 1)
+                            {
+                                //处理卸载完成
+                                cwtask.DealMoveFinishing(task);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.MoveFinishing)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 11 && data[3] == 51 && data[4] == 9999)
+                                {
+                                    //处理作业完成
+                                    cwtask.DealCompleteTask(task);
+                                }
+                            }
+                        }
                         #endregion
                         #endregion
                     }

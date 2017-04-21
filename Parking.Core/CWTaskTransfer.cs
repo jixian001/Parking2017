@@ -81,6 +81,22 @@ namespace Parking.Core
             }
         }
 
+        /// <summary>
+        /// 处理车辆离开
+        /// </summary>
+        /// <param name="task"></param>
+        public void DealCarLeave(ImplementTask task)
+        {
+            if (task.Type == EnmTaskType.SaveCar)
+            {
+                motsk.ICancelInAndDeleteTask(task);
+            }
+            else //取车或取物时
+            {
+                motsk.ODealCarDriveaway(task);
+            }
+        }
+
 
 
     }
