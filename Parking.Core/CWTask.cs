@@ -125,6 +125,14 @@ namespace Parking.Core
         /// <summary>
         /// 依ID获取任务
         /// </summary>
+        public ImplementTask Find(int ID)
+        {
+            return manager.Find(ID);
+        }
+
+        /// <summary>
+        /// 查询任务
+        /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         public ImplementTask Find(Expression<Func<ImplementTask,bool>> where)
@@ -842,6 +850,21 @@ namespace Parking.Core
         public Response DeleteQueue(int ID)
         {
             return manager_queue.Delete(ID);
+        }
+
+        /// <summary>
+        /// 获取车厅所有取车数量
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="hallID"></param>
+        /// <returns></returns>
+        public int GetHallGetCarCount(int warehouse,int hallID)
+        {
+            List<WorkTask> queues = manager_queue.FindList(qu => qu.Warehouse == warehouse &&
+                                                                qu.DeviceCode == hallID &&
+                                                                qu.IsMaster == 2 &&
+                                                                (qu.MasterType == EnmTaskType.GetCar || qu.MasterType == EnmTaskType.TempGet));
+            return queues.Count;
         }
 
         #endregion

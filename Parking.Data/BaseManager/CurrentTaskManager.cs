@@ -10,6 +10,11 @@ namespace Parking.Data
 {
     public class CurrentTaskManager:BaseManager<ImplementTask>
     {
+        public ImplementTask Find(int id)
+        {
+            return _repository.Find(id);
+        }
+
         public ImplementTask Find(Expression<Func<ImplementTask,bool>> where)
         {
             return _repository.Find(where);

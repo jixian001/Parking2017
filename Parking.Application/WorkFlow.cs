@@ -354,7 +354,7 @@ namespace Parking.Application
                     {
                         #region
                         #region 存车
-                        if (task.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                        if (task.Status == EnmTaskStatus.ISecondSwipedWaitforCheckSize)
                         {
                             if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
                             {
@@ -633,6 +633,9 @@ namespace Parking.Application
             }
         }
 
+        /// <summary>
+        /// 处理报警信息
+        /// </summary>
         public void DealAlarmInfo()
         {
 

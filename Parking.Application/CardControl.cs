@@ -61,7 +61,7 @@ namespace Parking.Application
                 if (nback == 0)
                 {
                     //调用刷卡器处理方法
-
+                    new CWTaskTransfer(nHallID, nWarehouse).DealICCardMessage(physiccard.ToString());
                 }
                 Thread.Sleep(interval);
             }

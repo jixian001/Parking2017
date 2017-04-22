@@ -15,10 +15,14 @@ namespace Parking.Core
     {
         private CWTask motsk;
         private Device moHall;
+        private int mHallGetCount;
 
         public CWTaskTransfer()
         {
             motsk = new CWTask();
+
+            string getcount = XMLHelper.GetRootNodeValueByXpath("root", "MaxHallGetCar");
+            mHallGetCount = string.IsNullOrEmpty(getcount) ? 0 : Convert.ToInt32(getcount);            
         }
 
         public CWTaskTransfer(int code,int warehouse) :this()
@@ -97,7 +101,116 @@ namespace Parking.Core
             }
         }
 
+        /// <summary>
+        /// 处理刷卡动作
+        /// </summary>
+        /// <param name="physiccode"></param>
+        public void DealICCardMessage(string physiccode)
+        {
+            Log log = LogFactory.GetLogger("CWTaskTransfer.DealICCardMessage");
+            try
+            {
+                int warehouse = moHall.Warehouse;
+                int code = moHall.DeviceCode;
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    motsk.AddNofication(warehouse, code, "5.wav");
+                    return;
+                }
+                ICCard iccd = new CWICCard().Find(ic => ic.PhysicCode == physiccode);
+                if (iccd != null)
+                {
+                    motsk.AddNofication(warehouse, code, "6.wav");
+                    return;
+                }
+                if (iccd.Status == EnmICCardStatus.Lost ||
+                    iccd.Status == EnmICCardStatus.Disposed)
+                {
+                    motsk.AddNofication(warehouse, code, "7.wav");
+                    return;
+                }
+                ImplementTask task = motsk.Find(tk => tk.ICCardCode == iccd.UserCode && tk.IsComplete == 0);
+                if (task != null)
+                {
+                    if (task.HallCode != moHall.DeviceCode)
+                    {
+                        motsk.AddNofication(warehouse, code, "8.wav");
+                        return;
+                    }
+                    if (task.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard &&
+                        task.Status != EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                        return;
+                    }
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccd.UserCode);
+                if (queue != null)
+                {
+                    motsk.AddNofication(warehouse, code, "9.wav");
+                    return;
+                }
+                int getcarCount = motsk.GetHallGetCarCount(warehouse, code);
+                Location lct = new CWLocation().FindLocation(lt => lt.ICCode == iccd.UserCode && lt.Type == EnmLocationType.Normal && lt.Status == EnmLocationStatus.Occupy);
 
+                #region 进车厅
+                if (moHall.HallType == EnmHallType.Entrance)
+                {
+                    if (lct != null)
+                    {
+                        //请到出车厅刷卡取车
+                        motsk.AddNofication(warehouse, code, "11.wav");
+                        return;
+                    }
+                    if (moHall.TaskID == 0)
+                    {
+                        //车厅无车，不能存车
+                        motsk.AddNofication(warehouse, code, "10.wav");
+                        return;
+                    }
+                    ImplementTask tsk = motsk.Find(moHall.TaskID);
+                    if (tsk == null)
+                    {
+                        log.Error("依车厅TaskID找不到作业信息，TaskID-"+moHall.TaskID+"  hallCode-"+moHall.DeviceCode);
+                        //系统故障
+                        motsk.AddNofication(warehouse, code, "20.wav");
+                        return;
+                    }
+                    if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                    {
+                        //处理刷第一次卡
+
+                    }
+                    else if(tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                    {
+                        //处理刷第二次卡
+
+                    }
+                    else
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                        return;
+                    }                    
+                }
+                #endregion
+                #region 出车厅
+                else if (moHall.HallType == EnmHallType.Exit)
+                {
+
+                }
+                #endregion
+                #region 进出车厅
+                else if (moHall.HallType == EnmHallType.EnterOrExit)
+                {
+
+                }
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
 
     }
 }

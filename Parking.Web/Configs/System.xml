@@ -8,6 +8,8 @@
   <ICcdRefresh>1000</ICcdRefresh>
   <!--客户端刷卡器的IP地址，客户端统一设置 -->
   <ICCardIPAddress>192.168.0.20</ICCardIPAddress>
+  <!--车厅最大允许取车数量-->
+  <MaxHallGetCar>4</MaxHallGetCar>
   <!--区分库区，区分车厅-->
   <setting>
     <!--开始设定库区信息-->

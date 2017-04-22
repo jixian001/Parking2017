@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.NetworkInformation;
+using Parking.Auxiliary;
 
 namespace Parking.Application
 {
@@ -13,8 +14,15 @@ namespace Parking.Application
         private bool isConnect;
         private int mnDesc;
         private short mnAuthKeyMode = 0;
+        private Log log;
 
-        public ICCardReader(string ip)
+        private ICCardReader()
+        {
+            log = LogFactory.GetLogger("ICCardReader");
+        }
+
+        public ICCardReader(string ip) :
+            this()
         {
             ipAddrs = ip;
             isConnect = false;
@@ -23,33 +31,46 @@ namespace Parking.Application
         public bool Connect()
         {
             isConnect = false;
-            mnDesc = -1;
-            if (string.IsNullOrEmpty(ipAddrs))
+            try
             {
-                return false;
+                mnDesc = -1;
+                if (string.IsNullOrEmpty(ipAddrs))
+                {
+                    return false;
+                }
+                //建立连接时，ping下
+                Ping ping = new Ping();
+                PingReply result = ping.Send(ipAddrs);
+                if (result == null || result.Status != IPStatus.Success)
+                {
+                    return false;
+                }
+                mnDesc = ICCardCommon.rf_init(ipAddrs, ipAddrs.Length);
+                if (mnDesc >= 0)
+                {
+                    isConnect = true;                   
+                }
             }
-            //建立连接时，ping下
-            Ping ping = new Ping();
-            PingReply result = ping.Send(ipAddrs);
-            if (result == null || result.Status != IPStatus.Success)
+            catch (Exception ex)
             {
-                return false;
+                log.Error("Connect 异常："+ex.ToString());
             }
-            mnDesc = ICCardCommon.rf_init(ipAddrs, ipAddrs.Length);
-            if (mnDesc >= 0)
-            {
-                isConnect = true;
-                return true;
-            }
-            return false;
+            return isConnect;
         }
 
         public bool Disconnect()
-        {            
-            if (mnDesc >= 0)
+        {
+            try
             {
-                ICCardCommon.rf_halt(mnDesc);
-                ICCardCommon.rf_exit(mnDesc);
+                if (mnDesc >= 0)
+                {
+                    ICCardCommon.rf_halt(mnDesc);
+                    ICCardCommon.rf_exit(mnDesc);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Disconnect 异常：" + ex.ToString());
             }
             isConnect = false;
             return true;
@@ -61,43 +82,50 @@ namespace Parking.Application
         /// <returns></returns>
         public int GetPhyscard(ref uint physiccard)
         {
-            physiccard = 0;
-            #region 为减少资源消耗，暂不一直PING
-            //if (!string.IsNullOrEmpty(ipAddrs))
-            //{
-            //    Ping ping = new Ping();
-            //    PingReply result = ping.Send(ipAddrs);
-            //    if (result == null || result.Status != IPStatus.Success)
-            //    {
-            //        return -1;
-            //    }
-            //}
-            #endregion
-            if (isConnect)
+            try
             {
-                UInt16 nICType = 0;
-                int nback = RequestICCard(ref nICType);
-                if (nback == 0)
+                physiccard = 0;
+                #region 为减少资源消耗，暂不一直PING
+                //if (!string.IsNullOrEmpty(ipAddrs))
+                //{
+                //    Ping ping = new Ping();
+                //    PingReply result = ping.Send(ipAddrs);
+                //    if (result == null || result.Status != IPStatus.Success)
+                //    {
+                //        return -1;
+                //    }
+                //}
+                #endregion
+                if (isConnect)
                 {
-                    uint physic = 0;
-                    nback = SelectCard(ref physic);
+                    UInt16 nICType = 0;
+                    int nback = RequestICCard(ref nICType);
                     if (nback == 0)
                     {
-                        //处理卡号
-                        physiccard = physic;
-                        return nback;
+                        uint physic = 0;
+                        nback = SelectCard(ref physic);
+                        if (nback == 0)
+                        {
+                            //处理卡号
+                            physiccard = physic;
+                            return nback;
+                        }
+                    }
+                    //依这个来改变连接状态，以便可以进行重连
+                    if (nback == 0xF1 || nback == 0xF2)
+                    {
+                        isConnect = false;
+                        Disconnect();
                     }
                 }
-                //依这个来改变连接状态，以便可以进行重连
-                if(nback == 0xF1 || nback == 0xF2)
+                else
                 {
-                    isConnect = false;
-                    Disconnect();
+                    Connect();
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Connect();
+                log.Error("GetPhyscard 异常："+ex.ToString());
             }
             return -1;
         }
