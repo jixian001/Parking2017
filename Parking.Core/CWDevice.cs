@@ -79,6 +79,60 @@ namespace Parking.Core
             return page;
         }
 
+        /// <summary>
+        /// 分配车厅
+        /// </summary>
+        /// <param name="lct"></param>
+        /// <param name="isTemp"></param>
+        /// <returns></returns>
+        public int AllocateHall(Location lct,bool isTemp)
+        {            
+            List<Device> hallsList = manager.FindList(d=>d.Type==EnmSMGType.Hall);
+            var query = from hall in hallsList
+                        where hall.Mode == EnmModel.Automatic &&
+                              hall.IsAble == 1 &&
+                             (isTemp ? hall.HallType == EnmHallType.EnterOrExit : hall.HallType != EnmHallType.Entrance)
+                        orderby Math.Abs(Convert.ToInt16(hall.Address.Substring(1, 2)) - lct.LocColumn) ascending
+                        select hall;
+
+            List<Device> avaibleHalls = query.ToList();
+            if (avaibleHalls.Count == 0)
+            {
+                return 0;
+            }
+            if (avaibleHalls.Count == 1)
+            {
+                return avaibleHalls[0].DeviceCode;
+            }
+            Device first = avaibleHalls.Find(h=>h.TaskID==0);
+            if (first != null)
+            {
+                return first.DeviceCode;
+            }
+            Dictionary<int, int> _dicHallTaskCount = new Dictionary<int, int>();
+            List<WorkTask> queueList = new CWTask().FindQueueList(q => true);
+            foreach(Device dev in avaibleHalls)
+            {
+                int count = 0;
+                foreach(WorkTask wt in queueList)
+                {
+                    if (dev.DeviceCode == wt.DeviceCode)
+                    {
+                        count++;
+                    }
+                }
+                _dicHallTaskCount.Add(dev.DeviceCode, count);
+            }
+            Dictionary<int, int> dicHallOrder = _dicHallTaskCount.OrderBy(d => d.Value).ToDictionary(o => o.Key, p => p.Value);
+
+            return dicHallOrder.FirstOrDefault().Key;
+        }
+
+
+
+
+
+
         #region 报警状态位控制
         private AlarmManager manager_alarm = new AlarmManager();
 

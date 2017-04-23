@@ -54,6 +54,7 @@ namespace Parking.Data
         /// 车头图片
         /// </summary>
         public byte[] ImageData { get; set; }
+        public int CarWeight { get; set; }
     }
 
     public enum EnmLocationType
