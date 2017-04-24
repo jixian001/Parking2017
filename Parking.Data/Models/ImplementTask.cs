@@ -9,7 +9,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Parking.Data
 {
     /// <summary>
-    /// 执行中的任务,一个设备只能允许有一个
+    /// 执行中的任务,一个设备只能允许有一个,
+    /// 如果有避让作业，可以允许有两个
     /// </summary>
     public class ImplementTask
     {

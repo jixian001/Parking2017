@@ -8,7 +8,8 @@
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/bootstrapplugin")
     @Styles.Render("~/Content/bootstrapselect")
-    @Scripts.Render("~/bundles/modernizr")    
+    @Scripts.Render("~/bundles/modernizr")
+    <script src="@Url.Content("~/Reports/CreateControl.js")" type="text/javascript"></script>  
 </head>
 <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -61,9 +62,10 @@
                     <li class="dropdown">
                         <a class="dropdown-toggle" data-toggle="dropdown">统计报表<strong class="caret"></strong></a>
                         <ul class="dropdown-menu">
+                            <li><a href="@Url.Action("Index", "Manage",new { area="ReportManager"})">报文日志</a></li>
                             <li><a href="#">操作日志</a></li>
                             <li><a href="#">故障日志</a></li>
-                            <li><a href="#">设备状态日志</a></li>
+                            <li><a href="#">设备状态</a></li>
                         </ul>
                     </li>                                       
                 </ul>

@@ -62,7 +62,177 @@ namespace Parking.Application
         /// </summary>
         public void TaskAssign()
         {
+            Log log = LogFactory.GetLogger("WorkFlow.TaskAssign");
+            try
+            {
+                List<WorkTask> queueList = cwtask.FindQueueList(mtsk => true);
+                if (queueList.Count == 0)
+                {
+                    return;
+                }
+                //优先发送是报文的队列
+                List<WorkTask> lstWaitTelegram = queueList.FindAll(ls => ls.IsMaster == 1);
+                #region 优先发送是避让的队列
+                List<WorkTask> avoidTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType == EnmTaskType.Avoid);
+                for (int i = 0; i < avoidTelegram.Count; i++)
+                {
+                    WorkTask queue = avoidTelegram[i];
+                    Device dev = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
+                    if (dev == null)
+                    {
+                        log.Error("避让队列，找不到执行的设备-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
+                        continue;
+                    }
+                    if (dev.Type != EnmSMGType.ETV)
+                    {
+                        log.Error("避让队列，但执行的设备-" + queue.DeviceCode + " 不是TV");
+                        continue;
+                    }
+                    //如果TV空闲可用，则允许下发
+                    if (dev.IsAble == 1 && dev.IsAvailabe == 1)
+                    {
+                        if (dev.TaskID == 0)
+                        {
+                            //当前TV没有作业，则绑定设备
+                            Response resp = cwtask.CreateAvoidTaskByQueue(queue);
+                            log.Info(resp.Message);
+                        }
+                        else
+                        {
+                            //当前作业不为空，查询当前作业状态
+                            ImplementTask itask = cwtask.Find(dev.TaskID);
+                            if (itask != null)
+                            {
+                                if (itask.IsComplete == 0 && itask.Status == EnmTaskStatus.WillWaitForUnload)
+                                {
+                                    //允许避让
+                                    Response resp = cwtask.CreateAvoidTaskByQueue(queue);
+                                    log.Info(resp.Message);
+                                }
+                            }
+                            else
+                            {
+                                log.Info("当前避让队列，对应的设备-"+dev.DeviceCode+"  TaskID-"+dev.TaskID+" 找不到对应的执行队列！");
+                            }
+                            
+                        }
+                    }
+                }
+                #endregion
+                #region 处理其他报文
+                List<WorkTask> otherTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType != EnmTaskType.Avoid);
+                for(int i = 0; i < otherTelegram.Count; i++)
+                {
+                    WorkTask queue = otherTelegram[i];
+                    Device dev = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
+                    if (dev == null)
+                    {
+                        log.Error("执行队列时，找不到执行的设备-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
+                        continue;
+                    }
+                    if (dev.IsAble == 1 && dev.IsAvailabe == 1)
+                    {
+                        if (dev.Type == EnmSMGType.Hall)
+                        {
+                            if (dev.TaskID == 0)
+                            {
+                                cwtask.CreateDeviceTaskByQueue(queue,dev);
+                            }
+                        }
+                        else if (dev.Type == EnmSMGType.ETV)
+                        {
+                            if (dev.TaskID == 0)
+                            {
+                                //可以增加避让判断
+                                if (cwtask.DealAvoid(queue, dev))
+                                {
+                                    cwtask.CreateDeviceTaskByQueue(queue, dev);
+                                }
+                            }
+                            else
+                            {
+                                ImplementTask itask = cwtask.Find(dev.TaskID);
+                                if (itask != null)
+                                {
+                                    //下发卸载指令
+                                    if (itask.IsComplete == 0 && 
+                                        itask.Status == EnmTaskStatus.WillWaitForUnload&&
+                                        itask.ICCardCode==queue.ICCardCode)
+                                    {
+                                        //可以增加避让判断
+                                        if (cwtask.DealAvoid(queue, dev))
+                                        {
+                                            Response resp = cwtask.CreateDeviceTaskByQueue(queue, dev);
+                                            log.Info(resp.Message);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
+                }
+                #endregion
+                #region 处理取车队列
+                List<WorkTask> getCarQueueList= queueList.FindAll(ls => ls.IsMaster == 2);
+                for(int i = 0; i < getCarQueueList.Count; i++)
+                {
+                    WorkTask queue = getCarQueueList[i];
+                    Device hall = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
+                    if (hall == null)
+                    {
+                        log.Error("执行取车队列时，找不到车厅-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
+                        continue;
+                    }
+                    Location lctn = new CWLocation().FindLocation(l=>l.ICCode==queue.ICCardCode);
+                    if (lctn == null)
+                    {
+                        log.Error("执行取车队列时，找不到存车车位，删除队列，iccode-" + queue.ICCardCode);
+                        cwtask.DeleteQueue(queue);
+                        continue;
+                    }
+                    if (hall.TaskID == 0)
+                    {
+                        //车厅没有作业
+                        if (hall.IsAble == 1 && hall.IsAvailabe == 1)
+                        {
+                            //发送车厅报文，同时查看TV状态，如果OK,则下发TV报文
+                            cwtask.SendHallTelegramAndBuildTV(queue, lctn, hall);
+                        }
+                    }
+                    else
+                    {
+                        //是否要进行提前装载
+                        ImplementTask hallTask = cwtask.Find(hall.TaskID);
+                        if (hallTask == null)
+                        {
+                            log.Error("依TASKID-" + hall.TaskID+" 找不到对应的作业！");
+                            continue;
+                        }
+                        if (hallTask.Type == EnmTaskType.GetCar)
+                        {
+                            if (hallTask.Status == EnmTaskStatus.OWaitforEVUp ||
+                                hallTask.Status == EnmTaskStatus.OCarOutWaitforDriveaway ||
+                                hallTask.Status == EnmTaskStatus.OHallFinishing)
+                            {
+                                //保证只有一个作业提前下发
+                                //防止不同巷道的取车同时下发
+                                WorkTask hallWillCommit = cwtask.FindQueue(tsk => tsk.DeviceCode == hall.DeviceCode && tsk.IsMaster == 1 && tsk.MasterType == EnmTaskType.GetCar);
+                                if (hallWillCommit != null)
+                                {
+                                    continue;
+                                }
+                                cwtask.AheadTvTelegramAndBuildHall(queue, lctn, hall);
+                            }
+                        }
+                    }
+                }
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
         }
 
         /// <summary>
@@ -638,7 +808,15 @@ namespace Parking.Application
         /// </summary>
         public void DealAlarmInfo()
         {
+            Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");
+            try
+            {
 
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
         }
 
         /// <summary>
