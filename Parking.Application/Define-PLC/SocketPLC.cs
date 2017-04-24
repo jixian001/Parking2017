@@ -10,10 +10,11 @@ using System.Text.RegularExpressions;
 
 namespace Parking.Application
 {
+   
     public class SocketPlc:IPLC, IDisposable
     {
         #region 枚举型数据
-        public enum CpuType
+        public enum CPUType
         {
             S7200 = 0,
             S7300 = 10,
@@ -26,7 +27,7 @@ namespace Parking.Application
         /// </summary>
         public enum DataType
         {
-            Init=0,
+            Init = 0,
             Input = 129,
             Output = 130,
             Memory = 131,
@@ -55,7 +56,7 @@ namespace Parking.Application
         #endregion
 
         private string IP;
-        private CpuType CPU;
+        private CPUType CPU;
         private short Rack;
         private short Slot;
         private bool isConnect;
@@ -69,13 +70,13 @@ namespace Parking.Application
         public SocketPlc(string ip) : 
             this()
         {
-            CPU = CpuType.S7300;
+            CPU = CPUType.S7300;
             IP = ip;
             Rack = 0;
             Slot = 2;
         }
 
-        public SocketPlc(CpuType ctype, string ip, short rack, short slot)
+        public SocketPlc(CPUType ctype, string ip, short rack, short slot)
             : this()
         {
             CPU = ctype;
@@ -136,7 +137,7 @@ namespace Parking.Application
             {
                 byte[] bSend1 = new byte[22] { 3, 0, 0, 22, 17, 224, 0, 0, 0, 46, 0, 193, 2, 1, 0, 194, 2, 3, 0, 192, 1, 9 };
                 //先做这两个的，1500后续测试再做
-                if (CPU == CpuType.S7300 || CPU == CpuType.S71200)
+                if (CPU == CPUType.S7300 || CPU == CPUType.S71200)
                 {
                     //S7300: Chr(193) & Chr(2) & Chr(1) & Chr(0)  'Eigener Tsap
                     bSend1[11] = 193;

@@ -811,7 +811,46 @@ namespace Parking.Application
             Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");
             try
             {
+                List<Device> deviceLst = new CWDevice().FindList(d => true);
+                foreach(Device smg in deviceLst)
+                {
+                    if (smg.Type == EnmSMGType.Hall)
+                    {
+                        #region
+                        int basePoint = 1012;
+                        if (smg.DeviceCode > 11)
+                        {
+                            basePoint += smg.DeviceCode - 11;
+                        }
+                        basePoint += smg.DeviceCode;
 
+                        string DBItemName = basePoint.ToString();
+                        string itemName = "";
+                        foreach(string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemName))
+                            {
+                                itemName = item;
+                                break;
+                            }
+                        }
+                        if (itemName == "")
+                        {
+                            log.Error("更新报警时， DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        byte[] bytesAlarmBuf = (byte[])plcAccess.ReadData(itemName,SocketPlc.VarType.Byte.ToString());
+
+
+                        #endregion
+                    }
+                    else if (smg.Type == EnmSMGType.ETV)
+                    {
+                        #region
+
+                        #endregion
+                    }
+                }
             }
             catch (Exception ex)
             {
