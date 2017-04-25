@@ -936,6 +936,18 @@ namespace Parking.Application
                             cwdevice.Update(smg);
                         }
                         #endregion
+                        #region 写入车厅的工作方式
+                        int workpattern = 34;
+                        if (workpattern <= bytesAlarmBuf.Length)
+                        {
+                            int pValue = shortFromByte(bytesAlarmBuf[workpattern + 1], bytesAlarmBuf[workpattern]);
+                            if (pValue != (int)smg.HallType)
+                            {
+                                string itname = itemName.Split(',').First()+",INT"+workpattern+",1";
+                                WriteValueToPlc(itname, (short)smg.HallType);
+                            }
+                        }
+                        #endregion
                         #endregion
                     }
                     else if (smg.Type == EnmSMGType.ETV)
@@ -1339,6 +1351,30 @@ namespace Parking.Application
         {
             return Convert.ToInt16(hibyte * 256 + lobyte);
         }
+
+        /// <summary>
+        /// 向PLC中写值
+        /// </summary>
+        /// <param name="itemname"></param>
+        /// <param name="value"></param>
+        private void WriteValueToPlc(string itemname,short value)
+        {
+            Log log = LogFactory.GetLogger("WorkFlow.WriteValueToPlc");
+            try
+            {
+                Task.Factory.StartNew(()=> {
+
+                    plcAccess.WriteData(itemname, value);
+
+                });
+                log.Info("warehouse-" + warehouse + "  向项-" + itemname + "  写值-" + value);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
 
     }
 }

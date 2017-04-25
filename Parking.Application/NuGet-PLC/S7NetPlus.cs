@@ -215,7 +215,7 @@ namespace Parking.Application
             }
             else
             {
-                log.Info("Itme-" + itemName + "格式不正确，不包含DB！");
+                log.Info("Item-" + itemName + "格式不正确，不包含DB！");
                 return -1;
             }
             DB = removeNotNumber(dtype);
@@ -223,7 +223,7 @@ namespace Parking.Application
             string startAddress = lstItems[1];
             if (!startAddress.ToLower().Contains("int"))
             {
-                log.Info("Itme-" + itemName + "格式不正确，不包含INT！");
+                log.Info("Item-" + itemName + "格式不正确，不包含INT！");
                 return -1;
             }
             startByteAddrs = removeNotNumber(startAddress);

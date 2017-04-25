@@ -35,26 +35,34 @@ namespace Parking.Core
         /// </summary>
         public void DealCarEntrance()
         {
-            if (moHall.Mode != EnmModel.Automatic)
+            Log log = LogFactory.GetLogger("CWTaskTransfer.DealCarEntrance");
+            try
             {
-                //模式不是全自动
-                motsk.AddNofication(moHall.Warehouse,moHall.DeviceCode,"5.wav");
-                return;
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    //模式不是全自动
+                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "5.wav");
+                    return;
+                }
+                if (moHall.TaskID != 0)
+                {
+                    //报警- 有故障作业未处理
+                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "39.wav");
+                    return;
+                }
+                if (moHall.HallType == EnmHallType.Exit)
+                {
+                    //出车厅不允许进车
+                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "7.wav");
+                    return;
+                }
+                //增加车厅作业，绑定车厅作业号
+                motsk.DealFirstCarEntrance(moHall);
             }
-            if (moHall.TaskID != 0)
+            catch (Exception ex)
             {
-                //报警- 有故障作业未处理
-                motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "39.wav");
-                return;
+                log.Error(ex.ToString());
             }
-            if (moHall.HallType == EnmHallType.Exit)
-            {
-                //出车厅不允许进车
-                motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "7.wav");
-                return;
-            }
-            //增加车厅作业，绑定车厅作业号
-            motsk.DealFirstCarEntrance(moHall);
         }
 
         /// <summary>
@@ -65,23 +73,31 @@ namespace Parking.Core
         /// <param name="carSize"></param>
         public void DealICheckCar(ImplementTask tsk,int distance,string carSize,int weight)
         {
-            if (tsk.Type == EnmTaskType.TempGet)
+            Log log = LogFactory.GetLogger("CWTaskTransfer.DealICheckCar");
+            try
             {
-                //注意要刷卡后，将源地址车位与目的地址车位互换下
-                Location tolct = new CWLocation().FindLocation(lc => lc.Warehouse == tsk.Warehouse && lc.Address == tsk.ToLctAddress);
-                if (tolct.Status != EnmLocationStatus.TempGet)
+                if (tsk.Type == EnmTaskType.TempGet)
                 {
-                    //取物车位不可用，则临时分配
-                    motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize,weight);
+                    //注意要刷卡后，将源地址车位与目的地址车位互换下
+                    Location tolct = new CWLocation().FindLocation(lc => lc.Warehouse == tsk.Warehouse && lc.Address == tsk.ToLctAddress);
+                    if (tolct.Status != EnmLocationStatus.TempGet)
+                    {
+                        //取物车位不可用，则临时分配
+                        motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize, weight);
+                    }
+                    else
+                    {
+                        motsk.ITempDealCheckCar(tsk, tolct, distance, carSize, weight);
+                    }
                 }
                 else
                 {
-                    motsk.ITempDealCheckCar(tsk, tolct, distance, carSize,weight);
-                }                
+                    motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize, weight);
+                }
             }
-            else
+            catch(Exception ex)
             {
-                motsk.IDealCheckedCar(tsk, moHall.DeviceCode, distance, carSize,weight);
+                log.Error(ex.ToString());
             }
         }
 
@@ -91,13 +107,21 @@ namespace Parking.Core
         /// <param name="task"></param>
         public void DealCarLeave(ImplementTask task)
         {
-            if (task.Type == EnmTaskType.SaveCar)
+            Log log = LogFactory.GetLogger("CWTaskTransfer.DealCarLeave");
+            try
             {
-                motsk.ICancelInAndDeleteTask(task);
+                if (task.Type == EnmTaskType.SaveCar)
+                {
+                    motsk.ICancelInAndDeleteTask(task);
+                }
+                else //取车或取物时
+                {
+                    motsk.ODealCarDriveaway(task);
+                }
             }
-            else //取车或取物时
+            catch (Exception ex)
             {
-                motsk.ODealCarDriveaway(task);
+                log.Error(ex.ToString());
             }
         }
 
@@ -373,7 +397,7 @@ namespace Parking.Core
         }
 
         /// <summary>
-        /// 临时取物
+        /// 手动出库
         /// </summary>
         /// <param name="warehouse"></param>
         /// <param name="locAddress"></param>
@@ -381,54 +405,62 @@ namespace Parking.Core
         public Response ManualGetCar(int warehouse,string locAddress)
         {
             Response _resp = new Response();
-            _resp.Code = 0;
-            if (moHall == null|| moHall.Type != EnmSMGType.Hall)
-            {               
-                _resp.Message = "找不到车厅设备，请输入正确的库区及车厅！";
-                return _resp;
-            }
-            if (moHall.HallType==EnmHallType.Entrance||
-                moHall.HallType==EnmHallType.Init)
-            {               
-                _resp.Message = "当前车厅-"+moHall.DeviceCode+",不是出车厅！";
-                return _resp;
-            }
-            if (moHall.Mode != EnmModel.Automatic)
+            Log log = LogFactory.GetLogger("CWTaskTransfer.ManualGetCar");
+            try
             {
-                _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
-                return _resp;
-            }
-            Location lctn = new CWLocation().FindLocation(l=>l.Warehouse==warehouse&&l.Address==locAddress);
-            if (lctn == null)
-            {
-                _resp.Message = "找不到车位，address-"+locAddress;
-                return _resp;
-            }
-            if (lctn.Type != EnmLocationType.Normal)
-            {
-                _resp.Message = "车位不可用，address-" + locAddress;
-                return _resp;
-            }
-            if (lctn.Status != EnmLocationStatus.Occupy)
-            {
-                _resp.Message = "车位不是占用状态，address-" + locAddress;
-                return _resp;
-            }
-            string iccode = lctn.ICCode;
-            ImplementTask itask = motsk.Find(tk=>tk.IsComplete==0&&tk.ICCardCode==iccode);
-            if (itask != null)
-            {
-                _resp.Message = "正在作业，请稍后！";
-                return _resp;
-            }
-            WorkTask queue = motsk.FindQueue(qu=>qu.ICCardCode==iccode);
-            if (queue != null)
-            {
-                _resp.Message = "正在作业，请稍后！";
-                return _resp;
-            }
+                if (moHall == null || moHall.Type != EnmSMGType.Hall)
+                {
+                    _resp.Message = "找不到车厅设备，请输入正确的库区及车厅！";
+                    return _resp;
+                }
+                if (moHall.HallType == EnmHallType.Entrance ||
+                    moHall.HallType == EnmHallType.Init)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",不是出车厅！";
+                    return _resp;
+                }
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
+                    return _resp;
+                }
+                Location lctn = new CWLocation().FindLocation(l => l.Warehouse == warehouse && l.Address == locAddress);
+                if (lctn == null)
+                {
+                    _resp.Message = "找不到车位，address-" + locAddress;
+                    return _resp;
+                }
+                if (lctn.Type != EnmLocationType.Normal)
+                {
+                    _resp.Message = "车位不可用，address-" + locAddress;
+                    return _resp;
+                }
+                if (lctn.Status != EnmLocationStatus.Occupy)
+                {
+                    _resp.Message = "车位不是占用状态，address-" + locAddress;
+                    return _resp;
+                }
+                string iccode = lctn.ICCode;
+                ImplementTask itask = motsk.Find(tk => tk.IsComplete == 0 && tk.ICCardCode == iccode);
+                if (itask != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccode);
+                if (queue != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
 
-            return motsk.ManualGetCar(moHall, lctn);
+                return motsk.ManualGetCar(moHall, lctn);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return _resp;
         }
 
         /// <summary>
@@ -439,64 +471,72 @@ namespace Parking.Core
         public Response TempGetCar(string iccode)
         {
             Response _resp = new Response();
-            _resp.Code = 0;
-            if (moHall == null || moHall.Type != EnmSMGType.Hall)
+            Log log = LogFactory.GetLogger("CWTaskTransfer.TempGetCar");
+            try
             {
-                _resp.Message = "找不到车厅设备，请输入正确的库区及车厅！";
-                return _resp;
-            }
-            if (moHall.HallType != EnmHallType.EnterOrExit )
-            {
-                _resp.Message = "当前车厅-" + moHall.DeviceCode + ",不是进出车厅！";
-                return _resp;
-            }
-            if (moHall.Mode != EnmModel.Automatic)
-            {
-                _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
-                return _resp;
-            }
-            ICCard iccd = new CWICCard().Find(ic=>ic.UserCode==iccode);
-            if (iccd == null)
-            {
-                _resp.Message = "找不到当前卡信息！ICCode-"+iccode;
-                return _resp;
-            }
-            if(iccd.Status==EnmICCardStatus.Disposed||
-                iccd.Status == EnmICCardStatus.Lost)
-            {
-                _resp.Message = "卡已挂失或注销！status-" + iccd.Status.ToString();
-                return _resp;
-            }
-            Location lct = new CWLocation().FindLocation(l=>l.ICCode==iccode);
-            if (lct == null)
-            {
-                _resp.Message = "该卡没有存车！ICCode-" + iccode;
-                return _resp;
-            }
-            if (lct.Type != EnmLocationType.Normal)
-            {
-                _resp.Message = "车位不可用，Type-"+lct.Type.ToString();
-                return _resp;
-            }
-            if (lct.Status != EnmLocationStatus.Occupy)
-            {
-                _resp.Message = "车位正在作业，Status-" + lct.Status.ToString();
-                return _resp;
-            }
-            ImplementTask itask = motsk.Find(tk => tk.IsComplete == 0 && tk.ICCardCode == iccode);
-            if (itask != null)
-            {
-                _resp.Message = "正在作业，请稍后！";
-                return _resp;
-            }
-            WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccode);
-            if (queue != null)
-            {
-                _resp.Message = "正在作业，请稍后！";
-                return _resp;
-            }
+                if (moHall == null || moHall.Type != EnmSMGType.Hall)
+                {
+                    _resp.Message = "找不到车厅设备，请输入正确的库区及车厅！";
+                    return _resp;
+                }
+                if (moHall.HallType != EnmHallType.EnterOrExit)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",不是进出车厅！";
+                    return _resp;
+                }
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
+                    return _resp;
+                }
+                ICCard iccd = new CWICCard().Find(ic => ic.UserCode == iccode);
+                if (iccd == null)
+                {
+                    _resp.Message = "找不到当前卡信息！ICCode-" + iccode;
+                    return _resp;
+                }
+                if (iccd.Status == EnmICCardStatus.Disposed ||
+                    iccd.Status == EnmICCardStatus.Lost)
+                {
+                    _resp.Message = "卡已挂失或注销！status-" + iccd.Status.ToString();
+                    return _resp;
+                }
+                Location lct = new CWLocation().FindLocation(l => l.ICCode == iccode);
+                if (lct == null)
+                {
+                    _resp.Message = "该卡没有存车！ICCode-" + iccode;
+                    return _resp;
+                }
+                if (lct.Type != EnmLocationType.Normal)
+                {
+                    _resp.Message = "车位不可用，Type-" + lct.Type.ToString();
+                    return _resp;
+                }
+                if (lct.Status != EnmLocationStatus.Occupy)
+                {
+                    _resp.Message = "车位正在作业，Status-" + lct.Status.ToString();
+                    return _resp;
+                }
+                ImplementTask itask = motsk.Find(tk => tk.IsComplete == 0 && tk.ICCardCode == iccode);
+                if (itask != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccode);
+                if (queue != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
 
-            return motsk.TempGetCar(moHall, lct);
+                return motsk.TempGetCar(moHall, lct);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return _resp;
         }
 
         
