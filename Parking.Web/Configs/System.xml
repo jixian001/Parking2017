@@ -16,7 +16,7 @@
     <PLC ID="1">
       <!--plc ip地址-->
       <PlcIPAddress>192.168.0.101</PlcIPAddress>    
-      <!--要读取的连接项-->
+      <!--要读取的连接项,以分号截取的，最后一个不能有分号-->
       <ConnectItem>
         S7:[S7 connection_1]DB1001,INT0,50;
         S7:[S7 connection_1]DB1001,INT100,1;
@@ -26,7 +26,7 @@
         S7:[S7 connection_1]DB1005,B0,54;
         S7:[S7 connection_1]DB1007,B0,54;
         S7:[S7 connection_1]DB1023,B0,54;
-        S7:[S7 connection_1]DB1025,B0,54;
+        S7:[S7 connection_1]DB1025,B0,54
       </ConnectItem>
       <!--库区车位边列层，以‘-’分开-->
       <LocInfo>2-20-3</LocInfo>

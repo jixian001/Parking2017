@@ -841,7 +841,11 @@ namespace Parking.Application
                             continue;
                         }
                         #endregion
-                        byte[] bytesAlarmBuf = (byte[])plcAccess.ReadData(itemName,SocketPlc.VarType.Byte.ToString());
+                        byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
+                        if (bytesAlarmBuf == null)
+                        {
+                            continue;
+                        }
                         #region 更新报警信息
                         List<Alarm> needUpdate = new List<Alarm>();
                         List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
@@ -955,7 +959,11 @@ namespace Parking.Application
                             continue;
                         }
                         #endregion
-                        byte[] bytesAlarmBuf = (byte[])plcAccess.ReadData(itemName, SocketPlc.VarType.Byte.ToString());
+                        byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
+                        if (bytesAlarmBuf == null)
+                        {
+                            continue;
+                        }
                         #region 更新报警信息
                         List<Alarm> needUpdate = new List<Alarm>();
                         List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
@@ -1190,6 +1198,30 @@ namespace Parking.Application
             return false;
         }
 
+        /// <summary>
+        /// 读取报警字节数组
+        /// </summary>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        private byte[] readAlarmBytesBuffer(string itemName)
+        {
+            Log log = LogFactory.GetLogger("WorkFlow.readAlarmBytesBuffer");
+            try
+            {
+                if (JudgeSocketAvailabe() == false)
+                {
+                    return null;
+                }
+                byte[] buffer=(byte[])plcAccess.ReadData(itemName, SocketPlc.VarType.Byte.ToString());
+                return buffer;
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return null;
+        }
+
         private short[] packageMessage(int mtype,int stype,int smg,ImplementTask tsk)
         {
             short[] data = new short[50];
@@ -1273,6 +1305,7 @@ namespace Parking.Application
         private bool JudgeSocketAvailabe()
         {
             Log log = LogFactory.GetLogger("WorkFlow.JudgeSocketAvailabe");
+
             if (s7_Connection_Items == null ||
                     s7_Connection_Items.Length < 4)
             {
