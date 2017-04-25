@@ -140,6 +140,17 @@ namespace Parking.Core
         {
             return manager_alarm.FindList(where);
         }
+
+        /// <summary>
+        /// 批量更新
+        /// </summary>
+        /// <param name="alarmLst"></param>
+        /// <returns></returns>
+        public Response UpdateAlarmList(List<Alarm> alarmLst)
+        {
+            return manager_alarm.UpdateAlarmList(alarmLst);
+        }
+
         #endregion
 
     }

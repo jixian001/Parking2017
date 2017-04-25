@@ -32,7 +32,13 @@ namespace Parking.Data
         /// </summary>
         public int IsAvailabe { get; set; }        
         public int RunStep { get; set; }
+        /// <summary>
+        /// 入库步进、装载步进
+        /// </summary>
         public int InStep { get; set; }
+        /// <summary>
+        /// 出库步进、卸载步进
+        /// </summary>
         public int OutStep { get; set; }
         /// <summary>
         /// 用于存放当前正在执行的作业

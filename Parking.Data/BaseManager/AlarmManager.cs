@@ -14,5 +14,25 @@ namespace Parking.Data
         {
             return _repository.FindList(where).ToList();
         }
+
+        /// <summary>
+        /// 批量更新
+        /// </summary>
+        /// <param name="alarmLst"></param>
+        /// <returns></returns>
+        public Response UpdateAlarmList(List<Alarm> alarmLst)
+        {
+            foreach(Alarm ar in alarmLst)
+            {
+                _repository.Update(ar, false);
+            }
+            int count= _repository.Save();
+            Response resp = new Response() {
+                Code=1,
+                Message="批量更新成功！Count-"+count
+            };
+            return resp;
+        }
+
     }
 }

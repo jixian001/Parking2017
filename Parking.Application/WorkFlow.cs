@@ -808,15 +808,16 @@ namespace Parking.Application
         /// </summary>
         public void DealAlarmInfo()
         {
-            Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");
+            Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");           
             try
             {
-                List<Device> deviceLst = new CWDevice().FindList(d => true);
+                List<Device> deviceLst =cwdevice.FindList(d => true);
                 foreach(Device smg in deviceLst)
                 {
                     if (smg.Type == EnmSMGType.Hall)
                     {
-                        #region
+                        #region 车厅
+                        #region 获取项名称
                         int basePoint = 1012;
                         if (smg.DeviceCode > 11)
                         {
@@ -836,18 +837,258 @@ namespace Parking.Application
                         }
                         if (itemName == "")
                         {
-                            log.Error("更新报警时， DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            log.Error("更新报警时，设备-" + smg.DeviceCode + "   DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
                             continue;
                         }
+                        #endregion
                         byte[] bytesAlarmBuf = (byte[])plcAccess.ReadData(itemName,SocketPlc.VarType.Byte.ToString());
+                        #region 更新报警信息
+                        List<Alarm> needUpdate = new List<Alarm>();
+                        List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                        foreach(Alarm fault in faultsList)
+                        {
+                            #region
+                            int faultAddrs = fault.Address;
+                            int byteNum = faultAddrs / 10;
+                            int bitNum = faultAddrs % 10;
 
+                            if (byteNum > bytesAlarmBuf.Length)
+                            {
+                                continue;
+                            }
+                            int value = bytesAlarmBuf[byteNum];
+                            value = value >> bitNum;
+                            value = value % 2;
+                            if (value != fault.Value)
+                            {
+                                fault.Value = (byte)value;
+                                needUpdate.Add(fault);
+                            }
+                            //可接收新指令
+                            if (faultAddrs == 297)
+                            {
+                                if (value != fault.Value)
+                                {
+                                    smg.IsAvailabe = value;
+                                    //更新设备可接收新指令
+                                    cwdevice.Update(smg);
+                                }
+                            }
+                            #endregion
+                        }
 
+                        if (needUpdate.Count > 0)
+                        {
+                            cwdevice.UpdateAlarmList(needUpdate);
+                        }
+                        #endregion
+                        #region 更新设备状态
+                        bool isUpdate = false;
+                        //控制模式 =38
+                        int mode = 38;
+                        if (mode <= bytesAlarmBuf.Length)
+                        {
+                            short modeValue = shortFromByte(bytesAlarmBuf[mode + 1], bytesAlarmBuf[mode]);
+                            if (modeValue != (short)smg.Mode)
+                            {
+                                if (modeValue > 4)
+                                {
+                                    log.Error("devicecode-" + smg.DeviceCode + " 更新模式时，读取的值不对-value:" + modeValue);
+                                }
+                                else
+                                {
+                                    smg.Mode = (EnmModel)modeValue;
+                                    isUpdate = true;
+                                }
+
+                            }
+                        }
+                        //存车自动步
+                        int inStep = 40;
+                        if (inStep <= bytesAlarmBuf.Length)
+                        {
+                            int inStepValue = shortFromByte(bytesAlarmBuf[inStep + 1], bytesAlarmBuf[inStep]);
+                            if (inStepValue != smg.InStep)
+                            {
+                                smg.InStep = inStepValue;
+                                isUpdate = true;
+                            }
+                        }
+
+                        //取车自动步
+                        int outStep = 42;
+                        if (outStep <= bytesAlarmBuf.Length)
+                        {
+                            int outValue = shortFromByte(bytesAlarmBuf[outStep + 1], bytesAlarmBuf[outStep]);
+                            if (outValue != smg.OutStep)
+                            {
+                                smg.OutStep = outValue;
+                                isUpdate = true;
+                            }
+                        }
+
+                        if (isUpdate)
+                        {
+                            cwdevice.Update(smg);
+                        }
+                        #endregion
                         #endregion
                     }
                     else if (smg.Type == EnmSMGType.ETV)
                     {
-                        #region
+                        #region ETV
+                        #region 获取项名称
+                        int basePoint = 1003 + 2 * (smg.DeviceCode - 1);
+                        string DBItemName = basePoint.ToString();
+                        string itemName = "";
+                        foreach (string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemName))
+                            {
+                                itemName = item;
+                                break;
+                            }
+                        }
+                        if (itemName == "")
+                        {
+                            log.Error("更新报警时，设备-"+smg.DeviceCode+"  DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        #endregion
+                        byte[] bytesAlarmBuf = (byte[])plcAccess.ReadData(itemName, SocketPlc.VarType.Byte.ToString());
+                        #region 更新报警信息
+                        List<Alarm> needUpdate = new List<Alarm>();
+                        List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                        foreach (Alarm fault in faultsList)
+                        {
+                            #region
+                            int faultAddrs = fault.Address;
+                            int byteNum = faultAddrs / 10;
+                            int bitNum = faultAddrs % 10;
 
+                            if (byteNum > bytesAlarmBuf.Length)
+                            {
+                                continue;
+                            }
+                            int value = bytesAlarmBuf[byteNum];
+                            value = value >> bitNum;
+                            value = value % 2;
+                            if (value != fault.Value)
+                            {
+                                fault.Value = (byte)value;
+                                needUpdate.Add(fault);
+                            }
+                            //可接收新指令
+                            if (faultAddrs == 297)
+                            {
+                                if (value != fault.Value)
+                                {
+                                    smg.IsAvailabe = value;
+                                    //更新设备可接收新指令
+                                    cwdevice.Update(smg);
+                                }
+                            }
+                            #endregion
+                        }
+
+                        if (needUpdate.Count > 0)
+                        {
+                            cwdevice.UpdateAlarmList(needUpdate);
+                        }
+                        #endregion
+                        #region 更新设备状态
+                        bool isUpdate = false;
+                        #region 更新地址
+                        //当前边
+                        int line_Num = 30;
+                        int line_Value = 0;
+                        if (line_Num <= bytesAlarmBuf.Length)
+                        {
+                            line_Value = shortFromByte(bytesAlarmBuf[line_Num + 1], bytesAlarmBuf[line_Num]);                            
+                        }
+                        //当前列
+                        int colmn_Num = 32;
+                        int colmn_Value = 0;
+                        if (colmn_Num <= bytesAlarmBuf.Length)
+                        {
+                            colmn_Value = shortFromByte(bytesAlarmBuf[colmn_Num + 1], bytesAlarmBuf[colmn_Num]);
+                        }
+                        //当前层
+                        int layer_Num = 34;
+                        int layer_Value = 0;
+                        if (layer_Num <= bytesAlarmBuf.Length)
+                        {
+                            layer_Value = shortFromByte(bytesAlarmBuf[layer_Num + 1], bytesAlarmBuf[layer_Num]);
+                        }
+                        #endregion
+                        string newAddrs = line_Value.ToString() + colmn_Value.ToString().PadLeft(2, '0') + layer_Value.ToString().PadLeft(2, '0');
+                        if (string.Compare(smg.Address, newAddrs) != 0)
+                        {
+                            smg.Address = newAddrs;
+                            isUpdate = true;
+                        }
+
+                        //自动步
+                        int autoStep = 36;
+                        if (autoStep <= bytesAlarmBuf.Length)
+                        {
+                            int autoStepValue = shortFromByte(bytesAlarmBuf[autoStep + 1], bytesAlarmBuf[autoStep]);
+                            if (autoStepValue != smg.RunStep)
+                            {
+                                smg.RunStep = autoStepValue;
+                                isUpdate = true;
+                            }
+                        }
+
+                        //装载步进
+                        int loadStep = 38;
+                        if (loadStep <= bytesAlarmBuf.Length)
+                        {
+                            int loadStepValue = shortFromByte(bytesAlarmBuf[loadStep + 1], bytesAlarmBuf[loadStep]);
+                            if (loadStepValue != smg.RunStep)
+                            {
+                                smg.InStep = loadStep;
+                                isUpdate = true;
+                            }
+                        }
+
+                        //卸载步进
+                        int unloadStep = 40;
+                        if (unloadStep <= bytesAlarmBuf.Length)
+                        {
+                            int unloadStepValue = shortFromByte(bytesAlarmBuf[unloadStep + 1], bytesAlarmBuf[unloadStep]);
+                            if (unloadStepValue != smg.RunStep)
+                            {
+                                smg.OutStep = unloadStep;
+                                isUpdate = true;
+                            }
+                        }
+
+                        //控制模式
+                        int mode = 50;
+                        if (mode <= bytesAlarmBuf.Length)
+                        {
+                            short modeValue = shortFromByte(bytesAlarmBuf[mode + 1], bytesAlarmBuf[mode]);
+                            if (modeValue != (short)smg.Mode)
+                            {
+                                if (modeValue > 4)
+                                {
+                                    log.Error("devicecode-" + smg.DeviceCode + " 更新模式时，读取的值不对-value:" + modeValue);
+                                }
+                                else
+                                {
+                                    smg.Mode = (EnmModel)modeValue;
+                                    isUpdate = true;
+                                }
+
+                            }
+                        }
+
+                        if (isUpdate)
+                        {
+                            cwdevice.Update(smg);
+                        }
+                        #endregion
                         #endregion
                     }
                 }
@@ -1054,5 +1295,17 @@ namespace Parking.Application
             }
             return true;
         }
+
+        /// <summary>
+        /// 高低字节转化为整型
+        /// </summary>
+        /// <param name="lobyte"></param>
+        /// <param name="hibyte"></param>
+        /// <returns></returns>
+        private short shortFromByte(byte lobyte,byte hibyte)
+        {
+            return Convert.ToInt16(hibyte * 256 + lobyte);
+        }
+
     }
 }
