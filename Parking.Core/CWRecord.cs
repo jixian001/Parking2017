@@ -38,14 +38,21 @@ namespace Parking.Core
                 {
                     tlog.Warehouse = data[0];
                 }
-                tlog.Telegram = data[2] + "|" + data[3] + "|" + data[4];
+                if (data[4] != 0)
+                {
+                    tlog.Telegram = "(" + data[2] + "," + data[3] + "," + data[4]+")";
+                }
+                else
+                {
+                    tlog.Telegram = "(" + data[2] + "," + data[3] + ")";
+                }
                 tlog.DeviceCode = data[6];
                 tlog.ICCode = data[11].ToString();
-                tlog.CarInfo = data[23] + "|" + data[25] + "|" + data[47];
+                tlog.CarInfo = data[23] + "," + data[25] + "," + data[47];
                 string fromAddrs = data[30]+"边"+data[31]+"列"+data[32]+"层";
                 string toAddrs= data[35] + "边" + data[36] + "列" + data[37] + "层";
                 tlog.FromAddress = fromAddrs;
-                tlog.ToAddress = toAddrs;
+                tlog.ToAddress = toAddrs;                
                 tlog.TelegramID = data[48];
 
                 manager.Add(tlog);
@@ -56,6 +63,17 @@ namespace Parking.Core
             }
         }
 
+        /// <summary>
+        /// 查询报文信息
+        /// </summary>      
+        public List<TelegramLog> FindPageList(int pageSize,int pageIndex,DateTime start,DateTime end,string queryName,string queryContent)
+        {
+            return manager.FindList().ToList();
+        }
+
 
     }
+
+
+
 }

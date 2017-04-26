@@ -136,7 +136,11 @@
                     top: false,
                     left: false,
                     getLabel: function (character, row, column) {
-                        return column;
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
@@ -175,7 +179,11 @@
                     top: false,
                     left: false,
                     getLabel: function (character, row, column) {
-                        return column;
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
@@ -214,7 +222,11 @@
                     top: false,
                     left: false,
                     getLabel: function (character, row, column) {
-                        return column;
+                        var rw = row;
+                        if (row >= 3) {
+                            rw = row - 1;
+                        }
+                        return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;

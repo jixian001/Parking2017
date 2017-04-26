@@ -181,7 +181,8 @@
     <Compile Include="Areas\CustomManager\CustomManagerAreaRegistration.cs" />
     <Compile Include="Areas\CustomManager\Models\CustomerModel.cs" />
     <Compile Include="Areas\CustomManager\Models\SelectItem.cs" />
-    <Compile Include="Areas\ReportManager\Controllers\ManageController.cs" />
+    <Compile Include="Areas\ReportManager\Controllers\ReportController.cs" />
+    <Compile Include="Areas\ReportManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
     <Compile Include="Areas\SystemManager\Controllers\FaultSummaryController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\ManageController.cs" />
@@ -281,6 +282,10 @@
     <Content Include="Content\bootstrap-select\js\bootstrap-select.js.map" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Add.cshtml" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Edit.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Report\_PartialSideNav.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Report\TelegramReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Report\OprtReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Report\FaultReport.cshtml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
@@ -330,8 +335,6 @@
     <Folder Include="Areas\ChargeManager\Views\Manage\" />
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
-    <Folder Include="Areas\ReportManager\Models\" />
-    <Folder Include="Areas\ReportManager\Views\Manage\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
     <Folder Include="Areas\SystemManager\Views\Shared\" />
   </ItemGroup>

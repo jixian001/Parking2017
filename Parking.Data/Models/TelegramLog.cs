@@ -28,11 +28,7 @@ namespace Parking.Data
         [StringLength(10)]
         public string FromAddress { get; set; }
         [StringLength(10)]
-        public string ToAddress { get; set; }
-        /// <summary>
-        /// 作业类型
-        /// </summary>
-        public int TaskType { get; set; }
+        public string ToAddress { get; set; }        
         public int TelegramID { get; set; }
         
     }
