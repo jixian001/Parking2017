@@ -15,7 +15,7 @@
             <li class="active">操作日志记录</li>
         </ol>
 
-        <div class="panel panel-default">
+        <div class="panel panel-default" style="display:none">
             <div class="panel-heading">
                 查询条件
             </div>
@@ -69,6 +69,9 @@
 
             var $goods = $("#goods");
             setTimeout(function () {
+
+                $('.panel').css('display', 'block');
+
                 $.ajax({
                     type: "GET",
                     url: "@Url.Action("GetQueryNameForOprt")",

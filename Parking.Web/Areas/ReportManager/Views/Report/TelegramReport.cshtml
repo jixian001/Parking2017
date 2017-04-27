@@ -12,8 +12,8 @@
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
             <li>统计报表</li>
             <li class="active">报文记录</li>
-        </ol>
-        <div class="panel panel-default">
+        </ol>       
+        <div class="panel panel-default" style="display:none">
             <div class="panel-heading">
                 查询条件
             </div>
@@ -46,7 +46,6 @@
                 </div>
             </div>
         </div>
-
         <div>
             <div id="toolbar" class="btn-group pull-right" role="group">
                 <button id="btnFind" class="btn btn-default">查 询</button>
@@ -67,6 +66,7 @@
 
             var $goods = $("#goods");           
             setTimeout(function () {
+                $('.panel').css('display','block');
                 $.ajax({
                     type: "GET",
                     url: "@Url.Action("GetQueryNameForTelegram")",

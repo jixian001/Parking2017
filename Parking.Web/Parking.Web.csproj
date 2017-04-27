@@ -231,6 +231,10 @@
     <Content Include="Content\jquery-seat-charts\jquery.seat-charts.js" />
     <Content Include="Content\jquery-seat-charts\jquery.seat-charts.min.js" />
     <Content Include="Content\jquery-seat-charts\Style.css" />
+    <Content Include="Content\rocket-to-top\css\rockettop.css" />
+    <Content Include="Content\rocket-to-top\images\rocket_button_up.png" />
+    <Content Include="Content\rocket-to-top\images\top.png" />
+    <Content Include="Content\rocket-to-top\js\rockettop.js" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />

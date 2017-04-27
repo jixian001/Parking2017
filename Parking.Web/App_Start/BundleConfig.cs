@@ -70,6 +70,12 @@ namespace Parking.Web
 
             bundles.Add(new StyleBundle("~/Content/devform").Include(
                "~/Content/devform.css"));
+
+            bundles.Add(new StyleBundle("~/Content/rocket").Include(
+                "~/Content/rocket-to-top/css/rockettop.css"));
+
+            bundles.Add(new ScriptBundle("~/bundles/rocket").Include(
+               "~/Content/rocket-to-top/js/rockettop.js"));
         }
     }
 }

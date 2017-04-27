@@ -7,6 +7,7 @@
     <title>@ViewBag.Title - 车库管理系统</title>
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/bootstrapplugin")
+    @Styles.Render("~/Content/rocket")
     @Scripts.Render("~/bundles/modernizr")
 </head>
 <body>
@@ -102,18 +103,23 @@
         <footer class="text-center">
             <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;深圳中集智能停车有限公司 &nbsp;&nbsp;&nbsp;版权所有</p>
             <p>
-                <a href="@Url.Action("About","Home")" target="_blank">关于我们</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                <a href="@Url.Action("WeChat","Home")" target="_blank">微信公众号</a>
+                @Html.ActionLink("关于我们", "About", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })&nbsp;&nbsp;&nbsp;&nbsp;
+                @Html.ActionLink("微信公众号", "WeChat", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })
             </p>
         </footer>
+    </div>
+
+    <div style="display:none" id="rocket-to-top">
+        <div style="opacity:0;display:block" class="level-2"></div>
+        <div class="level-3"></div>
     </div>
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/signalr")
     @Scripts.Render("~/bundles/plugin")  
+    @Scripts.Render("~/bundles/rocket")    
     <script src="~/signalr/hubs"></script>
-    @*@Scripts.Render("~/bundles/defsignalr")*@
 
     @RenderSection("scripts", required: false)
 </body>
