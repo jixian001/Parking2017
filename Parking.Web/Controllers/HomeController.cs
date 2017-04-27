@@ -11,15 +11,19 @@ using Parking.Core;
 using System.Threading.Tasks;
 
 namespace Parking.Web.Controllers
-{
+{   
     public class HomeController : Controller
-    {        
+    {
+        private Log log;
+          
         public HomeController()
         {
             //订阅事件
             MainCallback<Location>.Instance().WatchEvent+= FileWatch_LctnWatchEvent;
 
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
+
+            log = LogFactory.GetLogger("HomeController");
         }
 
         /*
@@ -68,15 +72,14 @@ namespace Parking.Web.Controllers
             return View();
         }
 
-        public JsonResult GetDeviceList()
+        public ActionResult GetDeviceList()
         {
-            List<Device> devices = new CWDevice().FindList(smg=>true);
+            List<Device> devices = new CWDevice().FindList(smg => true);
             if (devices == null)
             {
                 devices = new List<Device>();
             }
-            
-            return Json(devices,JsonRequestBehavior.AllowGet);
+            return Json(devices, JsonRequestBehavior.AllowGet);
         }
         
         /// <summary>
@@ -135,14 +138,15 @@ namespace Parking.Web.Controllers
         /// 初始化界面用
         /// </summary>
         /// <returns></returns>
-        public JsonResult GetLocationList()
+        public ActionResult GetLocationList()
         {
             List<Location> locList = new CWLocation().FindLocationList(lc => true);
             if (locList == null || locList.Count == 0)
             {
-                var resp = new {
-                    code=0,
-                    data=""
+                var resp = new
+                {
+                    code = 0,
+                    data = ""
                 };
                 return Json(resp, JsonRequestBehavior.AllowGet);
             }
@@ -151,10 +155,14 @@ namespace Parking.Web.Controllers
                 code = 1,
                 data = locList
             };
-            return Json(nback,JsonRequestBehavior.AllowGet);
+            return Json(nback, JsonRequestBehavior.AllowGet);
+
         }
 
-        
+        public ActionResult Error()
+        {
+            return View("Error");
+        }
 
     }
 }

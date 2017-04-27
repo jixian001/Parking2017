@@ -8,7 +8,7 @@ using Parking.Data;
 using Parking.Core;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
-{
+{  
     public class FaultSummaryController : Controller
     {
         // GET: SystemManager/FaultSummary

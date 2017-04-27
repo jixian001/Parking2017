@@ -1,4 +1,6 @@
-﻿@{
+﻿@model System.Web.Mvc.HandleErrorInfo
+
+@{
     Layout = null;
 }
 
@@ -11,7 +13,24 @@
 </head>
 <body>
     <div>
-    
+        @if (Model != null)
+        {
+            <p class="bg-danger text-danger">
+                异常类型：@Model.Exception.GetType().Name
+            </p>
+            <p class="bg-danger text-danger">
+                触发异常的控制器：@Model.ControllerName
+            </p>
+            <p class="bg-danger text-danger">
+                触发异常的操作方法：@Model.ActionName
+            </p>
+            <p class="bg-danger text-danger">
+                错误信息:@Model.Exception.Message
+            </p>
+            <p class="bg-info text-info">
+                页面路径:~/Views/Shared/Error.cshtml
+            </p>
+        }
     </div>
 </body>
 </html>

@@ -13,37 +13,39 @@
             <li>顾客管理</li>
             <li class="active">车主管理</li>
         </ol>
-        <div class="row">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    车主查询
-                </div>
-                <div class="panel-body">
-                    <div class="form-group">
-                        <label class="col-md-2 control-label" for="goods" style="text-align:right;margin-top:4px">查询条件</label>
-                        <div class="col-md-2">
-                            <select id="goods" name="goods" class="selectpicker show-tick form-control">
-                                <option value="0">请选择</option>                               
-                            </select>
-                        </div>
-                        <label class="col-md-2 control-label" for="content" style="text-align:right;margin-top:4px">查询数据</label>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" name="content" id="content" placeholder="输入查询内容" />
-                        </div>
-                        <div class="col-md-2 col-md-offset-1">
-                            <button class="btn btn-primary" id="search">查询</button>
-                        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                车主查询
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-md-2 control-label" for="goods" style="text-align:right;margin-top:4px">查询条件</label>
+                    <div class="col-md-2">
+                        <select id="goods" name="goods" class="selectpicker show-tick form-control">
+                            <option value="0">请选择</option>
+                        </select>
+                    </div>
+                    <label class="col-md-2 control-label" for="content" style="text-align:right;margin-top:4px">查询数据</label>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="content" id="content" placeholder="输入查询内容" />
+                    </div>
+                    <div class="col-md-2 col-md-offset-1">
+                        <button class="btn btn-primary" id="search">查询</button>
                     </div>
                 </div>
             </div>
+        </div>
+        <div>
             <div>
-                <div id="toolbar" class="btn-group pull-right" role="group">                   
+                <div id="toolbar" class="btn-group pull-right" role="group">
                     <a class="btn btn-default" role="button" href="@Url.Action("Add","CustomerManager")">添 加</a>
                     <button id="btnModify" class="btn btn-default">修 改</button>
-                    <button id="btnDelete" class="btn btn-default">删 除</button>                                      
-                </div>               
-            </div> 
-            <table id="custGrid"></table> 
+                    <button id="btnDelete" class="btn btn-default">删 除</button>
+                </div>
+            </div>
+
+            <table id="custGrid"></table>
         </div>
     </div>
 </div>

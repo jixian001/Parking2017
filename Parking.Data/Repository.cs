@@ -39,7 +39,7 @@ namespace Parking.Data
             return _dbContext.Set<TEntity>();
         }
 
-        public IQueryable<TEntity> FindList(Expression<Func<TEntity,bool>> where)
+        public IQueryable<TEntity> FindList(Expression<Func<TEntity, bool>> where)
         {
             return _dbContext.Set<TEntity>().Where(where);
         }

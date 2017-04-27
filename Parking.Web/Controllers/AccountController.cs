@@ -12,7 +12,7 @@ using System.Security.Claims;
 
 namespace Parking.Web.Controllers
 {
-    [Authorize]
+    [Authorize]   
     public class AccountController : Controller
     {
         private AppUserManager UserManager

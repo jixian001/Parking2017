@@ -9,7 +9,7 @@ using Parking.Core;
 using Parking.Web.Areas.CustomManager.Models;
 
 namespace Parking.Web.Areas.CustomManager.Controllers
-{
+{   
     public class ManageController : Controller
     {
         // GET: CustomManager/Manage/ICCard

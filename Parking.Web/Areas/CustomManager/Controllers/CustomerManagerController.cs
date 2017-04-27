@@ -9,7 +9,7 @@ using Parking.Core;
 using Parking.Web.Areas.CustomManager.Models;
 
 namespace Parking.Web.Areas.CustomManager.Controllers
-{
+{   
     public class CustomerManagerController : Controller
     {
         // GET: CustomManager/CustomerManager

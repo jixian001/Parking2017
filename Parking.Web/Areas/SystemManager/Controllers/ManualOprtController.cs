@@ -8,7 +8,7 @@ using Parking.Auxiliary;
 using Parking.Core;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
-{
+{   
     /// <summary>
     /// 手动指令
     /// </summary>
