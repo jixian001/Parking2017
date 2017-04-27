@@ -31,7 +31,8 @@ namespace Parking.Web
 
             bundles.Add(new ScriptBundle("~/bundles/plugin").Include(
                      "~/Scripts/bootstrap-dialog.js",
-                     "~/Scripts/bootstrap-datetimepicker.js"));
+                     "~/Scripts/bootstrap-datetimepicker.js",
+                     "~/Scripts/locales/bootstrap-datetimepicker.zh-CN.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",

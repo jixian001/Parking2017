@@ -19,7 +19,7 @@
     background: none repeat scroll 0 0 transparent;
     cursor: pointer;
     display: block;
-    height: 150px;
+    height: 80px;
     z-index: 2;
 }
 
@@ -27,8 +27,8 @@
     background: url("../images/top.png") no-repeat scroll 0 0 transparent;
     cursor: default;
     display: block;
-    height: 250px;
-    margin: -125px 10px 0;
+    height: 80px;
+    margin: 0 10px;
     overflow: hidden;
     padding: 0;
     position: fixed;

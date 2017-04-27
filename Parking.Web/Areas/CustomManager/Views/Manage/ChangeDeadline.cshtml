@@ -48,7 +48,7 @@
                         @Html.LabelFor(model => model.NewDeadline, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
                             @*@Html.EditorFor(model => model.NewDeadline, new { htmlAttributes = new { @class = "form-control" } })*@
-                            <input type="date" class="form-control" id="NewDeadline" name="NewDeadline" placeholder="格式：2017-04-01 00:00" />
+                            <input type="date" class="form-control form_datetime" id="NewDeadline" name="NewDeadline" placeholder="格式：2017-04-01 00:00" />
                             @Html.ValidationMessageFor(model => model.NewDeadline, "", new { @class = "text-danger" })
                         </div>
                     </div>
@@ -69,7 +69,16 @@
 @section scripts{
    <script>
        $(function () {
-           $("#NewDeadline").datetimepicker({ format: 'yyyy-mm-dd hh:ii' });
+           $('.form_datetime').datetimepicker({
+               language: 'zh-CN',
+               weekStart: 1,
+               todayBtn: 1,
+               autoclose: 1,
+               todayHighlight: 1,
+               startView: 2,
+               forceParse: 0,
+               showMeridian: 1
+           });
        })
     </script>
     }

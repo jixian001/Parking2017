@@ -244,6 +244,7 @@
     <Content Include="Image\three.jpg" />
     <Content Include="Scripts\bootstrap-datetimepicker.js" />
     <Content Include="Scripts\bootstrap-datetimepicker.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datetimepicker.zh-CN.js" />
     <Content Include="Scripts\bootstrap-dialog.js" />
     <Content Include="Configs\System.config" />
     <Content Include="Configs\Database.config" />
