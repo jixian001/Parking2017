@@ -6,6 +6,8 @@ using System.Web.Mvc;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
+using System.Threading.Tasks;
+using System.Net;
 using Parking.Web.Areas.CustomManager.Models;
 
 namespace Parking.Web.Areas.CustomManager.Controllers
@@ -28,22 +30,74 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             return Content(ipaddress);
         }
         
-        public ActionResult ReadCard()
+        /// <summary>
+        /// 读卡,异步方式
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ActionResult> ReadCard()
         {
+            //多线程下HttpContext.Current.Server为空
+            string ipaddrs = XMLHelper.GetRootNodeValueByXpath("root", "ICCardIPAddress"); 
+            var iccd = await ReadICCardAsync(ipaddrs);
             var data = new {
                 code = 1,
-                physccode = "0",
-                iccode="0"
+                physccode = iccd.PhysicCode,
+                iccode=iccd.UserCode
             };
             return Json(data, JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// 异步读卡
+        /// </summary>
+        /// <returns></returns>
+        private Task<ICCard> ReadICCardAsync(string ipaddrs)
+        {
+            return Task<ICCard>.Factory.StartNew(()=> {
+                ICCard iccd = new ICCard { PhysicCode = "0", UserCode = "" };
+                #region                
+                if (string.IsNullOrEmpty(ipaddrs))
+                {
+                    return iccd;
+                }
+                IPAddress ip;
+                if(!IPAddress.TryParse(ipaddrs,out ip))
+                {
+                    return iccd;
+                }
+                ICCardReader reader = new ICCardReader(ipaddrs);
+                bool nback = reader.Connect();
+                if (nback)
+                {
+                    uint physic = 0;
+                    int ret= reader.GetPhyscard(ref physic);
+                    if (ret == 0)
+                    {
+                        iccd.PhysicCode = physic.ToString();
+                        ICCard ccd = new CWICCard().Find(ic=>ic.PhysicCode==physic.ToString());
+                        if (ccd != null)
+                        {
+                            iccd = ccd;
+                        }
+                    }
+                }
+                reader.Disconnect();
+                #endregion
+                return iccd;
+            });           
+        }
+
+        /// <summary>
+        /// 制卡或修改卡号
+        /// </summary>
+        /// <returns></returns>
         [HttpPost]
         public ActionResult MakeCard()
         {
             string physc = Request.Form["physccode"];
             string code = Request.Form["iccode"];
-            Response resp = new Response() { Code=1,Message="Success"};
+            Response resp= new CWICCard().MakeICCard(physc, code);
+
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
 

@@ -42,7 +42,7 @@
             </fieldset>
         </div>
         <br />
-        <div class="row">
+        <div class="row formInfo" style="display:none">
             <fieldset>
                 <legend>IC卡信息</legend>
                 <div style="margin:10px 20px 20px 20px">
@@ -120,41 +120,22 @@
         </div>
     </div>
 </div>
-<div style="display:none">   
-    <input type="hidden" id="ipaddrs" value="" />
-</div>
 
 @section scripts{
     @Styles.Render("~/Content/defform")
     <script>       
-        $(function () {
-            //获取客户端IP地址
-            $.ajax({
-                type: "GET",
-                url: "@Url.Action("GetIccdIPAddress")",
-                dataType: "text",
-                cache: false,
-                beforeSend: function (XMLHttpRequest) {
+        $(function () {            
 
-                },
-                success: function (data) {
-                    $("#ipaddrs").val(data);
-                },
-                complete: function (XMLHttpRequest, textStatus) {
-
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-
-                }
-            });
+            setTimeout(function () {
+                $(".formInfo").css("display","block");
+            },500);
 
             //读卡
             $("#btnRead").click(function () {
                 var $phys = $("#physiccode");
                 var $iccd = $("#iccode");
                 $phys.val("");
-                $iccd.val("");
-                //var addrs = $("#ipaddrs").val();
+                $iccd.val("");               
                 //暂时先使用后台读卡方式
                 $.ajax({
                     type: "GET",
@@ -165,10 +146,13 @@
                         $("#btnRead").text("查询中...");
                     },
                     success: function (data) {
-                        if (data.code == 1) {
+                        if (data.code == 1)
+                        {
                             $phys.val(data.physccode);
                             $iccd.val(data.iccode);
-                        } else {
+                        }
+                        else
+                        {
                             BootstrapDialog.show({
                                 title: "温馨提示",
                                 message: "读卡失败，请检查卡片是否放在卡机上或联系供应商！"
