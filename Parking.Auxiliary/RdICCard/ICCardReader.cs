@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.NetworkInformation;
-using Parking.Auxiliary;
 
-namespace Parking.Application
+namespace Parking.Auxiliary
 {
     public class ICCardReader:ICCardRW
     {

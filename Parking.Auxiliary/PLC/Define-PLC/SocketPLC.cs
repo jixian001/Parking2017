@@ -5,10 +5,9 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
-using Parking.Auxiliary;
 using System.Text.RegularExpressions;
 
-namespace Parking.Application
+namespace Parking.Auxiliary
 {
    
     public class SocketPlc:IPLC, IDisposable

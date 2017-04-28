@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using S7.Net;
-using Parking.Auxiliary;
 using System.Text.RegularExpressions;
 
-namespace Parking.Application
+namespace Parking.Auxiliary
 {
     /// <summary>
     /// the library directly from NuGet 

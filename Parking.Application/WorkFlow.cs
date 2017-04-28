@@ -13,7 +13,7 @@ namespace Parking.Application
     {
         private int warehouse;
         private string ipAddrs;       
-        private IPLC plcAccess;
+        private S7NetPlus plcAccess;
         private string[] s7_Connection_Items = null;
 
         private CWTask cwtask = new CWTask();
@@ -27,8 +27,7 @@ namespace Parking.Application
         public WorkFlow(string ipaddrs,int wh)
         {
             ipAddrs = ipaddrs;
-            warehouse = wh;
-            //plcAccess = new SocketPlc(ipAddrs);
+            warehouse = wh;           
             plcAccess = new S7NetPlus(ipaddrs);
 
             messageID = (short)(new Random()).Next(1, 4000);        
