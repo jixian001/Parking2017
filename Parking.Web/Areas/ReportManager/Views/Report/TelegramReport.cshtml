@@ -48,7 +48,8 @@
         </div>
         <div>
             <div id="toolbar" class="btn-group pull-right" role="group">
-                <button id="btnFind" class="btn btn-default">查 询</button>
+                <button id="btnFind" class="btn btn-info">查 询</button>
+                <button id="btnReport" class="btn btn-danger">导出到Excel表</button>
             </div>
         </div>
         <div>
@@ -214,9 +215,7 @@
 
                 return {
                     pageSize: params.pageSize,  //一定包含
-                    pageIndex: params.pageNumber,  //一定包含
-                    //sortOrder: params.sortOrder,
-                    //sortName: params.sortName,
+                    pageIndex: params.pageNumber,  //一定包含                  
                     queryName: name,
                     queryValue: content,
                     stdtime: start,
@@ -224,6 +223,7 @@
                 };
             }
 
+            //查询
             $("#btnFind").click(function () {
                 var name = $("#goods option:selected").val(); //value值
                 var content = $("#fcontent").val();
@@ -231,14 +231,89 @@
                 {
                     if (content == "")
                     {
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: "请输入查询内容！"
-                            });
-                            return;                      
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
                     }
                 }
                 $table.bootstrapTable("refresh");              
+            });
+
+            //导出到EXCEL
+            $("#btnReport").click(function () {
+
+                var start = $("input[name='startdtime']").val();
+                var end = $("input[name='enddtime']").val();
+
+                var disp = $("#goods option:selected").text();
+                var name = $("#goods option:selected").val(); //value值
+                var content = $("#fcontent").val();
+
+                if (name != "0") {
+                    if (content == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
+                    }
+                }
+                else if (name == "GetNum" || name == "SaveNum") {
+                    if (content == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "无效的查询参数，该参数不允许导出报表！"
+                        });
+                        return;
+                    }
+                }
+               
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message: "<p>确定要将以下条件查询到的记录导出到 <b>服务器</b> Excel 文件中？</p>" +
+                             "<p>查询条件：</p><div style='margin-left:50px'>" +
+                             "<p>起始时间： <span class='text-info'>" + start + "</span></p>" +
+                             "<p>截止时间： <span class='text-info'>" + end + "</span></p>" +
+                             "<p>查询参数： <span class='text-info'>" + disp + "</span></p>" +
+                             "<p>查询内容： <span class='text-info'>" + content + "</span></p></div><br>"+
+                             "<p>导出的文件名：<input type='text' id='filename' value='telegram' class='text-info'/></p>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {                            
+                            var fileName=$("#filename").val();
+
+                            $.ajax({
+                                type: "POST",
+                                url: "@Url.Action("RenderToExcel")",
+                                data:{"code":1,"startdt":start,"enddt":end,"queryname":name,"content":content,"filename":fileName},
+                                dataType: "json",
+                                cache: false,
+                                success: function (data) {
+
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: data.Message
+                                    });
+
+                                },
+                                complete: function (XMLHttpRequest, textStatus) {
+                                    self.close();
+                                }
+                            });
+                            
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+                
+
+
             });
 
 

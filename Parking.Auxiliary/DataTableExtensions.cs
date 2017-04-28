@@ -8,7 +8,7 @@ using System.Data;
 
 namespace Parking.Auxiliary
 {
-    public static class DataTableExtensions
+    public static class ConvertToDataTable
     {
         public static DataTable ToDataTable<T>(this IEnumerable<T> list)
         {

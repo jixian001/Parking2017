@@ -10,6 +10,8 @@
   <ICCardIPAddress></ICCardIPAddress>
   <!--车厅最大允许取车数量-->
   <MaxHallGetCar>4</MaxHallGetCar>
+  <!--EXCEL报表导出路径-->
+  <FilePath>D:\Parking_Report\</FilePath>
   <!--区分库区，区分车厅-->
   <setting>
     <!--开始设定库区信息-->

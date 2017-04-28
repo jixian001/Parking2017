@@ -125,16 +125,17 @@ namespace Parking.Core
                     else if (queryName == "GetNum")
                     {
                         queryTelegram.AddRange(telegramLst.Where(lst => lst.Telegram.Contains("(2,1)") || lst.Telegram.Contains("(3,1)")));
-                    }
-                    else
-                    {
-
-                    }
+                    }                  
 
                 }
                 #endregion
             }
             totalCount = queryTelegram.Count;
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                return queryInfo;
+            }
+
             return queryTelegram.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
         }
 
@@ -169,6 +170,11 @@ namespace Parking.Core
                 }
             }
             totalCount = queryInfo.Count;
+
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                return queryInfo;
+            }
             return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
         }
     }
@@ -218,6 +224,10 @@ namespace Parking.Core
                 }
             }
             totalCount = queryInfo.Count;
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                return queryInfo;
+            }
             return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
         }

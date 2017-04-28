@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Data;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
@@ -177,6 +178,56 @@ namespace Parking.Web.Areas.ReportManager.Controllers
             };
             return Json(value, JsonRequestBehavior.AllowGet);
         }
+
+        /// <summary>
+        /// 后期改为异步的ACTION
+        /// </summary>       
+        [HttpPost]
+        public JsonResult RenderToExcel(int code,DateTime startdt,DateTime enddt,string queryname,string content,string filename)
+        {
+            Response resp = new Response();
+            #region
+            int totalnum;
+            string basepath= XMLHelper.GetRootNodeValueByXpath("root", "FilePath");
+            string fname = basepath + filename;
+            if (code == 1) //是报文记录
+            {
+                List<TelegramLog> lst = new CWTelegramLog().FindPageList(0, 0, startdt, enddt, queryname, content,out totalnum);
+                if (lst.Count > 0)
+                {
+                    DataTable dt = ConvertToDataTable.ToDataTable<TelegramLog>(lst);
+                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 11);
+                    resp.Code = 1;
+                    resp.Message = "数据导出成功，文件路径-"+fname;                    
+                }
+            }
+            else if (code == 2) //是操作记录
+            {
+                List<OperateLog> lst = new CWOperateRecordLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
+                if (lst.Count > 0)
+                {
+                    DataTable dt = ConvertToDataTable.ToDataTable<OperateLog>(lst);
+                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 4);
+                    resp.Code = 1;
+                    resp.Message = "数据导出成功，文件路径-" + fname;
+                }
+            }
+            else if (code == 3) //是故障记录
+            {
+                List<FaultLog> lst=new CWFaultLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
+                if (lst.Count > 0)
+                {
+                    DataTable dt = ConvertToDataTable.ToDataTable<FaultLog>(lst);
+                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 8);
+                    resp.Code = 1;
+                    resp.Message = "数据导出成功，文件路径-" + fname;
+                }
+            }
+            #endregion
+            return Json(resp, JsonRequestBehavior.AllowGet);
+        }
+
+
 
     }
 }

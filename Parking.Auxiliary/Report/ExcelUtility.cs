@@ -130,7 +130,7 @@ namespace Parking.Auxiliary
         /// <param name="title"></param>
         /// <param name="fileName"></param>
         public void RenderDataTableToExcel(DataTable dt, string title, string fileName, int col)
-        {
+        {            
             MemoryStream ms = RenderDataTableToStream(dt, title, col) as MemoryStream;
             WriteStreamToFile(ms, fileName);
         }
