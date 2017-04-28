@@ -62,11 +62,11 @@ namespace Parking.Web.Areas.ReportManager.Controllers
             DateTime end = DateTime.Parse("2017-1-1");
             if (!string.IsNullOrEmpty(startdtime))
             {
-                start = DateTime.Parse(startdtime);
+                DateTime.TryParse(startdtime, out start);                
             }
             if (!string.IsNullOrEmpty(enddtime))
             {
-                end = DateTime.Parse(enddtime);
+                DateTime.TryParse(enddtime, out end);
             }
             #endregion
             int totalNum = 0;
@@ -110,11 +110,11 @@ namespace Parking.Web.Areas.ReportManager.Controllers
             DateTime end = DateTime.Parse("2017-1-1");
             if (!string.IsNullOrEmpty(startdtime))
             {
-                start = DateTime.Parse(startdtime);
+                DateTime.TryParse(startdtime, out start);
             }
             if (!string.IsNullOrEmpty(enddtime))
             {
-                end = DateTime.Parse(enddtime);
+                DateTime.TryParse(enddtime, out end);
             }
             #endregion
             int totalNum = 0;
@@ -160,11 +160,11 @@ namespace Parking.Web.Areas.ReportManager.Controllers
             DateTime end = DateTime.Parse("2017-1-1");
             if (!string.IsNullOrEmpty(startdtime))
             {
-                start = DateTime.Parse(startdtime);
+                DateTime.TryParse(startdtime, out start);
             }
             if (!string.IsNullOrEmpty(enddtime))
             {
-                end = DateTime.Parse(enddtime);
+                DateTime.TryParse(enddtime, out end);
             }
             #endregion
             int totalNum = 0;

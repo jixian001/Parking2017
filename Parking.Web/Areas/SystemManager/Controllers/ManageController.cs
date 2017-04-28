@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
+using Parking.Web.Areas.SystemManager.Models;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
 {  
@@ -80,7 +81,27 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         {
             return View();
         }
-        
+
+        public ActionResult GetSelectItemName(int warehouse)
+        {
+            List<SelectItem> items = new List<SelectItem>();
+            //先以一个库算，后面做联动查询的
+            List<Device> devLst = new CWDevice().FindList(d => d.Warehouse == warehouse);
+            foreach (Device dev in devLst)
+            {
+                if (dev.DeviceCode > 10)
+                {
+                    items.Add(new SelectItem { OptionValue = dev.DeviceCode.ToString(), OptionText = "车厅 " + (dev.DeviceCode - 10).ToString() });
+                }
+                else
+                {
+                    items.Add(new SelectItem { OptionValue = dev.DeviceCode.ToString(), OptionText = "TV" + dev.DeviceCode.ToString() });
+                }
+            }
+            return Json(items, JsonRequestBehavior.AllowGet);
+        }
+
+
         /// <summary>
         /// 车位维护
         /// </summary>
@@ -331,7 +352,8 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 page.PageIndex = (int)pageIndex;
             }
-            if (!string.IsNullOrEmpty(warehouse) && !string.IsNullOrEmpty(code))
+            if ((!string.IsNullOrEmpty(warehouse) && warehouse != "0") &&
+                (!string.IsNullOrEmpty(code) && code != "0"))
             {
                 int wh = Convert.ToInt32(warehouse);
                 int smg = Convert.ToInt32(code);

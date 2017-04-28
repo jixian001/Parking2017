@@ -19,18 +19,23 @@
             <div class="panel-body">
                 <div class="form-group">
                     <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">库区</label>
-                    <div class="col-md-2">
-                        <input type="text" class="form-control" name="search_wh" id="search_wh" />
+                    <div class="col-md-3">
+                        <select id="warehouse" name="warehouse" class="selectpicker show-tick form-control">
+                            <option value="0">请选择</option>
+                            <option value="1" selected>1 号库</option>
+                        </select>
                     </div>
-                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">设备号</label>
-                    <div class="col-md-2">
-                        <input type="text" class="form-control" name="search_code" id="search_code" />
+                    <label class="col-md-1 control-label" style="text-align:right;margin-top:4px">设备</label>
+                    <div class="col-md-3">
+                        <select id="code" name="code" class="selectpicker show-tick form-control">
+                            <option value="0">请选择</option>
+                        </select>
                     </div>
-                    <div class="col-md-1 col-md-offset-1">
+                    <div class="col-md-2 col-md-offset-1">
                         <button class="btn btn-primary" id="search_btn">查询</button>
                     </div>
-                </div>   
-            </div>          
+                </div>
+            </div>
         </div>
         <div>
             <div id="toolbar" class="btn-group pull-right" role="group">
@@ -48,8 +53,38 @@
     <script>
         $(function () {
 
-            $("#search_wh").val("");
-            $("#search_code").val("");
+            $(".selectpicker").selectpicker({});
+            
+            setTimeout(function () {
+                var $goods = $("#code");
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetSelectItemName")",
+                    data: { "warehouse": 1 },
+                    dataType: "json",
+                    beforeSend: function (XMLHttpRequest) {
+                        var html = '<option value="100" selected>加载中...</option>';
+                        $goods.empty();
+                        $goods.append(html);
+                    },
+                    success: function (data) {
+                        var html = '<option value="0">请选择</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $goods.empty();
+                        $goods.append(html);
+                        $goods.selectpicker('render');
+                        $goods.selectpicker('refresh');
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            }, 500);
 
             var $table = $("#queueGrid");
             $table.bootstrapTable({

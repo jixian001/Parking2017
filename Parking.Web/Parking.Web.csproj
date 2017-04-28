@@ -190,6 +190,7 @@
     <Compile Include="Areas\SystemManager\Controllers\MSConfigController.cs" />
     <Compile Include="Areas\CustomManager\Models\ChangeDeadlineModel.cs" />
     <Compile Include="Areas\SystemManager\Models\ReturnModel.cs" />
+    <Compile Include="Areas\SystemManager\Models\SelectItem.cs" />
     <Compile Include="Areas\SystemManager\SystemManagerAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
