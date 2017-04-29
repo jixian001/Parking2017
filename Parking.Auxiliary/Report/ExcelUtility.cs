@@ -51,9 +51,15 @@ namespace Parking.Auxiliary
             workbook.SummaryInformation = si;
         }
 
-        private void WriteStreamToFile(MemoryStream ms, string fileName)
+        private string WriteStreamToFile(MemoryStream ms, string fileName)
         {
-            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
+            string filePath=XMLHelper.GetRootNodeValueByXpath("root", "FilePath");
+            if (!Directory.Exists(filePath))
+            {
+                Directory.CreateDirectory(filePath);
+            }
+            string allpath = filePath + "\\" + fileName + ".xls";
+            FileStream fs = new FileStream(allpath, FileMode.Create, FileAccess.Write);
             byte[] data = ms.ToArray();
             fs.Write(data, 0, data.Length);
             fs.Flush();
@@ -62,6 +68,8 @@ namespace Parking.Auxiliary
             data = null;
             ms = null;
             fs = null;
+
+            return allpath;
         }
 
         private Stream RenderDataTableToStream(DataTable SourceTable, string title, int colNum)
@@ -124,15 +132,12 @@ namespace Parking.Auxiliary
         }
 
         /// <summary>
-        /// 将datatable输出到Excel中
-        /// </summary>
-        /// <param name="dt"></param>
-        /// <param name="title"></param>
-        /// <param name="fileName"></param>
-        public void RenderDataTableToExcel(DataTable dt, string title, string fileName, int col)
+        /// 将datatable输出到Excel中,返回文件路径
+        /// </summary>       
+        public string RenderDataTableToExcel(DataTable dt, string title, string fileName, int col)
         {            
             MemoryStream ms = RenderDataTableToStream(dt, title, col) as MemoryStream;
-            WriteStreamToFile(ms, fileName);
+            return WriteStreamToFile(ms, fileName);
         }
 
 

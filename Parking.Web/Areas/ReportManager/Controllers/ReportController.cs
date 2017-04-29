@@ -187,41 +187,87 @@ namespace Parking.Web.Areas.ReportManager.Controllers
         {
             Response resp = new Response();
             #region
-            int totalnum;
-            string basepath= XMLHelper.GetRootNodeValueByXpath("root", "FilePath");
-            string fname = basepath + filename;
-            if (code == 1) //是报文记录
+            try
             {
-                List<TelegramLog> lst = new CWTelegramLog().FindPageList(0, 0, startdt, enddt, queryname, content,out totalnum);
-                if (lst.Count > 0)
+                int totalnum;              
+                if (code == 1) //是报文记录
                 {
-                    DataTable dt = ConvertToDataTable.ToDataTable<TelegramLog>(lst);
-                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 11);
-                    resp.Code = 1;
-                    resp.Message = "数据导出成功，文件路径-"+fname;                    
+                    List<TelegramLog> lst = new CWTelegramLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
+                    if (lst.Count > 0)
+                    {
+                        List<TelegramLog> filterLst = new List<TelegramLog>();
+                        if (totalnum > 1000)
+                        {
+                            filterLst = lst.Skip(0).Take(1000).ToList();
+                        }
+                        else
+                        {
+                            filterLst.AddRange(lst);
+                        }
+                        DataTable dt = ConvertToDataTable.ToDataTable<TelegramLog>(filterLst);
+                        string path= ExcelUtility.Instance.RenderDataTableToExcel(dt, "报文日志报表", filename, 11);
+                        resp.Code = 1;
+                        resp.Message = "数据导出成功，记录数- " + filterLst.Count + " ,文件路径- " + path;
+                    }
+                    else
+                    {
+                        resp.Message = "没有记录要导出.";
+                    }
+                }
+                else if (code == 2) //是操作记录
+                {
+                    List<OperateLog> lst = new CWOperateRecordLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
+                    if (lst.Count > 0)
+                    {
+                        List<OperateLog> filterLst = new List<OperateLog>();
+                        if (totalnum > 1000)
+                        {
+                            filterLst = lst.Skip(0).Take(1000).ToList();
+                        }
+                        else
+                        {
+                            filterLst.AddRange(lst);
+                        }
+
+                        DataTable dt = ConvertToDataTable.ToDataTable<OperateLog>(filterLst);
+                        string path = ExcelUtility.Instance.RenderDataTableToExcel(dt, "操作日志报表", filename, 4);
+                        resp.Code = 1;
+                        resp.Message = "数据导出成功，记录数- " + filterLst.Count + " ,文件路径- " + path;
+                    }
+                    else
+                    {
+                        resp.Message = "没有记录要导出.";
+                    }
+                }
+                else if (code == 3) //是故障记录
+                {
+                    List<FaultLog> lst = new CWFaultLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
+                    if (lst.Count > 0)
+                    {
+                        List<FaultLog> filterLst = new List<FaultLog>();
+                        if (totalnum > 1000)
+                        {
+                            filterLst = lst.Skip(0).Take(1000).ToList();
+                        }
+                        else
+                        {
+                            filterLst.AddRange(lst);
+                        }
+                        DataTable dt = ConvertToDataTable.ToDataTable<FaultLog>(filterLst);
+                        string path = ExcelUtility.Instance.RenderDataTableToExcel(dt, "故障日志报表", filename, 8);
+                        resp.Code = 1;
+                        resp.Message = "数据导出成功，记录数 - " + filterLst.Count + " ,文件路径 - " + path;
+                    }
+                    else
+                    {
+                        resp.Message = "没有记录要导出.";
+                    }
                 }
             }
-            else if (code == 2) //是操作记录
+            catch (Exception ex)
             {
-                List<OperateLog> lst = new CWOperateRecordLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
-                if (lst.Count > 0)
-                {
-                    DataTable dt = ConvertToDataTable.ToDataTable<OperateLog>(lst);
-                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 4);
-                    resp.Code = 1;
-                    resp.Message = "数据导出成功，文件路径-" + fname;
-                }
-            }
-            else if (code == 3) //是故障记录
-            {
-                List<FaultLog> lst=new CWFaultLog().FindPageList(0, 0, startdt, enddt, queryname, content, out totalnum);
-                if (lst.Count > 0)
-                {
-                    DataTable dt = ConvertToDataTable.ToDataTable<FaultLog>(lst);
-                    ExcelUtility.Instance.RenderDataTableToExcel(dt, "", fname, 8);
-                    resp.Code = 1;
-                    resp.Message = "数据导出成功，文件路径-" + fname;
-                }
+                log.Error("报表，导出到EXCEL异常："+ex.ToString());
+                resp.Message = "数据导出失败，请联供应商！";
             }
             #endregion
             return Json(resp, JsonRequestBehavior.AllowGet);

@@ -133,7 +133,7 @@ namespace Parking.Core
             totalCount = queryTelegram.Count;
             if (pageIndex == 0 || pageSize == 0)
             {
-                return queryInfo;
+                return queryTelegram;
             }
 
             return queryTelegram.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();

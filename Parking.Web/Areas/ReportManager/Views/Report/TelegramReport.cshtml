@@ -269,16 +269,20 @@
                         return;
                     }
                 }
-               
+                
+                var currtime = getCurrentTime();
+
                 BootstrapDialog.show({
                     title:"友情提示",
-                    message: "<p>确定要将以下条件查询到的记录导出到 <b>服务器</b> Excel 文件中？</p>" +
-                             "<p>查询条件：</p><div style='margin-left:50px'>" +
+                    message: "<p>注意：</p>" +
+                             "<p class='text-danger' style='margin-left:20px'>报出的Excel文件保存在后台服务器中.</p><br>" +
+                             "<p>确定要将以下查询条件 查询到的记录 导出到 <b>服务器</b>指定路径下的 Excel 文件中？</p>" +
+                             "<div style='margin-left:20px'><p>查询条件：</p><div style='margin-left:50px'>" +
                              "<p>起始时间： <span class='text-info'>" + start + "</span></p>" +
                              "<p>截止时间： <span class='text-info'>" + end + "</span></p>" +
                              "<p>查询参数： <span class='text-info'>" + disp + "</span></p>" +
-                             "<p>查询内容： <span class='text-info'>" + content + "</span></p></div><br>"+
-                             "<p>导出的文件名：<input type='text' id='filename' value='telegram' class='text-info'/></p>",
+                             "<p>查询内容： <span class='text-info'>" + content + "</span></p></div></div><br>"+
+                             "<p>导出的文件名：<input type='text' id='filename' value='报文记录"+currtime+"' class='text-info'/></p>",
                     buttons: [{
                         label: "确 定",
                         action: function (self) {                            
@@ -370,6 +374,29 @@
                 var currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
                         + " " + hour + seperator2 + minute;
                 return currentdate;
+            }
+
+            //获取当前时间，将其组合起来
+            function getCurrentTime() {
+                var date = new Date();
+
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+
+                var second = date.getMilliseconds();
+                if (second >= 0 && second <= 9) {
+                    second = "0" + second;
+                }
+
+                var currenttime = hour + minute + second;
+
+                return currenttime;
             }
 
             //格式化日期显示

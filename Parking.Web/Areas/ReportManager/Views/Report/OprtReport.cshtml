@@ -167,8 +167,7 @@
             });
 
             //查询参数
-            function queryParams(params)
-            {
+            function queryParams(params) {
                 var start = $("input[name='startdtime']").val();
                 var end = $("input[name='enddtime']").val();
                 var name = $("#goods option:selected").val(); //value值
@@ -180,14 +179,108 @@
                     queryName: name,
                     queryValue: content,
                     stdtime: start,
-                    enddtime:end
+                    enddtime: end
                 };
             }
 
-            $("#btnFind").click(function () {               
+            $("#btnFind").click(function () {
                 $table.bootstrapTable("refresh");
             });
-         
+
+
+            //导出到EXCEL
+            $("#btnReport").click(function () {
+
+                var start = $("input[name='startdtime']").val();
+                var end = $("input[name='enddtime']").val();
+
+                var disp = $("#goods option:selected").text();
+                var name = $("#goods option:selected").val(); //value值
+                var content = $("#fcontent").val();
+
+                if (name != "0") {
+                    if (content == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
+                    }
+                }
+
+                var currtime = getCurrentTime();
+
+                BootstrapDialog.show({
+                    title: "友情提示",
+                    message: "<p>注意：</p>" +
+                             "<p class='text-danger' style='margin-left:20px'>报出的Excel文件保存在后台服务器中.</p><br>" +
+                             "<p>确定要将以下查询条件 查询到的记录 导出到 <b>服务器</b>指定路径下的 Excel 文件中？</p>" +
+                             "<div style='margin-left:20px'><p>查询条件：</p><div style='margin-left:50px'>" +
+                             "<p>起始时间： <span class='text-info'>" + start + "</span></p>" +
+                             "<p>截止时间： <span class='text-info'>" + end + "</span></p>" +
+                             "<p>查询参数： <span class='text-info'>" + disp + "</span></p>" +
+                             "<p>查询内容： <span class='text-info'>" + content + "</span></p></div></div><br>" +
+                             "<p>导出的文件名：<input type='text' id='filename' value='操作日志" + currtime + "' class='text-info'/></p>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            var fileName = $("#filename").val();
+
+                            $.ajax({
+                                type: "POST",
+                                url: "@Url.Action("RenderToExcel")",
+                                data: { "code": 2, "startdt": start, "enddt": end, "queryname": name, "content": content, "filename": fileName },
+                                dataType: "json",
+                                cache: false,
+                                success: function (data) {
+
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: data.Message
+                                    });
+
+                                },
+                                complete: function (XMLHttpRequest, textStatus) {
+                                    self.close();
+                                }
+                            });
+
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+
+
+
+            });
+
+            //获取当前时间，将其组合起来
+            function getCurrentTime() {
+                var date = new Date();
+
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+
+                var second = date.getMilliseconds();
+                if (second >= 0 && second <= 9) {
+                    second = "0" + second;
+                }
+
+                var currenttime = hour + minute + second;
+
+                return currenttime;
+            }
+
             //日期格式
             function dtimeFormatter(value, row, index) {
                 return formatDate(value);
@@ -197,7 +290,7 @@
             //获取当前时间
             function getNowFormatDate(num) {
                 var date = new Date();
-                date.setMinutes(date.getMinutes()-num);
+                date.setMinutes(date.getMinutes() - num);
                 var seperator1 = "-";
                 var seperator2 = ":";
                 var month = date.getMonth() + 1;
