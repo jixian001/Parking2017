@@ -23,8 +23,16 @@ namespace Parking.Data
         public DbSet<Location> Locactions { get; set; }
         public DbSet<WorkTask> WorkTasks { get; set; }
         public DbSet<FaultLog> FautLogs { get; set; }
-        public DbSet<OperateLog> OperateLog { get; set; }
+        public DbSet<OperateLog> OperateLogs { get; set; }
         public DbSet<TelegramLog> TelegramLogs { get; set; }
+
+        //收费相关
+        public DbSet<FixChargingRule> FixChargingRules { get; set; }
+        public DbSet<PreCharging> PreChargings { get; set;}
+        public DbSet<TempChargingRule> TempChargingRules { get; set; }
+        public DbSet<OrderChargeDetail> OrderChargeDetails { get; set; }
+        public DbSet<HourChargeDetail> HourChargeDetails { get; set; }
+        public DbSet<HourSectionInfo> HourSectionInfos { get; set; }
 
     }
 }

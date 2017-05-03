@@ -52,20 +52,20 @@
                     </li>
                     <li class="dropdown">
                         <a class="dropdown-toggle" data-toggle="dropdown">收费管理<strong class="caret"></strong></a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">IC卡缴费</a></li>
-                            <li><a href="#">收费标准</a></li>
+                        <ul class="dropdown-menu">                           
+                            <li><a href="@Url.Action("TempCardCharge", "Manage",new { area="ChargeManager"})">临时类缴费</a></li>
+                            <li><a href="@Url.Action("FixCardCharge", "Manage",new { area="ChargeManager"})">固定类缴费</a></li>                           
                             <li class="divider"></li>
-                            <li><a href="#">计费制定</a></li>
-                            <li><a href="#">收费测试</a></li>
+                            <li><a href="#">计费规则管理</a></li>
+                            <li><a href="#">收费规则测试</a></li>
                         </ul>
                     </li>
                     <li class="dropdown">
                         <a class="dropdown-toggle" data-toggle="dropdown">统计报表<strong class="caret"></strong></a>
                         <ul class="dropdown-menu">
-                            <li><a href="@Url.Action("TelegramReport", "Report",new { area="ReportManager"})">报文日志</a></li>                           
-                            <li><a href="@Url.Action("OprtReport", "Report",new { area="ReportManager"})">操作日志</a></li>                           
-                            <li><a href="@Url.Action("FaultReport", "Report",new { area="ReportManager"})">故障日志</a></li>                            
+                            <li><a href="@Url.Action("TelegramReport", "Report",new { area="ReportManager"})">报文日志查询</a></li>                           
+                            <li><a href="@Url.Action("OprtReport", "Report",new { area="ReportManager"})">操作日志查询</a></li>                           
+                            <li><a href="@Url.Action("FaultReport", "Report",new { area="ReportManager"})">故障日志查询</a></li>                            
                         </ul>
                     </li>                                       
                 </ul>
