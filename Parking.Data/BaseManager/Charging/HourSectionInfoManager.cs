@@ -9,5 +9,20 @@ namespace Parking.Data
 {
     public class HourSectionInfoManager:BaseManager<HourSectionInfo>
     {
+        public HourSectionInfo Find(int ID)
+        {
+            return _repository.Find(ID);
+        }
+
+        public HourSectionInfo Find(Expression<Func<HourSectionInfo, bool>> where)
+        {
+            return _repository.Find(where);
+        }
+
+        public List<HourSectionInfo> FindList(Expression<Func<HourSectionInfo, bool>> where)
+        {
+            return _repository.FindList(where).ToList();
+        }
+
     }
 }

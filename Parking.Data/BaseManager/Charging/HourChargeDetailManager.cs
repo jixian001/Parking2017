@@ -9,5 +9,10 @@ namespace Parking.Data
 {
     public class HourChargeDetailManager:BaseManager<HourChargeDetail>
     {
+        public HourChargeDetail Find(Expression<Func<HourChargeDetail,bool>> where)
+        {
+            return _repository.Find(where);
+        }
+
     }
 }

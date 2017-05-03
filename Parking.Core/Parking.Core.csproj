@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CWDevice.cs" />
+    <Compile Include="CWTariff.cs" />
     <Compile Include="CWTask.cs" />
     <Compile Include="CWICCard.cs" />
     <Compile Include="CWLocation.cs" />
