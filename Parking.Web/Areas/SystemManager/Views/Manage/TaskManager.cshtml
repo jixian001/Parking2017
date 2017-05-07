@@ -30,7 +30,7 @@
             $table.bootstrapTable({
                 toolbar: "#toolbar",
                 toolbarAlign: "right",
-                buttonsAligh:"right",
+                buttonsAligh: "right",
                 showRefresh: true,
                 showToggle: true,
                 //showColumns: true,       //是否显示所有的列
@@ -40,13 +40,13 @@
                 sidePagination: "server",
                 //clickToSelect:true,
                 pageNumber: 1,              //初始化加载第一页，默认第一页
-                pageSize:10,                 //每页的记录数
+                pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
                 method: "post",
                 url: "@Url.Action("GetTaskList")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
-                dataType:"json",
+                dataType: "json",
                 columns: [
                     {
                         title: "state",
@@ -60,7 +60,7 @@
                         visible: true,
                         align: "center",
                         valign: "middle",
-                        sortable:true
+                        sortable: true
                     },
                     {
                         title: "库区",
@@ -74,36 +74,36 @@
                         field: "DeviceCode",
                         align: "center",
                         valign: "middle",
-                        sortable:true,
-                        formatter:deviceFormatter
+                        sortable: true,
+                        formatter: deviceFormatter
                     },
                     {
                         title: "任务类型",
                         field: "Type",
                         align: "left",
                         valign: "middle",
-                        formatter:typeFormatter
+                        formatter: typeFormatter
                     },
                     {
                         title: "任务状态",
                         field: "Status",
                         align: "left",
                         valign: "middle",
-                        formatter:statusFormatter
+                        formatter: statusFormatter
                     },
                     {
                         title: "发送状态",
                         field: "SendStatusDetail",
                         align: "left",
                         valign: "middle",
-                        formatter:sendDetailFormatter
+                        formatter: sendDetailFormatter
                     },
                      {
                          title: "涉及车厅",
                          field: "HallCode",
                          align: "center",
                          valign: "middle",
-                         formatter:deviceFormatter
+                         formatter: deviceFormatter
                      },
                     {
                         title: "用户卡号",
@@ -116,8 +116,8 @@
                         field: "SendDtime",
                         align: "left",
                         valign: "middle",
-                        visible:false,
-                        formatter:sendDtimeFormatter
+                        visible: false,
+                        formatter: sendDtimeFormatter
                     },
                     {
                         title: "建立时间",
@@ -141,10 +141,10 @@
                     },
                     {
                         title: "详情",
-                        field:"Operate",
+                        field: "Operate",
                         align: "center",
                         valign: "middle",
-                        events:actionEvents,
+                        events: actionEvents,
                         formatter: operateFormatter
                     }
                 ],
@@ -156,19 +156,14 @@
                     return "无符合条件的记录";
                 }
             });
-            function queryParams(params) {
-                //return params;
+
+            function queryParams(params) {               
                 return {
                     pageSize: params.pageSize,  //一定包含
                     pageIndex: params.pageNumber,  //一定包含
                     sortOrder: params.sortOrder,
                     sortName: params.sortName
                 };
-                //    UserName: $("#txtName").val(),
-                //    Birthday: $("#txtBirthday").val(),
-                //    Gender: $("#Gender").val(),
-                //    Address: $("#txtAddress").val(),
-                //    name: params.sortName
             }
 
             //库区显示

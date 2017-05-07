@@ -40,11 +40,50 @@ namespace Parking.Core
         }
 
         /// <summary>
+        /// 获取分页列表
+        /// </summary>
+        public Page<PreCharging> FindPreRulePageList(int pageSize, int pageIndex, string sortOrder, string sortName)
+        {
+            Page<PreCharging> page = new Page<PreCharging>();
+            page.PageIndex = pageIndex;
+            page.PageSize = pageSize;
+
+            OrderParam orderParam = new OrderParam();
+            if (!string.IsNullOrEmpty(sortName))
+            {               
+                orderParam.PropertyName = sortName;
+                if (!string.IsNullOrEmpty(sortOrder))
+                {
+                    orderParam.Method = sortOrder.ToLower() == "asc" ? OrderMethod.Asc : OrderMethod.Desc;
+                }
+                else
+                {
+                    orderParam.Method = OrderMethod.Asc;
+                }
+            }
+            else
+            {
+                orderParam.PropertyName = "ID";
+                orderParam.Method = OrderMethod.Asc;
+            }
+
+            page = preChgManager.FindPageList(page, orderParam);
+            return page;            
+        }
+
+        /// <summary>
         /// 添加实体
         /// </summary>
         public Response AddPreCharge(PreCharging pre)
         {
             return preChgManager.Add(pre);
+        }
+        /// <summary>
+        /// 查找
+        /// </summary>
+        public PreCharging FindPreCharge(int ID)
+        {
+            return preChgManager.Find(ID);
         }
 
         /// <summary>
@@ -272,5 +311,21 @@ namespace Parking.Core
 
         #endregion
 
+        #region 固定类
+        public FixChargingRule FindFixCharge(int ID)
+        {
+            return fixManager.Find(ID);
+        }
+
+        public FixChargingRule FindFixCharge(Expression<Func<FixChargingRule, bool>> where)
+        {
+            return fixManager.Find(where);
+        }
+
+        public Response UpdateFixCharge(FixChargingRule fix)
+        {
+            return fixManager.Update(fix);
+        }
+        #endregion
     }
 }

@@ -295,6 +295,9 @@
     <Content Include="Areas\ReportManager\Views\Report\FaultReport.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\TempCardCharge.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\FixCardCharge.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\ChargingRule\Index.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\ChargingRule\_PartialSideNav.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\ChargingRule\PreRule.cshtml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
@@ -341,7 +344,6 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Areas\ChargeManager\Models\" />
-    <Folder Include="Areas\ChargeManager\Views\ChargingRule\" />
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />

@@ -39,6 +39,8 @@ namespace Parking.Data
         [Display(Name = "个月")]
         Month,
         [Display(Name = "个季度")]
-        Season
+        Season,
+        [Display(Name ="个小时")]
+        Hour
     }
 }
