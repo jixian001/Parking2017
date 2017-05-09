@@ -77,6 +77,9 @@ namespace Parking.Web
 
             bundles.Add(new ScriptBundle("~/bundles/rocket").Include(
                "~/Content/rocket-to-top/js/rockettop.js"));
+
+            bundles.Add(new StyleBundle("~/Content/charge").Include(
+                "~/Content/charge.css"));
         }
     }
 }

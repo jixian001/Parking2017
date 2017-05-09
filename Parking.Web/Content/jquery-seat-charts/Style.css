@@ -1,8 +1,8 @@
 ﻿div.bger{
     border:2px solid #ccc;
-    padding-top:20px;
+    padding-top:10px;
     padding-bottom:10px;
-    margin-bottom:20px;
+    margin-bottom:10px;
 }
 
 .seat {
@@ -15,10 +15,10 @@
 
 div.seatCharts-container{
     border: 1px solid #ccd232;
-    width:auto;
+    width:100%;
     padding:0px;
     float:left;
-    margin:2px;
+    margin:1px;
 }
 div.seatCharts-cell{
     color:#182C4E;

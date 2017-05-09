@@ -19,6 +19,9 @@ namespace Parking.Data
     {
         public int ID { get; set; }
         public EnmICCardType ICType { get; set; }
+        /// <summary>
+        /// 按时、按次
+        /// </summary>
         public EnmTempChargeType TempChgType { get; set; }
         public int PreChgID { get; set; }       
     }
@@ -107,6 +110,9 @@ namespace Parking.Data
 
 
     #region 枚举
+    /// <summary>
+    /// 按时、按次
+    /// </summary>
     public enum EnmTempChargeType
     {
         Init = 0,

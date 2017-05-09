@@ -97,6 +97,8 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
 
         }
         #endregion
+
+        #region 固定类
         /// <summary>
         /// 固定类规则
         /// </summary>
@@ -105,6 +107,9 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         {
             return View();
         }
+        #endregion
+
+        #region 临时类
         /// <summary>
         /// 临时类规则
         /// </summary>
@@ -114,5 +119,29 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             return View();
         }
 
+        /// <summary>
+        /// 新增时间段
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult AddTempRule()
+        {
+            Response resp = new Response();
+
+            return Json(resp);
+        }
+
+        [HttpPost]
+        public JsonResult FindTempRuleList(int pageSize, int pageIndex)
+        {
+            Page<TempChargingRule> page = new CWTariff().FindPageTempRuleList(pageSize, pageIndex);
+            var data = new {
+                total = page.TotalNumber,
+                rows = page.ItemLists
+            };
+            return Json(data,JsonRequestBehavior.AllowGet);
+        }
+
+        #endregion
     }
 }

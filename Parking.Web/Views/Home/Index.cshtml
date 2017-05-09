@@ -28,69 +28,71 @@
 <div class="row">
     <span class="text-primary">车位分布</span>
 </div>
-<div class="row seat bger">
-    <div class="seat wrapper">
-        <div class="col-md-10" id="seat">
-            @* 平面移动库 *@
-            <div id="PPY" style="display:none">
-                @* 1号库 *@
-                <input type="hidden" value="1" id="wh1" name="wh1" />
-                <div id="L3-map">
-                    <span>&nbsp;&nbsp; 三层</span>
-                    <hr />
+
+<div class="row">
+    <div class="col-md-10 bger dheight">
+        <div class="seat wrapper">
+            <div id="seat">
+                @* 平面移动库 *@
+                <div id="PPY" style="display:none">
+                    @* 1号库 *@
+                    <input type="hidden" value="1" id="wh1" name="wh1" />                    
+                    <div id="L3-map" style="width:100%"> 
+                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;三&nbsp;层</p>                                                                                   
+                    </div>
+                    <div id="L2-map" style="width:100%">
+                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;二&nbsp;层</p>                       
+                    </div>
+                    <div id="L1-map" style="width:100%">
+                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;一&nbsp;层</p>                        
+                    </div>
                 </div>
-                <div id="L2-map">
-                    <span>&nbsp;&nbsp;二层</span>
-                    <hr />
-                </div>
-                <div id="L1-map">
-                    <span>&nbsp;&nbsp;一层</span>
-                    <hr />
+                @*  巷道堆垛 *@
+                <div id="PXD" style="display:none">
+                    @* 1号库 *@
+                    <input type="hidden" value="1" id="wh1" name="wh1" />
+                    <div id="layout-map">
+                    </div>
                 </div>
             </div>
-            @*  巷道堆垛 *@
-            <div id="PXD" style="display:none">
-                @* 1号库 *@
-                <input type="hidden" value="1" id="wh1" name="wh1" />
-                <div id="layout-map">                    
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-           <div class="booking-details" id="details">
-               <br />
-               <input type="hidden" id="lctn" name="lctn" />
-               <h3 class="text-center">已选中的车位(<span id="addr">0</span>)：</h3>
-               <ul id="selected-seats"></ul>
-               <br />
-               <div id="oprt" class="text-center" style="display:none">
-                   <button class="checkout-button" id="btnenable">启用</button>
-                   <button class="checkout-button" id="btndisable">禁用</button>                  
-               </div>
-               <br />
-               <div style="border:1px solid #808080">
-                   <div class="text-info text-center">
-                       <a data-toggle="collapse" href="#one">车位颜色定义</a>
-                   </div>
-                   <div id="one" class="panel-collapse collapse text-center">                      
-                           <div class="lbl lblhall">车厅</div>
-                           <div class="lbl lbldisable">禁用</div>
-                           <div class="lbl lblinvalid">无效</div>
-                           <div class="lbl lbltemp">缓存</div>
-                           <div class="lbl lbldisabletemp">缓禁</div>
-                           <div class="lbl lbloccupy">占用</div>
-                           <div class="lbl lblentering">入库</div>
-                           <div class="lbl lblouting">出库</div>
-                           <div class="lbl lblspace">空闲</div>                      
-                   </div>
-               </div>
-           </div>        
         </div>
     </div>
+    <div class="col-md-2 bger">
+        <div class="booking-details" id="details" style="height:100%">
+            <br />
+            <input type="hidden" id="lctn" name="lctn" />
+            <h3 class="text-center">已选中的车位(<span id="addr">0</span>)：</h3>
+            <ul id="selected-seats"></ul>
+            <br />
+            <div id="oprt" class="text-center" style="display:none">
+                <button class="checkout-button" id="btnenable">启用</button>
+                <button class="checkout-button" id="btndisable">禁用</button>
+            </div>
+            <br />
+            <div style="border:1px solid #808080">
+                <div class="text-info text-center">
+                    <a data-toggle="collapse" href="#one">车位颜色定义</a>
+                </div>
+                <div id="one" class="panel-collapse collapse text-center">
+                    <div class="lbl lblhall">车厅</div>
+                    <div class="lbl lbldisable">禁用</div>
+                    <div class="lbl lblinvalid">无效</div>
+                    <div class="lbl lbltemp">缓存</div>
+                    <div class="lbl lbldisabletemp">缓禁</div>
+                    <div class="lbl lbloccupy">占用</div>
+                    <div class="lbl lblentering">入库</div>
+                    <div class="lbl lblouting">出库</div>
+                    <div class="lbl lblspace">空闲</div>
+                </div>
+            </div>
+        </div> 
+    </div>
 </div>
+
 <div class="row">
     <span class="text-primary">设备信息</span>
 </div>
+
 <div id="devices" class="row bger">
 </div>
 
@@ -104,10 +106,10 @@
 
             //加载车位信息
             //目前先手动设置，到后面，改为ajax试试
-            var side = 2, column = 20, layer = 3;
+            var side = 3, column = 27, layer = 3;
             var warehouse = $("input[name='wh1']").val();
             //计算，固定div及设置cell宽度
-            var width = $('#seat').width()-20;           
+            var width = $('#seat').width() - 30;
             //先设置3层
             var l3_map = [];
             for (var i = 0; i < side + 1; i++)
@@ -137,15 +139,23 @@
                     left: false,
                     getLabel: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return warehouse + '_' + rw + '_' + column + '_' + 3;
                     }
@@ -180,15 +190,23 @@
                     left: false,
                     getLabel: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return warehouse + '_' + rw + '_' + column + '_' + 2;
                     }
@@ -223,15 +241,23 @@
                     left: false,
                     getLabel: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
-                        if (row >= 3) {
-                            rw = row - 1;
+                        if (row == 1) {
+                            rw = 3;
+                        } else if (row == 2) {
+                            rw = 1;
+                        } else if (row == 4) {
+                            rw = 2;
                         }
                         return warehouse + '_' + rw + '_' + column + '_' + 1;
                     }
@@ -434,7 +460,7 @@
 
                 $("#PPY").css("display","block");
 
-                var wd = $("#seat").height();
+                var wd = $(".dheight").height();
                 $("#details").css("height", wd);
 
             }, 600);

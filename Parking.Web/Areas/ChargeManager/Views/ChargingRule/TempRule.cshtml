@@ -1,0 +1,326 @@
+﻿
+@{
+    ViewBag.Title = "临时类规则";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>计费规则</li>
+            <li class="active">临时类规则</li>
+        </ol>
+
+        <div>           
+            @* 计费类型 入场付费 *@
+            <div class="bd" style="padding:10px">
+                <table class="form">
+                    <tr>
+                        <th class="formTitle">入场付费</th>
+                        <td class="formValue">
+                            <select id="needpre" class="form-control">
+                                <option value="0" selected>请选择</option>
+                                <option value="1">不需要</option>
+                                <option value="2">需要</option>
+                            </select>
+                        </td>
+                        <th class="formTitle">入场预付费</th>
+                        <td class="formValue">
+                            <select id="precontent" class="form-control">
+                                <option value="0" selected>请选择</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">计费类型</th>
+                        <td class="formValue">
+                            <select id="tarifftype" class="form-control">
+                                <option value="0" selected>请选择</option>
+                                <option value="1">按时</option>
+                                <option value="2">按次</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <br />
+                @* 按次 *@
+                <div id="ordercontent">
+
+                </div>
+
+                @* 周期计费策略 *@
+                <div id="cyclepolicy">
+                    <table class="form">
+                        <tr>
+                            <th class="formTitle">跨周期策略</th>
+                            <td class="formValue">
+                                <select id="strideday" class="form-control">
+                                    <option value="0" selected>请选择</option>
+                                    <option value="1">延续计费</option>
+                                    <option value="2">重新计费</option>
+                                </select>
+                            </td>
+                            <th class="formTitle">周期时长</th>
+                            <td class="formValue">
+                                <select id="cycletime" class="form-control">
+                                    <option value="0" selected>请选择</option>
+                                    <option value="1">24小时制</option>
+                                    <option value="2">12小时制</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="formTitle">周期最高金额</th>
+                            <td class="formValue">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <input type="checkbox" id="chk">
+                                    </span>
+                                    <input type="text" id="topfee" class="form-control">
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <br />
+                <div class="text-center">
+                    <input type="button" value="保存设置" class="btn btn-default" id="save"/>
+                </div>
+            </div>
+          
+            <div class="bd" id="hourcontent" >
+                <form>
+                    <table class="chg">
+                        <tbody>
+                            <tr align="left">
+                                <td rowspan="6" align="center" class="control-label spe">
+                                    <span id="hourtitle">新增时段</span>
+                                    <br />
+                                    <input type="button" value="保 存" id="save" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">时间段</td>
+                                <td colspan="3" class="bdr">
+                                    <input type="date" class="date form_time" data-date-format="hh:ii" />&nbsp;-&nbsp;
+                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">时段最高计费</td>
+                                <td colspan="3" class="bdr">
+                                    <input type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">有效期内免费</td>
+                                <td class="bdr">
+                                    <input type="checkbox" />
+                                </td>
+                                <td align="right">免费时长(分)</td>
+                                <td class="bdr">
+                                    <div class="input-group">
+                                        <input type="date" class="date form_time" data-date-format="hh:ii" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">首段计费时长</td>
+                                <td class="bdr">
+                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
+                                </td>
+                                <td align="right">首段计费金额</td>
+                                <td class="bdr">
+                                    <input type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">间隔计费时长</td>
+                                <td class="bdr">
+                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
+                                </td>
+                                <td align="right">间隔计费金额</td>
+                                <td class="bdr">
+                                    <input type="text" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+
+            <div>
+                <div id="toolbar" class="btn-group pull-right" role="group">
+                    <button id="btn_add" class="btn btn-default"><span></span>新增时段</button>
+                    <button id="btn_edit" class="btn btn-default"><span></span>编辑时段</button>
+                </div>
+                <table id="tGrid"></table>
+            </div>       
+
+        </div>
+
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    @Styles.Render("~/Content/charge")
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
+    <script>
+
+        $(function () {
+
+            $('.form_time').datetimepicker({
+                language: 'zh-CN',
+                weekStart: 1,
+                todayBtn: 0,
+                autoclose: 1,
+                todayHighlight: 0,
+                startView: 1,
+                minView: 0,
+                maxView: 1,
+                forceParse: 0
+            });
+
+            var $table = $("#tGrid");
+            $table.bootstrapTable({
+                toolbar: "#toolbar",
+                toolbarAlign: "right",
+                buttonsAligh: "right",
+                showRefresh: true,
+                showToggle: true,
+                showFooter: false,
+                pagination: true,
+                striped: true,              //是否显示行间隔色
+                sidePagination: "server",
+                clickToSelect: true,
+                singleSelect: true,
+                pageNumber: 1,              //初始化加载第一页，默认第一页
+                pageSize: 10,                 //每页的记录数
+                pageList: "[5,10,20,50]",
+                method: "post",
+                url: "@Url.Action("FindTempRuleList")",
+                queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
+                queryParamsType: "",              
+                dataType: "json",
+                columns: [
+                    {
+                        title: "选中",
+                        checkbox: true,
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "ID",
+                        field: "ID",
+                        visible: true,
+                        align: "center",
+                        valign: "middle",
+                        visible: false,
+                        sortable: true
+                    },
+                    {
+                        title: "起始时间",
+                        field: "StartTime",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "终止时间",
+                        field: "EndTime",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "最高计费",
+                        field: "SectionTopFee",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "免费时长",
+                        field: "SectionFreeTime",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "首段时长",
+                        field: "FirstVoidTime",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "首段金额",
+                        field: "FirstVoidFee",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "间隔时长",
+                        field: "IntervalVoidTime",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "间隔金额",
+                        field: "IntervalVoidFee",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "操作",
+                        field: "Operate",
+                        align: "center",
+                        valign: "middle",
+                        events: actionEvents,
+                        formatter: operateFormatter
+                    }
+                ],
+
+                formatLoadingMessage: function () {
+                    return "请稍等，正在加载中...";
+                },
+
+                formatNoMatches: function () {
+                    return "无符合条件的记录";
+                },
+
+                onClickRow: function (row, tr) {
+
+
+
+                }
+
+            });
+
+            function queryParams(params) {
+                return params;
+            }
+
+            function operateFormatter(value, row, index) {
+                return '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
+            }
+
+        });
+
+        window.actionEvents = {
+            'click .delete': function (e, value, row, index) {
+
+                BootstrapDialog.confirm("确定要删除该记录？ID为 " + row.ID, function (result) {
+                    if (result)
+                    {
+                       
+                    }
+                });
+            }
+        };
+
+
+
+    </script>
+
+    }

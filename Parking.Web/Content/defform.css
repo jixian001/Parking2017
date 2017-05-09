@@ -1,6 +1,21 @@
 ﻿
-.form{width:100%;margin:0px;padding:0px;border-collapse:collapse;border-width:3px 1px 1px;table-layout:fixed}
-.form .formTitle{position:relative;left:0px;text-align:right;white-space:nowrap;font-weight:normal;width:90px;padding-right:15px;}
+.form{
+    width:100%;
+    margin:0px;
+    padding:0px;
+    border-collapse:collapse;
+    border-width:3px 1px 1px;
+    table-layout:fixed
+}
+.form .formTitle{
+    position:relative;
+    left:0px;
+    text-align:right;
+    white-space:nowrap;
+    font-weight:normal;
+    width:90px;
+    padding-right:15px;
+}
 .form .formTitle font{color:red;position:absolute;right:0px;}
 .form .formValue{position:relative;padding:5px;width:auto;}
 .form .formValue input.form-control{height:30px;line-height:30px;padding-top:0px;padding-bottom:0px;padding-right:0px;padding-left:5px;resize: none;border-radius: 0px;box-shadow:none;}

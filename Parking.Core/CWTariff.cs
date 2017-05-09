@@ -125,6 +125,23 @@ namespace Parking.Core
             return tempManager.FindList().ToList();
         }
         /// <summary>
+        /// 分页查询
+        /// </summary>
+        public Page<TempChargingRule> FindPageTempRuleList(int pageSize, int pageIndex)
+        {
+            Page<TempChargingRule> page = new Page<TempChargingRule>();
+            page.PageIndex = pageIndex;
+            page.PageSize = pageSize;
+
+            OrderParam orderParam = new OrderParam();
+            orderParam.PropertyName = "ID";
+            orderParam.Method = OrderMethod.Asc;
+
+            page = tempManager.FindPageList(page, orderParam);
+            return page;
+        }
+
+        /// <summary>
         /// 查找
         /// </summary>
         /// <param name="id"></param>

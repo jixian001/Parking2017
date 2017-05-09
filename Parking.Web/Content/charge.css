@@ -1,0 +1,28 @@
+﻿.chg{
+    width:100%;
+    border:1px solid #d7d3d3;  
+}
+
+.chg .bdr{
+    padding:10px;    
+}
+
+.chg .spe{
+    border:1px solid #d7d3d3;
+}
+
+.tmmg{
+    padding:0px 20px 0px 20px;
+}
+
+.bd{
+     border:1px solid #d7d3d3;       
+}
+
+.totalbd{
+    border:1px solid #ccd232;
+}
+
+input{
+    text-align:center
+}
