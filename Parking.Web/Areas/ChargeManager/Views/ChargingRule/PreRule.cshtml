@@ -219,7 +219,8 @@
                     //修改
                     curl = "@Url.Action("ModifyPre")";
                 }
-                var para=$("form").serialize();
+                var para = $("form").serialize();
+
                 $.ajax({
                     type: "GET",
                     url: curl,                   

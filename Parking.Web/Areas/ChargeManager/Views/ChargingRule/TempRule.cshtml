@@ -15,13 +15,15 @@
         </ol>
 
         <div>           
-            @* 计费类型 入场付费 *@
-            <div class="bd" style="padding:10px">
+           
+            <div class="bd" id="outer" style="padding:10px; display:none">
+                <input type="hidden" id="mainID" value="0"/>
+
                 <table class="form">
                     <tr>
                         <th class="formTitle">入场付费</th>
                         <td class="formValue">
-                            <select id="needpre" class="form-control">
+                            <select id="needpre" class="form-control" onchange="preOnChange(this.value)">
                                 <option value="0" selected>请选择</option>
                                 <option value="1">不需要</option>
                                 <option value="2">需要</option>
@@ -37,7 +39,7 @@
                     <tr>
                         <th class="formTitle">计费类型</th>
                         <td class="formValue">
-                            <select id="tarifftype" class="form-control">
+                            <select id="tarifftype" class="form-control" onchange="typeOnChange(this.value)">
                                 <option value="0" selected>请选择</option>
                                 <option value="1">按时</option>
                                 <option value="2">按次</option>
@@ -45,14 +47,25 @@
                         </td>
                     </tr>
                 </table>
-                <br />
-                @* 按次 *@
-                <div id="ordercontent">
-
+                <br /> 
+                             
+                <div id="ordercontent" style="display:none">                   
+                    <p class="text-danger" style="margin-top:10px">按次计费规则</p>
+                    <table class="form">
+                        <tr>
+                            <th class="formTitle">免费时长</th>
+                            <td class="formValue">
+                                <input type="date" id="orderfreetime" class="date form_time form-control" data-date-format="hh:ii"/>
+                            </td>
+                            <th class="formTitle">计费金额</th>
+                            <td class="formValue">
+                                <input type="text" id="orderfee" class="form-control">
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-
-                @* 周期计费策略 *@
-                <div id="cyclepolicy">
+               
+                <div id="cyclepolicy" style="display:none">
                     <table class="form">
                         <tr>
                             <th class="formTitle">跨周期策略</th>
@@ -85,81 +98,85 @@
                         </tr>
                     </table>
                 </div>
-                <br />
-                <div class="text-center">
-                    <input type="button" value="保存设置" class="btn btn-default" id="save"/>
+                                
+                <div class="text-center" style="margin-top:10px">
+                    <input type="button" value="保存设置" class="btn btn-default" id="policysave"/>
                 </div>
-            </div>
-          
-            <div class="bd" id="hourcontent" >
-                <form>
-                    <table class="chg">
-                        <tbody>
-                            <tr align="left">
-                                <td rowspan="6" align="center" class="control-label spe">
-                                    <span id="hourtitle">新增时段</span>
-                                    <br />
-                                    <input type="button" value="保 存" id="save" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">时间段</td>
-                                <td colspan="3" class="bdr">
-                                    <input type="date" class="date form_time" data-date-format="hh:ii" />&nbsp;-&nbsp;
-                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">时段最高计费</td>
-                                <td colspan="3" class="bdr">
-                                    <input type="text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">有效期内免费</td>
-                                <td class="bdr">
-                                    <input type="checkbox" />
-                                </td>
-                                <td align="right">免费时长(分)</td>
-                                <td class="bdr">
-                                    <div class="input-group">
-                                        <input type="date" class="date form_time" data-date-format="hh:ii" />
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">首段计费时长</td>
-                                <td class="bdr">
-                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
-                                </td>
-                                <td align="right">首段计费金额</td>
-                                <td class="bdr">
-                                    <input type="text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">间隔计费时长</td>
-                                <td class="bdr">
-                                    <input type="date" class="date form_time" data-date-format="hh:ii" />
-                                </td>
-                                <td align="right">间隔计费金额</td>
-                                <td class="bdr">
-                                    <input type="text" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </form>
-            </div>
 
-            <div>
-                <div id="toolbar" class="btn-group pull-right" role="group">
-                    <button id="btn_add" class="btn btn-default"><span></span>新增时段</button>
-                    <button id="btn_edit" class="btn btn-default"><span></span>编辑时段</button>
+            </div>
+            @* 用来控制时间段的显示，在开始时如果没有找到临时卡记录，则要求先建立主记录 *@
+            <div id="hourtime" style="display:none"> 
+                <div class="bd" id="hourcontent" style="display:none">
+                    <form>
+                        <table class="chg">
+                            <tbody>
+                                <tr align="left">
+                                    <td rowspan="6" align="center" class="control-label spe">
+                                        <span id="hourtitle">新增时段</span>
+                                        <br />
+                                        <input type="button" value="保 存" id="hoursave" />
+                                        <input type="hidden" id="tID" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="right">时间段</td>
+                                    <td colspan="3" class="bdr">
+                                        <input type="date" class="date form_time" data-date-format="hh:ii" id="starttime" />&nbsp;-&nbsp;
+                                        <input type="date" class="date form_time" data-date-format="hh:ii" id="endtime" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="right">时段最高计费</td>
+                                    <td colspan="3" class="bdr">
+                                        <input type="text" id="tmtopfee" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="right">有效期内免费</td>
+                                    <td class="bdr">
+                                        <input type="checkbox" />
+                                    </td>
+                                    <td align="right">免费时长(分)</td>
+                                    <td class="bdr">
+                                        <div class="input-group">
+                                            <input type="date" class="date form_time" data-date-format="hh:ii" id="tmfree" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="right">首段计费时长</td>
+                                    <td class="bdr">
+                                        <input type="date" class="date form_time" data-date-format="hh:ii" id="tmfirt" />
+                                    </td>
+                                    <td align="right">首段计费金额</td>
+                                    <td class="bdr">
+                                        <input type="text" id="tmfirstfee" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="right">间隔计费时长</td>
+                                    <td class="bdr">
+                                        <input type="date" class="date form_time" data-date-format="hh:ii" id="tminterval" />
+                                    </td>
+                                    <td align="right">间隔计费金额</td>
+                                    <td class="bdr">
+                                        <input type="text" id="intervalfee" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
                 </div>
-                <table id="tGrid"></table>
-            </div>       
 
+                <div>
+                    <div id="toolbar" class="btn-group pull-right" role="group">
+                        <button id="btn_add" class="btn btn-default"><span></span>新增时段</button>
+                        <button id="btn_edit" class="btn btn-default"><span></span>编辑时段</button>
+                    </div>
+                    <table id="tGrid"></table>
+                </div>
+
+            </div>
         </div>
 
     </div>
@@ -185,6 +202,82 @@
                 maxView: 1,
                 forceParse: 0
             });
+            
+            $("#tarifftype").val("0");
+
+            setTimeout(function () {
+
+                $("#outer").css("display", "block");
+                //查询有没有临时卡记录，有的话是按时的还是按次的，分别显示出来
+                //如果都没有，都不显示，待保存设置，生成主记录时才显示相关项               
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetTempRule")",                   
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+
+                    },
+                    success: function (resp) {
+
+                        if (resp.Code == 1)
+                        {
+                            var obj = resp.Data;
+                            $("#mainID").val(obj.ID);
+
+                            var prechg = obj.PreChgID;
+                            $("#precontent").val(prechg);
+
+                            var $needpre = $("#needpre");                           
+                            if (prechg == '0') {
+                                $needpre.val("1");
+                            }
+                           
+                            var ttype = obj.TempChgType;
+                            $("#tarifftype").val(ttype);
+                           
+                            //按次
+                            if (ttype == 2)
+                            {
+                                $("#ordercontent").css("display", "block");
+                               
+                                $.getJSON("@Url.Action("FindOrderDetail")", { "tempID": obj.ID }, function (data) {
+
+                                    $("#orderfreetime").val(data.OrderFreeTime);
+                                    $("#orderfee").val(data.Fee);
+                                });
+
+                            }
+                            else if (ttype == 1) //按时
+                            {
+                                $("#cyclepolicy").css("display", "block");
+                                $("#hourtime").css("display", "block");
+
+                                //获取计费策略
+                                $.getJSON("@Url.Action("FindHourDetail")", { "tempID": obj.ID }, function (jsondata) {
+                                    $("#topfee").val(jsondata.CycleTopFee);
+                                    if (jsondata.CycleTopFee > 0)
+                                    {
+                                        $("#chk").attr("checked",true);
+                                    }
+
+                                    var ctime = jsondata.CycleTime;
+                                    $("#cycletime").val(ctime);
+                                    
+                                    var stride = jsondata.StrideDay;
+                                    $("#strideday").val(stride);
+                                   
+                                });
+                            }
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                       
+                    }
+                });
+             
+
+            }, 500);
 
             var $table = $("#tGrid");
             $table.bootstrapTable({
@@ -203,7 +296,7 @@
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
                 method: "post",
-                url: "@Url.Action("FindTempRuleList")",
+                url: "@Url.Action("FindTempHourRuleList")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              
                 dataType: "json",
@@ -305,7 +398,186 @@
                 return '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
             }
 
+            $("#btn_add").click(function () {
+                var $content = $("#hourcontent");
+                $content.css("display","block");
+                $("#tID").val("");
+            });
+
+            $("#btn_edit").click(function () {
+
+
+            });
+
+            //周期策略保存(新增、修改)
+            $("#policysave").click(function () {
+
+                var preneed = $("#needpre option:selected").val();
+                var precontent = $("#precontent option:selected").val();
+
+                if (preneed == 2)
+                {
+                    if (precontent == 0) {
+                        BootstrapDialog.warning("请选择预付项！");
+                        return;
+                    }
+                }
+                var ttype = $("#tarifftype option:selected").val();
+                if (ttype == 0)
+                {
+                    BootstrapDialog.warning("请选择计费类型！");
+                    return;
+                }
+                //按时
+                if (ttype == 1)
+                {
+                    
+                }
+                //按次
+                var $orderfreetime = $("#orderfreetime");
+                var $orderfee = $("#orderfee");
+                if (ttype == 2)
+                {                   
+                    if ($orderfreetime.val() == "")
+                    {                        
+                        $orderfreetime.val("00:00");
+                    }
+                    if ($orderfee.val() == "")
+                    {
+                        $orderfee.val("0");
+                    }
+                }
+               
+                var mID = $("#mainID").val();
+               
+                if (mID == 0)
+                {
+                    //新增
+                    if (ttype == 2) {
+                        //按次 添加
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("AddTempRuleByOrder")",
+                            data: { "PreID": precontent, "TType": ttype, "FreeTime": $orderfreetime.val(),"OrderFee":$orderfee.val()},
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+                                $("#policysave").text("提交中");
+                            },
+                            success: function (data) {
+                                BootstrapDialog.warning(data.Message);
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#policysave").text("保存设置");
+                            }
+                        });
+
+                    }
+                }
+                else
+                {
+                    //修改
+
+                }
+
+            });
+
+            //时间段保存
+            $("#hoursave").click(function () {
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("AddHourTempRule")",
+                    data: para,
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#hoursave").text("提交中");
+                    },
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.Message
+                        });
+
+                        if (data.Code == 1) {
+                            $("#hourcontent").css("display", "none");
+                            $table.bootstrapTable("refresh");
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#hoursave").text("新增时段");
+                    }
+                });
+
+
+            });
+          
+
         });
+
+        //计费类型事件改变
+        function typeOnChange(val) {
+           
+            if (val == 1)
+            {
+                $("#ordercontent").css("display", "none");
+
+                $("#cyclepolicy").css("display", "block");
+                $("#hourtime").css("display", "block");
+            }
+            else if (val == 2)
+            {
+                $("#ordercontent").css("display", "block");
+
+                $("#cyclepolicy").css("display", "none");
+                $("#hourtime").css("display", "none");
+            }
+            else
+            {
+                $("#ordercontent").css("display", "none");
+                $("#cyclepolicy").css("display", "none");
+                $("#hourtime").css("display", "none");
+            }
+
+        }
+
+        //预付类
+        function preOnChange(val) {
+
+            var $goods = $("#precontent");
+            var html = '<option value="0">请选择</option>';
+
+            if (val == 2) {
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("PreSelectNameList")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        html = '<option value="0">加载中</option>';
+                        $goods.empty();
+                        $goods.append(html);
+                    },
+                    success: function (data) {
+                        html = '<option value="0">请选择</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $goods.empty();
+                        $goods.append(html);
+
+                    }
+                });
+
+            }
+            else
+            {
+                $goods.empty();
+                $goods.append(html);
+            }
+        }
 
         window.actionEvents = {
             'click .delete': function (e, value, row, index) {
@@ -318,8 +590,6 @@
                 });
             }
         };
-
-
 
     </script>
 

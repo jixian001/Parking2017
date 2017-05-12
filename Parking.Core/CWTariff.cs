@@ -194,6 +194,16 @@ namespace Parking.Core
         {
             return orderDetailManager.FindList().ToList();
         }
+
+        /// <summary>
+        /// 查找按次收费记录
+        /// </summary>
+        /// <param name="where"></param>
+        /// <returns></returns>
+        public OrderChargeDetail FindOrderDetail(Expression<Func<OrderChargeDetail, bool>> where)
+        {
+            return orderDetailManager.Find(where);
+        }
         /// <summary>
         /// 添加
         /// </summary>
@@ -263,7 +273,7 @@ namespace Parking.Core
         /// <summary>
         /// 查找
         /// </summary>
-        public HourChargeDetail FindHourDetail(Expression<Func<HourChargeDetail, bool>> where)
+        public HourChargeDetail FindHourChgDetail(Expression<Func<HourChargeDetail, bool>> where)
         {
             return hourDetailManager.Find(where);
         }

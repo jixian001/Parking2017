@@ -40,7 +40,7 @@ namespace Parking.Data
         /// <summary>
         /// 免费时长
         /// </summary>
-        public TimeSpan OrderFreeTime { get; set; }
+        public string OrderFreeTime { get; set; }
         public float Fee { get; set; }
 
     }   
@@ -89,11 +89,11 @@ namespace Parking.Data
         /// <summary>
         /// 免费时长
         /// </summary>
-        public TimeSpan SectionFreeTime { get; set; }
+        public string SectionFreeTime { get; set; }
         /// <summary>
         /// 首段计费时长
         /// </summary>    
-        public TimeSpan FirstVoidTime { get; set; }
+        public string FirstVoidTime { get; set; }
         /// <summary>
         /// 首段计费金额
         /// </summary>
@@ -101,7 +101,7 @@ namespace Parking.Data
         /// <summary>
         /// 间隔计费时长
         /// </summary>      
-        public TimeSpan IntervalVoidTime { get; set; }
+        public string IntervalVoidTime { get; set; }
         /// <summary>
         /// 间隔计费金额
         /// </summary>

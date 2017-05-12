@@ -177,6 +177,7 @@
     <Compile Include="Areas\ChargeManager\ChargeManagerAreaRegistration.cs" />
     <Compile Include="Areas\ChargeManager\Controllers\ChargingRuleController.cs" />
     <Compile Include="Areas\ChargeManager\Controllers\ManageController.cs" />
+    <Compile Include="Areas\ChargeManager\Models\SelectItem.cs" />
     <Compile Include="Areas\CustomManager\Controllers\CustomerManagerController.cs" />
     <Compile Include="Areas\CustomManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\CustomManager\CustomManagerAreaRegistration.cs" />
@@ -235,7 +236,6 @@
     <Content Include="Content\jquery-seat-charts\jquery.seat-charts.min.js" />
     <Content Include="Content\jquery-seat-charts\Style.css" />
     <Content Include="Content\rocket-to-top\css\rockettop.css" />
-    <Content Include="Content\rocket-to-top\images\rocket_button_up.png" />
     <Content Include="Content\rocket-to-top\images\top.png" />
     <Content Include="Content\rocket-to-top\js\rockettop.js" />
     <Content Include="favicon.ico" />
@@ -345,7 +345,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Areas\ChargeManager\Models\" />
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
