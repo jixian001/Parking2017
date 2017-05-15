@@ -123,23 +123,7 @@ namespace Parking.Core
         public List<TempChargingRule> GetTempChgRuleList()
         {
             return tempManager.FindList().ToList();
-        }
-        /// <summary>
-        /// 分页查询
-        /// </summary>
-        public Page<TempChargingRule> FindPageTempRuleList(int pageSize, int pageIndex)
-        {
-            Page<TempChargingRule> page = new Page<TempChargingRule>();
-            page.PageIndex = pageIndex;
-            page.PageSize = pageSize;
-
-            OrderParam orderParam = new OrderParam();
-            orderParam.PropertyName = "ID";
-            orderParam.Method = OrderMethod.Asc;
-
-            page = tempManager.FindPageList(page, orderParam);
-            return page;
-        }
+        }       
 
         /// <summary>
         /// 查找
@@ -204,6 +188,14 @@ namespace Parking.Core
         {
             return orderDetailManager.Find(where);
         }
+
+        /// <summary>
+        /// 查找按次收费记录
+        /// </summary>
+        public OrderChargeDetail FindOrderDetail(int oid)
+        {
+            return orderDetailManager.Find(oid);
+        }
         /// <summary>
         /// 添加
         /// </summary>
@@ -242,7 +234,8 @@ namespace Parking.Core
         public List<HourChargeDetail> FindHourChgDetailList()
         {
             return hourDetailManager.FindList().ToList();
-        }
+        }      
+
         /// <summary>
         /// 添加
         /// </summary>
@@ -277,6 +270,13 @@ namespace Parking.Core
         {
             return hourDetailManager.Find(where);
         }
+        /// <summary>
+        /// 查找
+        /// </summary>
+        public HourChargeDetail FindHourChgDetail(int ID)
+        {
+            return hourDetailManager.Find(ID);
+        }
 
         #region 时间段
         /// <summary>
@@ -287,6 +287,22 @@ namespace Parking.Core
         public List<HourSectionInfo> FindHourSectionList(Expression<Func<HourSectionInfo,bool>> where)
         {
             return hourSectionManager.FindList(where);
+        }
+        /// <summary>
+        /// 分页查询时间段
+        /// </summary>
+        public Page<HourSectionInfo> FindPageHourRuleList(int pageSize, int pageNumber)
+        {
+            Page<HourSectionInfo> page = new Page<HourSectionInfo>();
+            page.PageIndex = pageNumber;
+            page.PageSize = pageSize;
+
+            OrderParam orderParam = new OrderParam();
+            orderParam.PropertyName = "ID";
+            orderParam.Method = OrderMethod.Asc;
+
+            page = hourSectionManager.FindPageList(page, orderParam);
+            return page;
         }
         /// <summary>
         /// 查找

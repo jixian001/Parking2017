@@ -13,5 +13,10 @@ namespace Parking.Data
         {
             return _repository.Find(where);
         }
+
+        public OrderChargeDetail Find(int id)
+        {
+            return _repository.Find(id);
+        }
     }
 }

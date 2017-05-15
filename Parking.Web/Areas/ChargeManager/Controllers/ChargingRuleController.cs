@@ -169,7 +169,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             {
                 //先删除原来的记录
                 List<OrderChargeDetail> orderdetailLst = cwtrff.GetOrderDetailList();
-                foreach(OrderChargeDetail order in orderdetailLst)
+                foreach (OrderChargeDetail order in orderdetailLst)
                 {
                     cwtrff.DeleteOrderDetail(order.ID);
                 }
@@ -181,7 +181,201 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     Fee = Convert.ToSingle(fee)
                 };
                 resp = cwtrff.AddOrderDetail(odetail);
+
+                resp.Data = null;
+                if (resp.Code == 1)
+                {
+                    var da = new
+                    {
+                        mainID = rule.ID,
+                        orderID = odetail.ID
+                    };
+                    resp.Data = da;
+                }
             }
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 新增临时类记录,按时
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult AddTempRuleByHour()
+        {
+            Response resp = new Response();
+
+            CWTariff cwtrff = new CWTariff();
+            List<TempChargingRule> ruleList = cwtrff.GetTempChgRuleList();
+            if (ruleList.Count > 0)
+            {
+                resp.Code = 0;
+                resp.Message = "系统故障，存在临时类记录，无法完成新增工作！";
+                return Json(resp);
+            }
+            string preID = Request.Form["PreID"];
+            string tType = Request.Form["TType"]; //计费类型
+            TempChargingRule rule = new TempChargingRule()
+            {
+                ICType = EnmICCardType.Temp,
+                TempChgType = (EnmTempChargeType)Convert.ToInt16(tType),
+                PreChgID = Convert.ToInt32(preID)
+            };
+            resp = cwtrff.AddTempChgRule(rule);
+            if (resp.Code == 1)
+            {
+                string strided = Request.Form["StrideDay"];
+                string cyclet = Request.Form["CycleTime"];
+                string topfee = Request.Form["StrideTopFee"];
+
+                HourChargeDetail hour = new HourChargeDetail {
+                    StrideDay = (EnmStrideDay)Convert.ToInt16(strided),
+                    CycleTime = (EnmCycleTime)Convert.ToInt16(cyclet),
+                    CycleTopFee = Convert.ToSingle(topfee),
+                    TempChgID=rule.ID
+                };
+                resp = cwtrff.AddHourChgDetail(hour);
+
+                resp.Data = null;
+                if (resp.Code == 1)
+                {
+                    var da = new
+                    {
+                        mainID = rule.ID,
+                        hourID = hour.ID
+                    };
+                    resp.Data = da;
+                }
+            }
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 修改按次临时收费规则
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult ModifyTempRuleOfOrder()
+        {
+            Response resp = new Response();
+            #region
+            CWTariff cwtarff = new CWTariff();
+            int mainID = 0;
+            string mID = Request.Form["MID"];
+            if (!string.IsNullOrEmpty(mID))
+            {
+                TempChargingRule rule = cwtarff.FindTempChgRule(Convert.ToInt32(mID));
+                if (rule != null)
+                {
+                    string preID = Request.Form["PreID"];
+                    string tType = Request.Form["TType"];
+
+                    rule.TempChgType = (EnmTempChargeType)Convert.ToInt16(tType);
+                    rule.PreChgID = Convert.ToInt32(preID);
+
+                    cwtarff.UpdateTempChgRule(rule);
+
+                    mainID = rule.ID;
+                }
+            }
+
+            string orderID = Request.Form["OrderID"];
+            if (!string.IsNullOrEmpty(orderID))
+            {
+                string freetime = Request.Form["FreeTime"];
+                string fee = Request.Form["OrderFee"];
+
+                if (orderID == "0")
+                {
+                    //添加新的
+                    if (mainID != 0)
+                    {
+                        OrderChargeDetail odetail = new OrderChargeDetail()
+                        {
+                            TempChgID = mainID,
+                            OrderFreeTime = freetime,
+                            Fee = Convert.ToSingle(fee)
+                        };
+                        resp = cwtarff.AddOrderDetail(odetail);
+                    }
+                }
+                else
+                {
+                    OrderChargeDetail order = cwtarff.FindOrderDetail(Convert.ToInt32(orderID));
+                    if (order != null)
+                    {                       
+                        order.OrderFreeTime = freetime;
+                        order.Fee = Convert.ToSingle(fee);
+                        cwtarff.UpdateOrderDetail(order);
+                    }
+                }              
+            }
+            resp.Message = "修改数据成功";
+            #endregion
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 修改 按时 周期性策略
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult ModifyTempRuleOfHour()
+        {
+            Response resp = new Response();
+            CWTariff cwtarff = new CWTariff();
+            int mainID = 0;
+            string mID = Request.Form["MID"];
+            if (!string.IsNullOrEmpty(mID))
+            {
+                TempChargingRule rule = cwtarff.FindTempChgRule(Convert.ToInt32(mID));
+                if (rule != null)
+                {
+                    string preID = Request.Form["PreID"];
+                    string tType = Request.Form["TType"];
+
+                    rule.TempChgType = (EnmTempChargeType)Convert.ToInt16(tType);
+                    rule.PreChgID = Convert.ToInt32(preID);
+
+                    cwtarff.UpdateTempChgRule(rule);
+
+                    mainID = rule.ID;
+                }
+            }
+            string hourID = Request.Form["hourID"];
+            if (!string.IsNullOrEmpty(hourID))
+            {
+                string strided = Request.Form["StrideDay"];
+                string cyclet = Request.Form["CycleTime"];
+                string topfee= Request.Form["StrideTopFee"];
+                if (hourID == "0")
+                {
+                    //新增
+                    HourChargeDetail hour = new HourChargeDetail
+                    {
+                        StrideDay = (EnmStrideDay)Convert.ToInt16(strided),
+                        CycleTime = (EnmCycleTime)Convert.ToInt16(cyclet),
+                        CycleTopFee = Convert.ToSingle(topfee),
+                        TempChgID = mainID
+                    };
+                    resp = cwtarff.AddHourChgDetail(hour);
+                }
+                else
+                {
+                    //修改
+                    HourChargeDetail detail = cwtarff.FindHourChgDetail(Convert.ToInt32(hourID));
+                    if (detail != null)
+                    {
+                        detail.StrideDay = (EnmStrideDay)Convert.ToInt16(strided);
+                        detail.CycleTime = (EnmCycleTime)Convert.ToInt16(cyclet);
+                        detail.CycleTopFee = Convert.ToSingle(topfee);
+
+                        resp = cwtarff.UpdateHourChgDetail(detail);
+                    }
+                }
+
+            }
+            resp.Message = "修改数据成功";
             return Json(resp);
         }
 
@@ -189,25 +383,232 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         /// 新增时间段
         /// </summary>
         [HttpPost]
-        public ActionResult AddHourTempRule()
+        public ActionResult AddHourSectionRule()
         {
             Response resp = new Response();
+            CWTariff cwtarff = new CWTariff();
 
+            string hourchgID = Request.Form["HourChgID"];
+            if (string.IsNullOrEmpty(hourchgID))
+            {
+                resp.Message = "周期性计费策略ID为空，传输错误!";
+                return Json(resp);
+            }
+            int hourID = Convert.ToInt32(hourchgID);
+            HourChargeDetail temprule = cwtarff.FindHourChgDetail(hourID);
+            if (temprule == null)
+            {
+                resp.Message = "传输错误,找不到相关的周期性计费，ID-" + hourchgID;
+                return Json(resp);
+            }
 
+            //重点是时间段的判断
+            string start = Request.Form["StartTime"];
+            string end = Request.Form["EndTime"];
 
+            DateTime st_dtime = DateTime.Parse("2017-1-1 " + start + ":00");
+            DateTime end_dtime = DateTime.Parse("2017-1-1 " + end + ":00").AddSeconds(-1);
+            if (DateTime.Compare(st_dtime, end_dtime) > 0)
+            {
+                end_dtime = end_dtime.AddDays(1);
+            }
+
+            List<HourSectionInfo> timeSlotLst = cwtarff.FindHourSectionList(hr => true);
+            foreach(HourSectionInfo section in timeSlotLst)
+            {
+                DateTime sttime = section.StartTime;
+                DateTime endtime = section.EndTime.AddSeconds(-1);
+                #region
+                if (DateTime.Compare(sttime, st_dtime) < 0 && DateTime.Compare(endtime, st_dtime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + st_dtime.ToString();
+                    return Json(resp);
+                }
+
+                if (DateTime.Compare(sttime, end_dtime) < 0&& DateTime.Compare(endtime, end_dtime) >0)
+                {
+                    resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + end_dtime.ToString();
+                    return Json(resp);
+                }
+                if(DateTime.Compare(st_dtime, sttime) < 0 && DateTime.Compare(end_dtime, sttime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，现-" + st_dtime.ToString()+ ",原来 - " + sttime.ToString();
+                    return Json(resp);
+                }
+                if (DateTime.Compare(st_dtime, endtime) < 0 && DateTime.Compare(end_dtime, endtime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，现-" + st_dtime.ToString() + ",原来 - " + endtime.ToString();
+                    return Json(resp);
+                }
+                #endregion
+
+                if(DateTime.Compare(endtime,DateTime.Parse("2017-1-1 23:59:59")) > 0)
+                {
+                    DateTime newstart = DateTime.Parse("2017-1-1");
+                    DateTime newend = endtime.AddDays(-1);
+
+                    if (DateTime.Compare(newstart, st_dtime) < 0 && DateTime.Compare(newend, st_dtime) > 0)
+                    {
+                        resp.Message = "当前时段设置错误，现-" + st_dtime.ToString() + ",原来 New- " + newstart.ToString();
+                        return Json(resp);
+                    }
+
+                    if (DateTime.Compare(newstart, end_dtime) < 0 && DateTime.Compare(newend, end_dtime) > 0)
+                    {
+                        resp.Message = "当前时段设置错误，现-" + end_dtime.ToString() + ",原来 New- " + newstart.ToString();
+                        return Json(resp);
+                    }
+
+                    //跨时段时，设定的终点落在原有区域内
+                    foreach(HourSectionInfo hour in timeSlotLst)
+                    {
+                        if (hour.ID != section.ID)
+                        {
+                            DateTime nextstart = hour.StartTime;
+                            DateTime nextend = hour.EndTime;
+
+                            if (DateTime.Compare(nextstart, newend) < 0 && DateTime.Compare(nextend, newend) > 0)
+                            {
+                                resp.Message = "当前时段设置错误，现-" + newend.ToString() + ",原来 New- " + nextstart.ToString();
+                                return Json(resp);
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            string topfee = Request.Form["SectionTopFee"];
+            string freetime = Request.Form["SectionFreeTime"];
+            string firstvoid = Request.Form["FirstVoidTime"];
+            string firstfee = Request.Form["FirstVoidFee"];
+            string intervalvoid = Request.Form["IntervalVoidTime"];
+            string intervalfee = Request.Form["IntervalVoidFee"];
+
+            HourSectionInfo hoursection = new HourSectionInfo() {
+                HourChgID=hourID,
+                StartTime=st_dtime,
+                EndTime=end_dtime.AddSeconds(1),
+                SectionTopFee=Convert.ToSingle(topfee),
+                SectionFreeTime=freetime,
+                FirstVoidTime=firstvoid,
+                FirstVoidFee=Convert.ToSingle(firstfee),
+                IntervalVoidTime=intervalvoid,
+                IntervalVoidFee=Convert.ToSingle(intervalfee)
+            };
+            resp = cwtarff.AddHourSection(hoursection);
 
             return Json(resp);
         }
 
+        /// <summary>
+        /// 修改时间段
+        /// </summary>
         [HttpPost]
-        public JsonResult FindTempHourRuleList(int pageSize, int pageIndex)
+        public ActionResult ModifyHourSectionRule()
         {
-            Page<TempChargingRule> page = new CWTariff().FindPageTempRuleList(pageSize, pageIndex);
+            Response resp = new Response();
+            CWTariff cwtarff = new CWTariff();
+            string hourID = Request.Form["HourID"];
+            if (string.IsNullOrEmpty(hourID))
+            {
+                resp.Message = "传输故障，ID为空";
+                return Json(resp);
+            }
+            HourSectionInfo hoursection = cwtarff.FindHourSection(Convert.ToInt32(hourID));
+            if (hoursection == null)
+            {
+                resp.Message = "传输故障，找不到对应时间段，ID-"+hourID;
+                return Json(resp);
+            }
+            //如果修改时间区间，则要判断
+            string start = Request.Form["StartTime"];
+            string end = Request.Form["EndTime"];
+
+            DateTime st_dtime = DateTime.Parse("2017-1-1 " + start + ":00");
+            DateTime end_dtime = DateTime.Parse("2017-1-1 " + end + ":00").AddSeconds(-1);
+            if (DateTime.Compare(st_dtime, end_dtime) > 0)
+            {
+                end_dtime = end_dtime.AddDays(1);
+            }
+
+            List<HourSectionInfo> timeSlotLst = cwtarff.FindHourSectionList(hr => true);
+            foreach (HourSectionInfo section in timeSlotLst)
+            {
+                DateTime sttime = section.StartTime;
+                DateTime endtime = section.EndTime.AddSeconds(-1);
+                #region
+                if (DateTime.Compare(sttime, st_dtime) < 0 && DateTime.Compare(endtime, st_dtime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + st_dtime.ToString();
+                    return Json(resp);
+                }
+
+                if (DateTime.Compare(sttime, end_dtime) < 0 && DateTime.Compare(endtime, end_dtime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + end_dtime.ToString();
+                    return Json(resp);
+                }
+                if (DateTime.Compare(st_dtime, sttime) < 0 && DateTime.Compare(end_dtime, sttime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，现-" + st_dtime.ToString() + ",原来 - " + sttime.ToString();
+                    return Json(resp);
+                }
+                if (DateTime.Compare(st_dtime, endtime) < 0 && DateTime.Compare(end_dtime, endtime) > 0)
+                {
+                    resp.Message = "当前时段设置错误，现-" + st_dtime.ToString() + ",原来 - " + endtime.ToString();
+                    return Json(resp);
+                }
+                #endregion
+            }
+
+            string topfee = Request.Form["SectionTopFee"];
+            string freetime = Request.Form["SectionFreeTime"];
+            string firstvoid = Request.Form["FirstVoidTime"];
+            string firstfee = Request.Form["FirstVoidFee"];
+            string intervalvoid = Request.Form["IntervalVoidTime"];
+            string intervalfee = Request.Form["IntervalVoidFee"];
+
+            hoursection.StartTime = st_dtime;
+            hoursection.EndTime = end_dtime.AddSeconds(1);
+            hoursection.SectionTopFee = Convert.ToSingle(topfee);
+            hoursection.SectionFreeTime = freetime;
+            hoursection.FirstVoidTime = firstvoid;
+            hoursection.FirstVoidFee = Convert.ToSingle(firstfee);
+            hoursection.IntervalVoidTime = intervalvoid;
+            hoursection.IntervalVoidFee = Convert.ToSingle(intervalfee);
+            resp = cwtarff.UpdateHourSection(hoursection);
+
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 分页查找
+        /// </summary>
+        /// <param name="pageSize"></param>
+        /// <param name="pageNumber"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult FindHourSectionList(int pageSize, int pageNumber)
+        {
+            Page<HourSectionInfo> page = new CWTariff().FindPageHourRuleList(pageSize, pageNumber);
             var data = new {
                 total = page.TotalNumber,
                 rows = page.ItemLists
             };
             return Json(data);
+        }
+
+        /// <summary>
+        /// 删除记录
+        /// </summary>
+        /// <param name="hourID"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult DeleteHourSection(int hourID)
+        {
+            Response resp = new CWTariff().DeleteHourSection(hourID);
+            return Json(resp);
         }
 
         /// <summary>
@@ -256,11 +657,15 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             HourChargeDetail policy = cwtariff.FindHourChgDetail(hr => hr.TempChgID == tempID);
             if (policy == null)
             {
-                policy = cwtariff.FindHourChgDetailList().First();
-                if (policy != null)
+                List<HourChargeDetail> hourList = cwtariff.FindHourChgDetailList();
+                if (hourList.Count > 0)
                 {
-                    policy.TempChgID = tempID;
-                    cwtariff.UpdateHourChgDetail(policy);
+                    policy = hourList[0];
+                    if (policy != null)
+                    {
+                        policy.TempChgID = tempID;
+                        cwtariff.UpdateHourChgDetail(policy);
+                    }
                 }
                 else
                 {
@@ -271,6 +676,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     policy.CycleTopFee = 0;
                     cwtariff.AddHourChgDetail(policy);
                 }
+              
             }
             return Json(policy,JsonRequestBehavior.AllowGet);
         }
@@ -290,6 +696,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     OrderFreeTime = "00:00",
                     Fee = 0
                 };
+                cwtariff.AddOrderDetail(orderDetail);
             }
             return Json(orderDetail, JsonRequestBehavior.AllowGet);
         }

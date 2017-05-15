@@ -51,6 +51,7 @@
                              
                 <div id="ordercontent" style="display:none">                   
                     <p class="text-danger" style="margin-top:10px">按次计费规则</p>
+                    <input type="hidden" id="orderID" value="0" />
                     <table class="form">
                         <tr>
                             <th class="formTitle">免费时长</th>
@@ -66,6 +67,7 @@
                 </div>
                
                 <div id="cyclepolicy" style="display:none">
+                    <input type="hidden" id="cycleID" value="0" />
                     <table class="form">
                         <tr>
                             <th class="formTitle">跨周期策略</th>
@@ -107,15 +109,18 @@
             @* 用来控制时间段的显示，在开始时如果没有找到临时卡记录，则要求先建立主记录 *@
             <div id="hourtime" style="display:none"> 
                 <div class="bd" id="hourcontent" style="display:none">
-                    <form>
+                    <form id="frm">
                         <table class="chg">
                             <tbody>
                                 <tr align="left">
                                     <td rowspan="6" align="center" class="control-label spe">
-                                        <span id="hourtitle">新增时段</span>
-                                        <br />
+                                        <span id="hourtitle">时段</span>
+                                        <br /><br />
                                         <input type="button" value="保 存" id="hoursave" />
-                                        <input type="hidden" id="tID" />
+                                        <br /><br />
+                                        <input type="button" value="隐 藏" id="hourhidden" />
+
+                                        <input type="hidden" id="hourSectionID" value="0"/>
                                     </td>
                                 </tr>
                                 <tr>
@@ -134,7 +139,7 @@
                                 <tr>
                                     <td align="right">有效期内免费</td>
                                     <td class="bdr">
-                                        <input type="checkbox" />
+                                        <input type="checkbox" id="tmfreechk"/>
                                     </td>
                                     <td align="right">免费时长(分)</td>
                                     <td class="bdr">
@@ -245,6 +250,8 @@
 
                                     $("#orderfreetime").val(data.OrderFreeTime);
                                     $("#orderfee").val(data.Fee);
+
+                                    $("#orderID").val(data.ID);
                                 });
 
                             }
@@ -266,7 +273,8 @@
                                     
                                     var stride = jsondata.StrideDay;
                                     $("#strideday").val(stride);
-                                   
+                                    
+                                    $("#cycleID").val(jsondata.ID);
                                 });
                             }
                         }
@@ -296,7 +304,7 @@
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
                 method: "post",
-                url: "@Url.Action("FindTempHourRuleList")",
+                url: "@Url.Action("FindHourSectionList")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              
                 dataType: "json",
@@ -320,18 +328,20 @@
                         title: "起始时间",
                         field: "StartTime",
                         align: "left",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter:dtimeformatter
                     },
                     {
                         title: "终止时间",
                         field: "EndTime",
                         align: "left",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter: dtimeformatter
                     },
                     {
                         title: "最高计费",
                         field: "SectionTopFee",
-                        align: "left",
+                        align: "center",
                         valign: "middle"
                     },
                     {
@@ -349,7 +359,7 @@
                     {
                         title: "首段金额",
                         field: "FirstVoidFee",
-                        align: "left",
+                        align: "center",
                         valign: "middle"
                     },
                     {
@@ -361,7 +371,7 @@
                     {
                         title: "间隔金额",
                         field: "IntervalVoidFee",
-                        align: "left",
+                        align: "center",
                         valign: "middle"
                     },
                     {
@@ -382,10 +392,22 @@
                     return "无符合条件的记录";
                 },
 
-                onClickRow: function (row, tr) {
+                onClickRow: function (selected, tr) {
 
-
-
+                    var disp = $("#hourcontent").css("display");
+                    if (disp == 'block') {
+                        $("#hourtitle").text("修改时段");
+                        $("#hourSectionID").val(selected.ID);
+                        $("#starttime").val(dtimeformatter(selected.StartTime));
+                        $("#endtime").val(dtimeformatter(selected.EndTime));                      
+                        $("#tmfreechk").attr("checked", true);
+                        $("#tmfree").val(selected.SectionFreeTime);
+                        $("#tmtopfee").val(selected.SectionTopFee);
+                        $("#tmfirt").val(selected.FirstVoidTime);
+                        $("#tmfirstfee").val(selected.FirstVoidFee);
+                        $("#tminterval").val(selected.IntervalVoidTime);
+                        $("#intervalfee").val(selected.IntervalVoidFee);
+                    }
                 }
 
             });
@@ -398,16 +420,187 @@
                 return '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
             }
 
-            $("#btn_add").click(function () {
+            //格式化时间
+            function dtimeformatter(value) {
+                var newdate = formatDate(value);
+                var arraydate = newdate.split(" ");
+                if (arraydate.length > 0) {
+                    //获取时间
+                    var dtime = arraydate[1];
+                    var arraytime = dtime.split(":");
+                    if (arraytime.length > 1)
+                    {
+                        return arraytime[0] + ":" + arraytime[1];
+                    }
+                }
+                return newdate;
+            }            
+
+            //新增时间段
+            $("#btn_add").click(function ()
+            {
                 var $content = $("#hourcontent");
-                $content.css("display","block");
-                $("#tID").val("");
+                $content.css("display", "block");
+
+                $("#hourSectionID").val("0");
+                $("#starttime").val("");
+                $("#endtime").val("");
+                $("#tmfree").val("");
+                $("#tmtopfee").val("");
+
+                $("#hourtitle").text("新增时段");
             });
 
-            $("#btn_edit").click(function () {
+            //辑辑
+            $("#btn_edit").click(function ()
+            {
+                var $content = $("#hourcontent");
+                $content.css("display", "none");
 
+                var selected = $table.bootstrapTable('getSelections')[0];
+                if (typeof (selected) == 'undefined')
+                {
+                    BootstrapDialog.warning("请选择一行数据！");
+                }
+                else
+                {                   
+                    $content.css("display", "block");
+
+                    $("#hourtitle").text("修改时段");
+
+                    $("#hourSectionID").val(selected.ID);
+                    $("#starttime").val(dtimeformatter(selected.StartTime));
+                    $("#endtime").val(dtimeformatter(selected.EndTime));
+                    $("#tmfreechk").attr("checked", true);
+                    $("#tmfree").val(selected.SectionFreeTime);
+                    $("#tmtopfee").val(selected.SectionTopFee);
+                    $("#tmfirt").val(selected.FirstVoidTime);
+                    $("#tmfirstfee").val(selected.FirstVoidFee);
+                    $("#tminterval").val(selected.IntervalVoidTime);
+                    $("#intervalfee").val(selected.IntervalVoidFee);
+                }
+            });
+
+            //隐藏
+            $("#hourhidden").click(function () {
+                $("#hourcontent").css("display","none");
+            });
+
+            //时间段新增或修改
+            $("#hoursave").click(function () {
+
+                var hourID = $("#cycleID").val();
+                if (hourID == 0) {
+                    BootstrapDialog.warning("请先保存周期计费策略，再添加时间段！");
+                    return;
+                }
+
+                var start = $("#starttime").val();
+                var end = $("#endtime").val();
+                if (start.length == 0 || end.length == 0) {
+                    BootstrapDialog.warning("时间段不允许为空！");
+                    return;
+                }
+
+                var hourtopfee = $("#tmtopfee").val();
+                if (hourtopfee.length == 0) {
+                    BootstrapDialog.warning("时段最高计费不允许为空！");
+                    return;
+                }
+
+                var hourfirsttime = $("#tmfirt").val();
+                if (hourfirsttime.length == 0) {
+                    BootstrapDialog.warning("首段时长不允许为空！");
+                    return;
+                }
+
+                var hourfirstfee = $("#tmfirstfee").val();
+                if (hourfirstfee.length == 0) {
+                    BootstrapDialog.warning("首段计费金额不允许为空！");
+                    return;
+                }
+
+                var hourintvtime = $("#tminterval").val();
+                if (hourintvtime.length == 0) {
+                    BootstrapDialog.warning("间隔计费时长不允许为空！");
+                    return;
+                }
+
+                var hourintvfee = $("#intervalfee").val();
+                if (hourintvfee.length == 0) {
+                    BootstrapDialog.warning("间隔计费金额不允许为空！");
+                    return;
+                }
+
+                if ($("#tmfreechk").is(':checked') == false) {
+                    $("#tmfree").val("00:00");
+                }
+
+                var hoursection = $("#hourSectionID").val();
+                if (hoursection == 0) //新增
+                {
+                    console.log("新增时间段");
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("AddHourSectionRule")",
+                        data: { "HourChgID": $("#cycleID").val(), "StartTime": start, "EndTime": end, "SectionTopFee": hourtopfee, "SectionFreeTime": $("#tmfree").val(), "FirstVoidTime": hourfirsttime, "FirstVoidFee": hourfirstfee, "IntervalVoidTime": hourintvtime, "IntervalVoidFee": hourintvfee },
+                        dataType: "json",
+                        cache: false,
+                        beforeSend: function (XMLHttpRequest) {
+                            $("#hoursave").text("添加中");
+                        },
+                        success: function (data) {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: data.Message
+                            });
+
+                            if (data.Code == 1)
+                            {
+                                $("#hourcontent").css("display", "none");
+                                $table.bootstrapTable("refresh");
+                            }
+
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+                            $("#hoursave").text("保 存");
+                        }
+                    });
+
+                }
+                else //修改
+                {
+                    console.log("修改时间段，ID-" + hoursection);
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("ModifyHourSectionRule")",
+                        data: { "HourID": hoursection, "StartTime": start, "EndTime": end, "SectionTopFee": hourtopfee, "SectionFreeTime": $("#tmfree").val(), "FirstVoidTime": hourfirsttime, "FirstVoidFee": hourfirstfee, "IntervalVoidTime": hourintvtime, "IntervalVoidFee": hourintvfee },
+                        dataType: "json",
+                        cache: false,
+                        beforeSend: function (XMLHttpRequest) {
+                            $("#hoursave").text("提交中");
+                        },
+                        success: function (data) {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: data.Message
+                            });
+
+                            if (data.Code == 1) {
+                                $("#hourcontent").css("display", "none");
+                                $table.bootstrapTable("refresh");
+                            }
+
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+                            $("#hoursave").text("保 存");
+                        }
+                    });
+
+                }
 
             });
+
 
             //周期策略保存(新增、修改)
             $("#policysave").click(function () {
@@ -428,10 +621,19 @@
                     BootstrapDialog.warning("请选择计费类型！");
                     return;
                 }
-                //按时
+                //按时 条件判断
+                var strided = $("#strideday option:selected").val();
+                var cyclet = $("#cycletime option:selected").val();
                 if (ttype == 1)
                 {
-                    
+                    if (strided == 0) {
+                        BootstrapDialog.warning("请选择跨周期策略！");
+                        return;
+                    }
+                    if (cyclet == 0) {
+                        BootstrapDialog.warning("请选择周期时长！");
+                        return;
+                    }
                 }
                 //按次
                 var $orderfreetime = $("#orderfreetime");
@@ -450,9 +652,9 @@
                
                 var mID = $("#mainID").val();
                
-                if (mID == 0)
+                if (mID == 0)  //新增
                 {
-                    //新增
+                  
                     if (ttype == 2) {
                         //按次 添加
                         $.ajax({
@@ -464,8 +666,22 @@
                             beforeSend: function (XMLHttpRequest) {
                                 $("#policysave").text("提交中");
                             },
-                            success: function (data) {
-                                BootstrapDialog.warning(data.Message);
+                            success: function (resp) {
+                                BootstrapDialog.warning(resp.Message);
+
+                                if(resp.Code==1)
+                                {
+                                    var exp = resp.Data;
+                                    if (!exp&&typeof(exp)!="undefined")
+                                    {
+                                        alert("Is Null");
+                                    }
+                                    else
+                                    {
+                                        $("#mainID").val(exp.mainID);
+                                        $("#orderID").val(exp.orderID);
+                                    }
+                                }
                             },
                             complete: function (XMLHttpRequest, textStatus) {
                                 $("#policysave").text("保存设置");
@@ -473,65 +689,184 @@
                         });
 
                     }
-                }
-                else
-                {
-                    //修改
 
-                }
+                    //新增 按时 添加周期计费规则
+                    if (ttype == 1)
+                    {
 
-            });
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("AddTempRuleByHour")",
+                            data: { "PreID": precontent, "TType": ttype, "StrideDay": strided, "CycleTime": cyclet, "StrideTopFee": $("#topfee").val() },
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+                                $("#policysave").text("提交中");
+                            },
+                            success: function (resp) {
+                                BootstrapDialog.warning(resp.Message);
 
-            //时间段保存
-            $("#hoursave").click(function () {
-
-                $.ajax({
-                    type: "GET",
-                    url: "@Url.Action("AddHourTempRule")",
-                    data: para,
-                    dataType: "json",
-                    cache: false,
-                    beforeSend: function (XMLHttpRequest) {
-                        $("#hoursave").text("提交中");
-                    },
-                    success: function (data) {
-                        BootstrapDialog.show({
-                            title: "温馨提示",
-                            message: data.Message
+                                if (resp.Code == 1) {
+                                    var exp = resp.Data;
+                                    if (!exp && typeof (exp) != "undefined") {
+                                        alert("Is Null");
+                                    }
+                                    else {
+                                        $("#mainID").val(exp.mainID);
+                                        $("#cycleID").val(exp.hourID);
+                                    }
+                                }
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#policysave").text("保存设置");
+                            }
                         });
 
-                        if (data.Code == 1) {
-                            $("#hourcontent").css("display", "none");
-                            $table.bootstrapTable("refresh");
-                        }
-                    },
-                    complete: function (XMLHttpRequest, textStatus) {
-                        $("#hoursave").text("新增时段");
                     }
-                });
 
+                }
+                else  //修改
+                {
+                    console.log("MainID: "+mID + "  ,OrderID: " + $("#orderID").val() + "  ,HourID: " + $("#cycleID").val());
+                    //按次
+                    if (ttype == 2) {
+                        var orderID = $("#orderID").val();
+                       
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("ModifyTempRuleOfOrder")",
+                            data: { "MID": mID, "PreID": precontent, "TType": ttype, "OrderID": orderID, "FreeTime": $orderfreetime.val(), "OrderFee": $orderfee.val() },
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+                                $("#policysave").text("修改中");
+                            },
+                            success: function (resp) {
+                                BootstrapDialog.warning(resp.Message);
+
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#policysave").text("保存设置");
+                            }
+                        });
+
+
+                    }
+
+                    //按时
+                    if (ttype == 1)
+                    {
+                        var hourID = $("#cycleID").val();
+
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("ModifyTempRuleOfHour")",
+                            data: { "MID": mID, "PreID": precontent, "TType": ttype, "HourID": hourID, "StrideDay": strided, "CycleTime": cyclet, "StrideTopFee": $("#topfee").val() },
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+                                $("#policysave").text("修改中");
+                            },
+                            success: function (resp) {
+                                BootstrapDialog.warning(resp.Message);
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#policysave").text("保存设置");
+                            }
+                        });
+
+                    }
+
+                }
 
             });
-          
+            
+            //只显示时间
+            function convertdatetime(value)
+            {
+                var array = formatDate(value);
+            }
+
+            //Date(1391141532000)的字符串转换成javascript中的日期对象
+            function formatDate(dt) {
+                var milliseconds = parseInt(dt.replace(/\D/igm, ""));
+                var newdate = new Date(milliseconds).Format("yyyy-MM-dd hh:mm:ss");
+                return newdate.toLocaleString();
+            }
+
+            Date.prototype.Format = function (fmt) { //author: meizz 
+                var o = {
+                    "M+": this.getMonth() + 1, //月份 
+                    "d+": this.getDate(), //日 
+                    "h+": this.getHours(), //小时 
+                    "m+": this.getMinutes(), //分 
+                    "s+": this.getSeconds(), //秒 
+                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+                    "S": this.getMilliseconds() //毫秒 
+                };
+                if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+                for (var k in o)
+                    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                return fmt;
+            }
+
 
         });
 
         //计费类型事件改变
         function typeOnChange(val) {
-           
-            if (val == 1)
+            
+            var mID = $("#mainID").val();
+            
+            if (val == 1) //按时
             {
                 $("#ordercontent").css("display", "none");
 
                 $("#cyclepolicy").css("display", "block");
                 $("#hourtime").css("display", "block");
+
+                if (mID != 0)
+                {
+                    //获取计费策略
+                    $.getJSON("@Url.Action("FindHourDetail")", { "tempID": mID }, function (jsondata) {
+
+                        $("#topfee").val(jsondata.CycleTopFee);
+
+                        if (jsondata.CycleTopFee > 0)
+                        {
+                            $("#chk").attr("checked",true);
+                        }
+
+                        var ctime = jsondata.CycleTime;
+                        $("#cycletime").val(ctime);
+                                    
+                        var stride = jsondata.StrideDay;
+                        $("#strideday").val(stride);
+                                    
+                        $("#cycleID").val(jsondata.ID);
+                    });
+
+                }
+                
             }
-            else if (val == 2)
+            else if (val == 2)  //按次
             {
                 $("#ordercontent").css("display", "block");
 
                 $("#cyclepolicy").css("display", "none");
                 $("#hourtime").css("display", "none");
+
+                if (mID != 0)
+                {
+                    $.getJSON("@Url.Action("FindOrderDetail")", { "tempID": obj.ID }, function (data) {
+
+                        $("#orderfreetime").val(data.OrderFreeTime);
+                        $("#orderfee").val(data.Fee);
+
+                        $("#orderID").val(data.ID);
+                    });
+                }
+
             }
             else
             {
@@ -583,9 +918,24 @@
             'click .delete': function (e, value, row, index) {
 
                 BootstrapDialog.confirm("确定要删除该记录？ID为 " + row.ID, function (result) {
-                    if (result)
-                    {
-                       
+                    if (result) {
+
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("DeleteHourSection")",
+                            data: { "hourID": row.ID },
+                            dataType: "json",
+                            cache: false,
+                            success: function (data) {
+                                BootstrapDialog.show({
+                                    title: "温馨提示",
+                                    message: data.Message
+                                });
+
+                                window.location.href = "/ChargeManager/ChargingRule/TempRule";
+                            }
+                        });
+
                     }
                 });
             }
