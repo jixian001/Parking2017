@@ -16,6 +16,9 @@ namespace Parking.Data
         public EnmICCardType ICType { get; set; }
         public EnmFeeUnit Unit { get; set; }
         public float Fee { get; set; }
+        /// <summary>
+        /// 暂不开通
+        /// </summary>
         public int? PreChgID { get; set; }
     }
 

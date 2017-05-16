@@ -360,6 +360,11 @@ namespace Parking.Core
             return fixManager.Find(ID);
         }
 
+        public Response AddFixRule(FixChargingRule rule)
+        {
+            return fixManager.Add(rule);
+        }
+
         public FixChargingRule FindFixCharge(Expression<Func<FixChargingRule, bool>> where)
         {
             return fixManager.Find(where);
@@ -368,6 +373,28 @@ namespace Parking.Core
         public Response UpdateFixCharge(FixChargingRule fix)
         {
             return fixManager.Update(fix);
+        }
+
+        public Response DeleteFixRule(int ID)
+        {
+            return fixManager.Delete(ID);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        public Page<FixChargingRule> FindPageFixRuleLst(int pageSize, int pageNumber)
+        {
+            Page<FixChargingRule> page = new Page<FixChargingRule>();
+            page.PageIndex = pageNumber;
+            page.PageSize = pageSize;
+
+            OrderParam orderParam = new OrderParam();
+            orderParam.PropertyName = "ID";
+            orderParam.Method = OrderMethod.Asc;
+
+            page = fixManager.FindPageList(page, orderParam);
+            return page;
         }
         #endregion
     }

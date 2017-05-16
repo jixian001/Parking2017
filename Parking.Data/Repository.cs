@@ -29,7 +29,7 @@ namespace Parking.Data
         }
         public TEntity Find(Expression<Func<TEntity,bool>> where)
         {
-            return _dbContext.Set<TEntity>().SingleOrDefault(where);
+            return _dbContext.Set<TEntity>().FirstOrDefault(where);
         }
         #endregion
 

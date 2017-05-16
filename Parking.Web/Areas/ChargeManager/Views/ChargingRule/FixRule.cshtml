@@ -1,6 +1,6 @@
 ﻿
 @{
-    ViewBag.Title = "预付类规则";
+    ViewBag.Title = "固定类规则";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -11,12 +11,12 @@
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
             <li>计费规则</li>
-            <li class="active">预付类规则</li>              
+            <li class="active">固定类规则</li>
         </ol>
+
         <div id="disp" style="display:none;border:1px solid #ccd232;padding-top:25px">
             <form>
-                <div class="form-horizontal">
-                    <h4 id="htitle" class="margin-base-vertical col-md-offset-3" hidden></h4>                  
+                <div class="form-horizontal">                  
                     <div class="form-group" hidden>
                         <label class="control-label col-md-2">ID</label>
                         <div class="col-md-4">
@@ -24,29 +24,32 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-md-2">周期单位</label>
+                        <label class="control-label col-md-2">卡类型</label>
                         <div class="col-md-4">
-                            <select id="cunit" name="cunit" class="form-control">
-                                <option value="0">请选择</option>
-                                <option value="1">天</option>
-                                <option value="2">月份</option>
-                                <option value="3">季度</option>
-                                <option value="4">小时</option>
+                            <select id="ccard" name="ccard" class="form-control">
+                                <option value="1">请选择</option>
+                                <option value="2">定期卡</option>
+                                <option value="3">固定卡</option>                               
                             </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-md-2">充值周期</label>
+                        <label class="control-label col-md-2">收费类型</label>
                         <div class="col-md-4">
-                            <input type="text" id="cnum" name="cnum" class="form-control" />
+                            <select id="cunit" name="cunit" class="form-control">
+                                <option value="0">请选择</option>                              
+                                <option value="1">月</option>
+                                <option value="2">季度</option>
+                                <option value="3">年</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-md-2">预缴费用</label>
+                        <label class="control-label col-md-2">费用</label>
                         <div class="col-md-4">
                             <input type="text" id="cfee" name="cfee" class="form-control" />
                         </div>
-                    </div>                 
+                    </div>                   
                     <div class="form-group">
                         <div class="col-md-3 col-md-offset-2">
                             <button type="button" class="btn btn-default" id="btn" name="btn"></button>
@@ -54,7 +57,8 @@
                     </div>
                 </div>
             </form>
-        </div>     
+        </div>
+
         <div>
             <div id="toolbar" class="btn-group pull-right" role="group">
                 <button id="btn_add" class="btn btn-default"><span></span>新 增</button>
@@ -66,10 +70,11 @@
 </div>
 
 @section scripts{
+
     @Styles.Render("~/Content/bootstraptable")
     @Scripts.Render("~/bundles/bootstraptable")
-    <script>
 
+    <script>
         $(function () {
 
             var $table = $("#tGrid");
@@ -89,7 +94,7 @@
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
                 method: "post",
-                url: "@Url.Action("FindPreRuleList")",
+                url: "@Url.Action("FindFixRuleLst")",
                 queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
                 queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
                 dataType: "json",
@@ -106,24 +111,22 @@
                         visible: true,
                         align: "center",
                         valign: "middle",
-                        visible: false,
-                        sortable: true
+                        visible: false
                     },
                     {
-                        title: "充值周期",
-                        field: "CycleNum",
+                        title: "卡类型",
+                        field: "ICType",
                         align: "center",
                         valign: "middle"
                     },
                     {
-                        title: "周期单位",
-                        field: "CycleUnit",
+                        title: "收费类型",
+                        field: "Unit",
                         align: "center",
-                        valign: "middle",
-                        sortable: true
+                        valign: "middle"
                     },
                     {
-                        title: "收费金额",
+                        title: "金额",
                         field: "Fee",
                         align: "left",
                         valign: "middle"
@@ -145,61 +148,52 @@
                 formatNoMatches: function () {
                     return "无符合条件的记录";
                 },
-                
+
                 onClickRow: function (row, tr) {
                     var dis = $('#disp').css("display");
                     if (dis === 'block') {
+                        $("#btn").text("修 改");
                         $("#cID").val(row.ID);
-                        $("#cnum").val(row.CycleNum);
-                        $("#cfee").val(row.Fee);
-                        $("#cunit").val(row.CycleUnit);
+                        $("#ccard").val(row.ICType);
+                        $("#cunit").val(row.Unit);
+                        $("#cfee").val(row.Fee);                       
                     }
                 }
 
             });
 
             function queryParams(params) {
-                //return params;
-                return {
-                    pageSize: params.pageSize,
-                    pageIndex: params.pageNumber,
-                    sortOrder: params.sortOrder,
-                    sortName: params.sortName
-                };
+                return params;
             }
 
             function operateFormatter(value, row, index) {
-                return '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-                       '<a class="edit" href="javascript:void(0)" title="编辑"><i class="glyphicon glyphicon-th"></i></a>';
+                return '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
             }
 
-            //添加
             $("#btn_add").click(function () {
-                $("#htitle").text("添 加");
                 $("#btn").text("添 加");
                 $("#disp").css("display", "block");
 
                 $("#cID").val("0");
-                $("#cnum").val("");
-                $("#cfee").val("");
-                $("#cunit").val("0");
+                $("#ccard").val("1");
             });
 
-            //编辑
             $("#btn_edit").click(function () {
+
                 var selected = $table.bootstrapTable('getSelections')[0];
-                if (typeof (selected) == 'undefined') {
+                if (typeof (selected) == 'undefined')
+                {
                     BootstrapDialog.warning("请选择一行数据！");
                 }
-                else {
-                    $("#htitle").text("编 辑");
+                else
+                {
                     $("#btn").text("修 改");
                     $("#disp").css("display", "block");
 
                     $("#cID").val(selected.ID);
-                    $("#cnum").val(selected.CycleNum);
+                    $("#ccard").val(selected.ICType);
                     $("#cfee").val(selected.Fee);
-                    $("#cunit").val(selected.CycleUnit);
+                    $("#cunit").val(selected.Unit);
                 }
 
             });
@@ -208,57 +202,69 @@
             $("#btn").click(function () {
                 var $id = $("#cID");
                 var curl = "";
-                if ($id.val() == '0')
-                {
+                if ($id.val() == '0') {
                     //添加
-                    curl = "@Url.Action("AddPre")";
+                    curl = "@Url.Action("AddFixRule")";
                 }
-                else
-                {
+                else {
                     //修改
-                    curl = "@Url.Action("ModifyPre")";
+                    curl = "@Url.Action("ModifyFixRule")";
                 }
+
+                var ctype = $("#ccard").val();
+                if (ctype == 1)
+                {
+                    BootstrapDialog.warning("请选择卡类型！");
+                    return;
+                }
+                var cunit = $("cunit").val();
+                if (cunit == 0)
+                {
+                    BootstrapDialog.warning("请选择收费类型！");
+                    return;
+                }
+
                 var para = $("form").serialize();
 
                 $.ajax({
-                    type: "GET",
-                    url: curl,                   
-                    data:para,
+                    type: "POST",
+                    url: curl,
+                    data: para,
                     dataType: "json",
                     cache: false,
                     beforeSend: function (XMLHttpRequest) {
                         $("#btn").text("提交中");
                     },
-                    success: function (data) {                       
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: data.Message
-                            });
+                    success: function (data) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: data.Message
+                        });
 
-                            if (data.Code == 1)
-                            {
-                                $("#disp").css("display", "none");
-                                $table.bootstrapTable("refresh");
-                            }                           
+                        if (data.Code == 1) {
+                            $("#disp").css("display", "none");
+                            $table.bootstrapTable("refresh");
+                        }
                     },
                     complete: function (XMLHttpRequest, textStatus) {
-                        $("#btn").text("确 认");                       
+                        $("#btn").text("确 认");
                     }
                 });
 
             });
 
+
         });
 
         window.actionEvents = {
             'click .delete': function (e, value, row, index) {
-                
+
                 BootstrapDialog.confirm("确定要删除该记录？ID为 " + row.ID, function (result) {
                     if (result) {
 
                         $.ajax({
                             type: "GET",
-                            url: "@Url.Action("DeletePre")",
+                            url: "@Url.Action("DeleteFixRule")",
                             data: { "ID": row.ID },
                             dataType: "json",
                             cache: false,
@@ -270,26 +276,17 @@
                                     message: data.Message
                                 });
 
-                                window.location.href = "/ChargeManager/ChargingRule/PreRule";
+                                window.location.href = "/ChargeManager/ChargingRule/FixRule";
                             },
                             complete: function (XMLHttpRequest, textStatus) {
                             }
                         });
                     }
                 });
-            },
-            'click .edit': function (e, value, row, index) {
-                $("#htitle").text("编 辑");
-                $("#btn").text("修 改");
-                $("#disp").css("display", "block");
-
-                $("#cID").val(row.ID);
-                $("#cnum").val(row.CycleNum);
-                $("#cfee").val(row.Fee);
-                $("#cunit").val(row.CycleUnit);
             }
         };
 
     </script>
+
     }
 

@@ -108,6 +108,125 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         {
             return View();
         }
+
+        /// <summary>
+        /// 查找固定类
+        /// </summary>       
+        [HttpPost]
+        public ActionResult FindFixRuleLst(int pageSize, int pageNumber)
+        {
+            Page<FixChargingRule> page = new CWTariff().FindPageFixRuleLst(pageSize, pageNumber);
+            var data = new
+            {
+                total = page.TotalNumber,
+                rows = page.ItemLists
+            };
+            return Json(data);
+
+        }
+
+        [HttpPost]
+        public ActionResult AddFixRule()
+        {
+            Response resp = new Response();
+            CWTariff cwtariff = new CWTariff();
+
+            string cardtype = Request.Form["ccard"];
+            if (string.IsNullOrEmpty(cardtype))
+            {
+                resp.Message = "传输错误，卡类型为空！";
+                return Json(resp);
+            }
+            string cunit = Request.Form["cunit"];
+            if (string.IsNullOrEmpty(cunit))
+            {
+                resp.Message = "传输错误，收费类型为空！";
+                return Json(resp);
+            }
+            string fee = Request.Form["cfee"];
+
+            int ctype = Convert.ToInt32(cardtype);
+            int unit = Convert.ToInt32(cunit);
+
+            FixChargingRule rule = cwtariff.FindFixCharge(f=>f.ICType==(EnmICCardType)ctype&&f.Unit==(EnmFeeUnit)unit);
+            if (rule != null)
+            {
+                resp.Message = "已存在该记录，不允许重复添加！";
+                return Json(resp);
+            }
+            rule = new FixChargingRule {
+                ICType= (EnmICCardType)ctype,
+                Unit= (EnmFeeUnit)unit,
+                Fee=Convert.ToSingle(fee)
+            };
+            resp = cwtariff.AddFixRule(rule);
+
+            return Json(resp);
+        }
+
+        [HttpPost]
+        public ActionResult ModifyFixRule()
+        {
+            Response resp = new Response();
+            CWTariff cwtariff = new CWTariff();
+
+            string ID = Request.Form["cID"];
+            if (string.IsNullOrEmpty(ID))
+            {
+                resp.Message = "传输错误，ID为空！";
+                return Json(resp);
+            }
+            int mID = Convert.ToInt32(ID);
+            FixChargingRule rule = cwtariff.FindFixCharge(mID);
+            if (rule == null)
+            {
+                resp.Message = "找不到对应的记录，ID-"+ID;
+                return Json(resp);
+            }
+            string cardtype = Request.Form["ccard"];
+            if (string.IsNullOrEmpty(cardtype))
+            {
+                resp.Message = "传输错误，卡类型为空！";
+                return Json(resp);
+            }
+            string cunit = Request.Form["cunit"];
+            if (string.IsNullOrEmpty(cunit))
+            {
+                resp.Message = "传输错误，收费类型为空！";
+                return Json(resp);
+            }
+            string fee = Request.Form["cfee"];
+
+            int ctype = Convert.ToInt32(cardtype);
+            int unit = Convert.ToInt32(cunit);
+
+            FixChargingRule exstRule = cwtariff.FindFixCharge(f => f.ICType == (EnmICCardType)ctype && f.Unit == (EnmFeeUnit)unit);
+            if (exstRule != null)
+            {
+                if (exstRule.ID != mID)
+                {
+                    resp.Message = "已存在该记录，不允许重复添加！";
+                    return Json(resp);
+                }
+            }
+
+            rule.ICType = (EnmICCardType)ctype;
+            rule.Unit = (EnmFeeUnit)unit;
+            rule.Fee = Convert.ToSingle(fee);
+            resp = cwtariff.UpdateFixCharge(rule);
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>       
+        public ActionResult DeleteFixRule(int ID)
+        {
+            Response resp = new CWTariff().DeleteFixRule(ID);
+
+            return Json(resp, JsonRequestBehavior.AllowGet);
+        }
+
         #endregion
 
         #region 临时类
@@ -457,24 +576,23 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     {
                         resp.Message = "当前时段设置错误，现-" + end_dtime.ToString() + ",原来 New- " + newstart.ToString();
                         return Json(resp);
-                    }
+                    }                   
+                }
+            }
 
-                    //跨时段时，设定的终点落在原有区域内
-                    foreach(HourSectionInfo hour in timeSlotLst)
+            if (DateTime.Compare(end_dtime, DateTime.Parse("2017-1-1 23:59:59")) > 0)
+            {
+                DateTime newend= DateTime.Parse("2017-1-1 " + end + ":00").AddSeconds(-1);
+                foreach (HourSectionInfo section in timeSlotLst)
+                {
+                    DateTime sttime = section.StartTime;
+                    DateTime endtime = section.EndTime.AddSeconds(-1);
+
+                    if (DateTime.Compare(sttime, newend) < 0 && DateTime.Compare(endtime, newend) > 0)
                     {
-                        if (hour.ID != section.ID)
-                        {
-                            DateTime nextstart = hour.StartTime;
-                            DateTime nextend = hour.EndTime;
-
-                            if (DateTime.Compare(nextstart, newend) < 0 && DateTime.Compare(nextend, newend) > 0)
-                            {
-                                resp.Message = "当前时段设置错误，现-" + newend.ToString() + ",原来 New- " + nextstart.ToString();
-                                return Json(resp);
-                            }
-                        }
+                        resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + newend.ToString();
+                        return Json(resp);
                     }
-
                 }
             }
 
@@ -509,16 +627,17 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         {
             Response resp = new Response();
             CWTariff cwtarff = new CWTariff();
-            string hourID = Request.Form["HourID"];
-            if (string.IsNullOrEmpty(hourID))
+            string hID = Request.Form["HourID"];
+            if (string.IsNullOrEmpty(hID))
             {
                 resp.Message = "传输故障，ID为空";
                 return Json(resp);
             }
-            HourSectionInfo hoursection = cwtarff.FindHourSection(Convert.ToInt32(hourID));
+            int hourID = Convert.ToInt32(hID);
+            HourSectionInfo hoursection = cwtarff.FindHourSection(hourID);
             if (hoursection == null)
             {
-                resp.Message = "传输故障，找不到对应时间段，ID-"+hourID;
+                resp.Message = "传输故障，找不到对应时间段，ID-"+hID;
                 return Json(resp);
             }
             //如果修改时间区间，则要判断
@@ -535,6 +654,10 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             List<HourSectionInfo> timeSlotLst = cwtarff.FindHourSectionList(hr => true);
             foreach (HourSectionInfo section in timeSlotLst)
             {
+                if (section.ID == hourID)
+                {
+                    continue;
+                }
                 DateTime sttime = section.StartTime;
                 DateTime endtime = section.EndTime.AddSeconds(-1);
                 #region
@@ -560,6 +683,44 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     return Json(resp);
                 }
                 #endregion
+
+                if (DateTime.Compare(endtime, DateTime.Parse("2017-1-1 23:59:59")) > 0)
+                {
+                    DateTime newstart = DateTime.Parse("2017-1-1");
+                    DateTime newend = endtime.AddDays(-1);
+
+                    if (DateTime.Compare(newstart, st_dtime) < 0 && DateTime.Compare(newend, st_dtime) > 0)
+                    {
+                        resp.Message = "当前时段设置错误，现-" + st_dtime.ToString() + ",原来 New- " + newstart.ToString();
+                        return Json(resp);
+                    }
+
+                    if (DateTime.Compare(newstart, end_dtime) < 0 && DateTime.Compare(newend, end_dtime) > 0)
+                    {
+                        resp.Message = "当前时段设置错误，现-" + end_dtime.ToString() + ",原来 New- " + newstart.ToString();
+                        return Json(resp);
+                    }                   
+                }
+            }
+
+            if (DateTime.Compare(end_dtime, DateTime.Parse("2017-1-1 23:59:59")) > 0)
+            {
+                DateTime newend = DateTime.Parse("2017-1-1 " + end + ":00").AddSeconds(-1);
+                foreach (HourSectionInfo section in timeSlotLst)
+                {
+                    if (section.ID == hourID)
+                    {
+                        continue;
+                    }
+                    DateTime sttime = section.StartTime;
+                    DateTime endtime = section.EndTime.AddSeconds(-1);
+
+                    if (DateTime.Compare(sttime, newend) < 0 && DateTime.Compare(endtime, newend) > 0)
+                    {
+                        resp.Message = "当前时段设置错误，原来-" + sttime.ToString() + "，现-" + newend.ToString();
+                        return Json(resp);
+                    }
+                }
             }
 
             string topfee = Request.Form["SectionTopFee"];
