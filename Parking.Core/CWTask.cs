@@ -244,6 +244,14 @@ namespace Parking.Core
                 this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "63.wav");
                 return;
             }
+
+            PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == hall.Warehouse && pt.DeviceCode == hall.DeviceCode);
+            if (device_plate != null)
+            {
+                lct.PlateNum = device_plate.PlateNum;
+                lct.ImagePath = device_plate.HeadImagePath;
+            }
+
             //补充车位信息
             lct.WheelBase = distance;
             lct.CarSize = checkCode;
@@ -256,6 +264,16 @@ namespace Parking.Core
             if (resp.Code == 1)
             {               
                 log.Info(DateTime.Now.ToString()+" 更新车位-"+lct.Address+"数据，iccode-"+lct.ICCode+" status-"+lct.Status.ToString());
+
+                #region 清空车牌存储区
+                if (device_plate != null)
+                {
+                    device_plate.HeadImagePath = "";
+                    device_plate.PlateImagePath = "";
+                    device_plate.PlateNum = "";
+                    new CWDevice().UpdatePlateInfo(device_plate);
+                }
+                #endregion
             }
 
             htsk.ToLctAddress = lct.Address;

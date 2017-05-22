@@ -56,6 +56,7 @@
     <Compile Include="BaseManager\Charging\OrderChargeDetailManager.cs" />
     <Compile Include="BaseManager\Charging\PreChargingManager.cs" />
     <Compile Include="BaseManager\Charging\TempChargingRuleManager.cs" />
+    <Compile Include="BaseManager\PlateInfoManager.cs" />
     <Compile Include="ContextFactory.cs" />
     <Compile Include="BaseManager\AlarmManager.cs" />
     <Compile Include="BaseManager\CurrentTaskManager.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Models\ImplementTask.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\OperateLog.cs" />
+    <Compile Include="Models\PlateMappingDev.cs" />
     <Compile Include="Models\TelegramLog.cs" />
     <Compile Include="Models\WorkTask.cs" />
     <Compile Include="ParkingContext.cs" />

@@ -20,7 +20,7 @@ namespace Parking.Web
 
         private EqpService service;       
 
-        public ParkingSingleton(IHubConnectionContext<dynamic> clients)
+        private ParkingSingleton(IHubConnectionContext<dynamic> clients)
         {
             Clients = clients;
           

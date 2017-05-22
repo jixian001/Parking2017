@@ -71,7 +71,7 @@ namespace Parking.Auxiliary
                 setting.IgnoreComments = true;
                 XmlReader reader = XmlReader.Create(path, setting);
                 xmlDoc.Load(reader);
-
+                reader.Close();
                 string xpath = "//" + root + "//" + nodeName;
                 XmlNode node = xmlDoc.SelectSingleNode(xpath);
                 if (node != null)
@@ -104,7 +104,7 @@ namespace Parking.Auxiliary
                 setting.IgnoreComments = true;
                 XmlReader reader = XmlReader.Create(path, setting);
                 xmlDoc.Load(reader);
-
+                reader.Close();
                 XmlNode settingNode = xmlDoc.SelectSingleNode(settingpath);
                 if (settingpath != null)
                 {
@@ -147,7 +147,7 @@ namespace Parking.Auxiliary
                 setting.IgnoreComments = true;
                 XmlReader reader = XmlReader.Create(path, setting);
                 xmlDoc.Load(reader);
-
+                reader.Close();
                 XmlNode halls = GetPlcNodeByTagName(settingpath, warehouse, "halls");
                 if (halls != null)
                 {

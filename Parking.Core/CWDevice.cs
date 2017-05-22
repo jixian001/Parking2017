@@ -127,11 +127,7 @@ namespace Parking.Core
 
             return dicHallOrder.FirstOrDefault().Key;
         }
-
-
-
-
-
+        
 
         #region 报警状态位控制
         private AlarmManager manager_alarm = new AlarmManager();
@@ -151,6 +147,31 @@ namespace Parking.Core
             return manager_alarm.UpdateAlarmList(alarmLst);
         }
 
+        #endregion
+
+        #region 车牌识别映射到车厅设备表
+        private PlateInfoManager plateManager = new PlateInfoManager();
+
+        /// <summary>
+        /// 查找车厅车牌
+        /// </summary>
+        /// <param name="where"></param>
+        /// <returns></returns>
+        public PlateMappingDev FindPlateInfo(Expression<Func<PlateMappingDev, bool>> where)
+        {
+            return plateManager.Find(where);
+        }
+
+        /// <summary>
+        /// 更新对应的车厅车牌信息
+        /// 主要是清空
+        /// </summary>
+        /// <param name="dev"></param>
+        /// <returns></returns>
+        public Response UpdatePlateInfo(PlateMappingDev dev)
+        {
+            return plateManager.Update(dev);
+        }
         #endregion
 
     }
