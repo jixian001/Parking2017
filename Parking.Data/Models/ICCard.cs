@@ -19,9 +19,9 @@ namespace Parking.Data
         /// 物理卡号
         /// </summary>
         public string PhysicCode { get; set; }
-        [StringLength(10)]
+        [StringLength(4)]
         /// <summary>
-        /// 用户卡号
+        /// 用户卡号,4位用户卡号
         /// </summary>
         public string UserCode { get; set; }
         public EnmICCardType Type { get; set; }

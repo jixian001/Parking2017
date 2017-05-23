@@ -56,6 +56,7 @@
     <Compile Include="BaseManager\Charging\OrderChargeDetailManager.cs" />
     <Compile Include="BaseManager\Charging\PreChargingManager.cs" />
     <Compile Include="BaseManager\Charging\TempChargingRuleManager.cs" />
+    <Compile Include="BaseManager\FingerPrintManager.cs" />
     <Compile Include="BaseManager\PlateInfoManager.cs" />
     <Compile Include="ContextFactory.cs" />
     <Compile Include="BaseManager\AlarmManager.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\FaultLog.cs" />
+    <Compile Include="Models\FingerPrint.cs" />
     <Compile Include="Models\ICCard.cs" />
     <Compile Include="Models\ImplementTask.cs" />
     <Compile Include="Models\Location.cs" />

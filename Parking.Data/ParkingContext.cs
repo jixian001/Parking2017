@@ -33,6 +33,7 @@ namespace Parking.Data
         public DbSet<OrderChargeDetail> OrderChargeDetails { get; set; }
         public DbSet<HourChargeDetail> HourChargeDetails { get; set; }
         public DbSet<HourSectionInfo> HourSectionInfoes { get; set; }
+        public DbSet<FingerPrint> FingerPrints { get; set; }
 
     }
 }
