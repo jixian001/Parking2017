@@ -34,6 +34,8 @@ namespace Parking.Web.Areas.CustomManager.Models
         public string PlateNum { get; set; }
         [Display(Name = "家庭住址")]
         public string FamilyAddress { get; set; }
-       
+        public string FingerPrint1 { get; set; }
+        public string FingerPrint2 { get; set; }
+        public string FingerPrint3 { get; set; }
     }
 }

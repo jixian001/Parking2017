@@ -114,6 +114,40 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 {
                     //记录
                 }
+
+                #region 绑定指纹，更新指纹信息
+                CWFingerPrint fprint = new CWFingerPrint();
+                if (!string.IsNullOrEmpty(model.FingerPrint1))
+                {
+                    short sn = Convert.ToInt16(model.FingerPrint1);
+                    FingerPrint finger = fprint.Find(p=>p.SN_Number==sn);
+                    if (finger != null)
+                    {
+                        finger.CustID = addcust.ID;
+                        fprint.Update(finger);
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.FingerPrint2))
+                {
+                    short sn = Convert.ToInt16(model.FingerPrint2);
+                    FingerPrint finger = fprint.Find(p => p.SN_Number == sn);
+                    if (finger != null)
+                    {
+                        finger.CustID = addcust.ID;
+                        fprint.Update(finger);
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.FingerPrint3))
+                {
+                    short sn = Convert.ToInt16(model.FingerPrint3);
+                    FingerPrint finger = fprint.Find(p => p.SN_Number == sn);
+                    if (finger != null)
+                    {
+                        finger.CustID = addcust.ID;
+                        fprint.Update(finger);
+                    }
+                }
+                #endregion
             }
             else
             {
@@ -376,6 +410,24 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             }
             ViewData["list"] = items;
 
+            #region 查找指纹
+            List<FingerPrint> printList = new CWFingerPrint().FindList(p=>p.CustID==ID);
+            if (printList.Count == 1)
+            {
+                model.FingerPrint1 = printList[0].SN_Number.ToString();
+            }
+            if (printList.Count == 2)
+            {
+                model.FingerPrint1 = printList[0].SN_Number.ToString();
+                model.FingerPrint2 = printList[1].SN_Number.ToString();
+            }
+            if (printList.Count == 3)
+            {
+                model.FingerPrint1 = printList[0].SN_Number.ToString();
+                model.FingerPrint2 = printList[1].SN_Number.ToString();
+                model.FingerPrint3 = printList[2].SN_Number.ToString();
+            }
+            #endregion
             return View(model);
         }
 
@@ -537,6 +589,15 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     };
                     return Json(data, JsonRequestBehavior.AllowGet);
                 }
+
+                #region 删除相关指纹
+                CWFingerPrint fprint = new CWFingerPrint();
+                List<FingerPrint> fingerLst = fprint.FindList(p => p.CustID == ID);
+                foreach(FingerPrint print in fingerLst)
+                {
+                    fprint.Delete(print.ID);
+                }
+                #endregion
             }
             #endregion
             var nback = new
@@ -548,18 +609,51 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         }
         
         /// <summary>
-        /// 绑定指纹
+        /// 新增用户界面，增加指纹
         /// </summary>
         /// <param name="custID"></param>
         /// <returns></returns>
-        public async Task<ActionResult> ReadFingerPrint(int custID)
+        public async Task<ActionResult> AddFingerPrint()
         {
             CWFingerPrint fprint = new CWFingerPrint();
-            Response resp = await fprint.FindFingerPrintAsync(custID);
+            Response resp = await fprint.AddFingerPrintAsync(0);
 
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// 修改用户界面，增加指纹
+        /// </summary>
+        /// <param name="custID"></param>
+        /// <returns></returns>
+        public async Task<ActionResult> AddFingerPrintFromModify(int custID)
+        {
+            CWFingerPrint fprint = new CWFingerPrint();
+            Response resp = await fprint.AddFingerPrintAsync(custID);
+
+            return Json(resp, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// 删除指纹
+        /// </summary>
+        /// <param name="sn"></param>
+        /// <returns></returns>
+        public ActionResult DeleteFingerPrint(short sn)
+        {
+            Response resp = new Response();
+            CWFingerPrint fpring = new CWFingerPrint();
+            FingerPrint finger = fpring.Find(p=>p.SN_Number==sn);
+            if (finger != null)
+            {
+                resp = fpring.Delete(finger.ID);
+            }
+            else
+            {
+                resp.Message = "系统异常，找不到SN-"+sn+" 的指纹";
+            }
+            return Json(resp,JsonRequestBehavior.AllowGet);
+        }
 
     }
 }

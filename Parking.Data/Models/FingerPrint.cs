@@ -15,7 +15,7 @@ namespace Parking.Data
     public class FingerPrint
     {
         public int ID { get; set; }
-        [StringLength(5)]
+        
         /// <summary>
         /// 编号，5位数，唯一
         /// int16(最大32767) 范围（10000-30000）

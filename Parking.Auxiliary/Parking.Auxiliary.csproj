@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="Config\Configs.cs" />
     <Compile Include="DataTableExtensions.cs" />
+    <Compile Include="FingerPrint\FiPrintMatch.cs" />
     <Compile Include="FingerPrint\FPDll.cs" />
     <Compile Include="FingerPrint\FPrint.cs" />
     <Compile Include="Log\Log.cs" />

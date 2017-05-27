@@ -104,9 +104,12 @@
                     <div class="form-group">
                         <label class="control-label col-md-2">指纹信息</label>
                         <div class="col-md-10">
-                            <img src="~/Image/add.jpg" alt="指纹模板1"/>
-                            <img src="~/Image/add.jpg" alt="指纹模板2"/>
-                            <img src="~/Image/add.jpg" alt="指纹模板3"/>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger1" title="0" class="print" id="FingerPrint1" /></a>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger2" title="0" class="print" id="FingerPrint1" /></a>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger3" title="0" class="print" id="FingerPrint1" /></a>
+                            @Html.HiddenFor(model => model.FingerPrint1)
+                            @Html.HiddenFor(model => model.FingerPrint2)
+                            @Html.HiddenFor(model => model.FingerPrint3)
                         </div>
                     </div>
 
@@ -126,8 +129,26 @@
 
     <script>
         $(function () {
-            $("#btnDelete").click(function () {
 
+            setTimeout(function () {
+
+                var arr = $("input[type='hidden']");
+                $.each(arr, function (i, item) {
+                    var value = item.val();
+                    console.log(value);
+                    if (value > 1000) {
+                        var name = item.attr("name");
+                        var ig = $("img[id='" + name + "']");
+
+                        ig.attr("src", "/Image/fingerprint.jpg");
+                        ig.attr("title", value);
+                    }
+                });
+
+            }, 500);
+
+
+            $("#btnDelete").click(function () {
                 $.ajax({
                     type: "GET",
                     url: "@Url.Action("Delete")",
@@ -156,9 +177,93 @@
                     }
                 });
 
+            });
 
+            $("img.print").click(function () {
+
+                var ig = $(this);
+                var title = ig.attr("title");
+                //添加
+                if (title == 0) {
+
+                    $(this).attr("title", "-1");
+
+                    $.ajax({
+                        type: "GET",
+                        url: "@Url.Action("AddFingerPrint")",
+                        timeout: 10000,   //毫秒为单位
+                        dataType: "json",
+                        cache: false,
+                        beforeSend: function (XMLHttpRequest) {
+                            ig.attr("src", "/Image/scan.gif");
+                        },
+                        success: function (resp) {
+
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: resp.Message
+                            });
+
+                            if (resp.Code == 1) {
+                                ig.attr("src", "/Image/fingerprint.jpg");
+                                ig.attr("title", resp.Data);
+
+                                var idd = ig.attr("id");
+                                //写
+                                $("input[name='" + idd + "']").val(resp.Data);
+                            }
+                            else {
+                                ig.attr("title", "0");
+                                ig.attr("src", "/Image/add.jpg");
+                            }
+
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+
+                            if (textStatus == 'timeout') {
+                                $(this).attr("title", "0");
+                                ig.attr("src", "/Image/add.jpg");
+                            }
+                        }
+                    });
+
+                }
+                else if (title == -1) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "等待扫描指纹中"
+                    });
+                }
+                else {
+                    BootstrapDialog.confirm("<b>确定要删除当前指纹模板？SN - </b>" + title, function (result) {
+                        if (result) {
+
+                            $.ajax({
+                                type: "GET",
+                                url: "@Url.Action("DeleteFingerPrint")",
+                                data: { "sn": title },
+                                dataType: "json",
+                                cache: false,
+                                success: function (resp) {
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: resp.Data
+                                    });
+                                    if (resp.Code == 1) {
+                                        ig.attr("title", "0");
+                                        ig.attr("src", "/Image/add.jpg");
+                                    }
+                                }
+                            });
+
+
+                        }
+                    });
+                }
 
             });
+
+
         });
     </script>
     }

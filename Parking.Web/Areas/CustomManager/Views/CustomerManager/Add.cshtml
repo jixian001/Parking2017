@@ -100,11 +100,14 @@
                     <div class="form-group">
                         <label class="control-label col-md-2">指纹信息</label>
                         <div class="col-md-10">
-                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger1" title="0" /></a>
-                            <a href="javascript:void(0)"><img src="~/Image/scan.gif" alt="finger2" title="-1" /></a>
-                            <a href="javascript:void(0)"><img src="~/Image/fingerprint.jpg" alt="finger3" title="1" /></a>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger1" title="0" class="print" id="FingerPrint1"/></a>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger2" title="0" class="print" id="FingerPrint1"/></a>
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger3" title="0" class="print" id="FingerPrint1"/></a>
+                            @Html.HiddenFor(model => model.FingerPrint1)
+                            @Html.HiddenFor(model => model.FingerPrint2)
+                            @Html.HiddenFor(model => model.FingerPrint3)
                         </div>
-                    </div>
+                    </div>                    
 
                     <div class="form-group">
                         <div class="col-md-offset-2 col-md-4">
@@ -138,7 +141,8 @@
                 }
             });
 
-            $("img[alt='finger1']").click(function () {
+            $("img.print").click(function () {
+
                 var ig = $(this);
                 var title = ig.attr("title");
                 //添加
@@ -148,7 +152,7 @@
 
                     $.ajax({
                         type: "GET",
-                        url: "@Url.Action("ReadFingerPrint")",
+                        url: "@Url.Action("AddFingerPrint")",
                         timeout:10000,
                         dataType: "json",
                         cache: false,
@@ -165,11 +169,15 @@
                             if (resp.Code == 1)
                             {
                                 ig.attr("src", "/Image/fingerprint.jpg");
-                                $(this).attr("title", resp.Data);
+                                ig.attr("title", resp.Data);
+
+                                var idd = ig.attr("id");
+                                //写
+                                $("input[name='" + idd + "']").val(resp.Data);
                             }
                             else
                             {
-                                $(this).attr("title", "0");
+                                ig.attr("title", "0");
                                 ig.attr("src", "/Image/add.jpg");
                             }
 
@@ -184,15 +192,46 @@
                         }
                     });
 
-                }
-                //扫描中
-                if (title == -1) {
+                }               
+                else if (title == -1)
+                {
                     BootstrapDialog.show({
                         title: "温馨提示",
                         message: "等待扫描指纹中"
                     });
                 }
+                else
+                {
+                    BootstrapDialog.confirm("<b>确定要删除当前指纹模板？SN - </b>"+title, function (result) {
+                        if (result) {
+
+                            $.ajax({
+                                type: "GET",
+                                url: "@Url.Action("DeleteFingerPrint")",
+                                data: { "sn": title },
+                                dataType: "json",
+                                cache: false,
+                                success: function (resp) {
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: resp.Data
+                                    });
+                                    if (resp.Code == 1)
+                                    {
+                                        ig.attr("title", "0");
+                                        ig.attr("src", "/Image/add.jpg");
+                                    }
+                                }
+                            });
+
+
+                        }
+                    });
+                }
+
             });
+
+
 
         });
       

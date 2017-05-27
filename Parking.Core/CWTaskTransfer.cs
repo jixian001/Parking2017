@@ -142,7 +142,7 @@ namespace Parking.Core
                     return;
                 }
                 ICCard iccd = new CWICCard().Find(ic => ic.PhysicCode == physiccode);
-                if (iccd != null)
+                if (iccd == null)
                 {
                     motsk.AddNofication(warehouse, code, "6.wav");
                     return;
@@ -539,7 +539,500 @@ namespace Parking.Core
             return _resp;
         }
 
-        
+        /// <summary>
+        /// 处理指纹信息上报
+        /// 指纹存车，只需采集一次就下发（1，9）
+        /// </summary>
+        /// <param name="psTZ"></param>
+        /// <returns></returns>
+        public Response DealFingerPrintMessage(byte[] psTZ)
+        {
+            Log log = LogFactory.GetLogger("CWTasksfer.DealFingerPrintMessage");
+
+            Response resp = new Response();
+            CWFingerPrint fingerprint = new CWFingerPrint();
+            int iLevel = 3;
+            
+            FingerPrint print = null;
+            List<FingerPrint> FingerList = fingerprint.FindList(p=>true).ToList();
+            foreach(FingerPrint fp in FingerList)
+            {
+                byte[] psMB = Encoding.Default.GetBytes(fp.FingerInfo);
+                int nback = FiPrintMatch.FPIMatch(psMB, psTZ, iLevel);
+                //比对成功
+                if (nback == 0)
+                {
+                    print = fp;
+                    break;
+                }
+            }
+            int warehouse = moHall.Warehouse;
+            int code = moHall.DeviceCode;
+            if (print == null)
+            {
+                motsk.AddNofication(warehouse, code, "80.wav");
+                resp.Message = "指纹库内未找到匹配模板";
+                return resp;
+            }
+            if (moHall.Mode != EnmModel.Automatic)
+            {
+                motsk.AddNofication(warehouse, code, "5.wav");
+                resp.Message = "已转为人工作业";
+                return resp;
+            }
+            string SNO = print.SN_Number.ToString();
+            ImplementTask task = motsk.Find(tk => tk.ICCardCode == SNO && tk.IsComplete == 0);
+            if (task != null)
+            {
+                if (task.HallCode != moHall.DeviceCode)
+                {
+                    motsk.AddNofication(warehouse, code, "8.wav");
+                    resp.Message = "正在作业，请勿重复";
+                    return resp;
+                }
+                if (task.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                {
+                    motsk.AddNofication(warehouse, code, "9.wav");
+                    resp.Message = "正在作业";
+                    return resp;
+                }
+            }
+            WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == SNO);
+            if (queue != null)
+            {
+                motsk.AddNofication(warehouse, code, "9.wav");
+                resp.Message = "正在作业";
+                return resp;
+            }
+            int getcarCount = motsk.GetHallGetCarCount(warehouse, code);
+            Location lct = new CWLocation().FindLocation(lt => lt.ICCode == SNO && lt.Type == EnmLocationType.Normal);
+
+            #region 进车厅
+            if (moHall.HallType == EnmHallType.Entrance)
+            {
+                if (lct != null)
+                {
+                    //请到出车厅刷卡取车
+                    motsk.AddNofication(warehouse, code, "11.wav");
+                    resp.Message = "已存车，请到出车厅取车";
+                    return resp;
+                }
+                if (moHall.TaskID == 0)
+                {
+                    //车厅无车，不能存车
+                    motsk.AddNofication(warehouse, code, "10.wav");
+                    resp.Message = "车厅无车，不能存车";
+                    return resp;
+                }
+                ImplementTask tsk = motsk.Find(moHall.TaskID);
+                if (tsk == null)
+                {
+                    log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
+                    //系统故障
+                    motsk.AddNofication(warehouse, code, "20.wav");
+                    resp.Message = "系统故障";
+                    return resp;
+                }
+                if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                {                    
+                    motsk.DealISwipedSecondCard(tsk, SNO);
+                    resp.Code = 1;
+                    resp.Message = "指纹识别成功";                  
+                }
+                else
+                {
+                    motsk.AddNofication(warehouse, code, "9.wav");
+                    resp.Message = "正在作业，请稍后";                    
+                }
+                return resp;
+            }
+            #endregion
+            #region 出车厅
+            else if (moHall.HallType == EnmHallType.Exit)
+            {
+                if (lct == null)
+                {
+                    //该卡没有存车
+                    motsk.AddNofication(warehouse, code, "14.wav");
+                    resp.Message = "该卡没有存车";
+                    return resp;
+                }
+                if (lct.Status != EnmLocationStatus.Occupy)
+                {
+                    //正在作业，
+                    motsk.AddNofication(warehouse, code, "65.wav");
+                    resp.Message = "车位状态不是占用状态";
+                    return resp;
+                }              
+                if (getcarCount > mHallGetCount)
+                {
+                    motsk.AddNofication(warehouse, code, "12.wav");
+                    resp.Message = "取车队列已满，请稍后取车";
+                    return resp;
+                }
+                //生成取车作业，加入队列
+                motsk.DealOSwipedCard(moHall, lct, null);
+                resp.Code = 1;
+                resp.Message = "已经加入取车队列，请稍后";
+                return resp;
+            }
+            #endregion
+            #region 进出车厅
+            else if (moHall.HallType == EnmHallType.EnterOrExit)
+            {
+                #region 存车
+                if (lct == null) //是进车状态
+                {
+                    if (moHall.TaskID == 0)
+                    {
+                        //车厅无车，不能存车
+                        motsk.AddNofication(warehouse, code, "10.wav");
+                        resp.Message = "车厅无车，不能存车";
+                        return resp;
+                    }
+                    ImplementTask tsk = motsk.Find(moHall.TaskID);
+                    if (tsk == null)
+                    {
+                        log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
+                        //系统故障
+                        motsk.AddNofication(warehouse, code, "20.wav");
+                        resp.Message = "系统故障";
+                        return resp;
+                    }
+                    if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                    {
+                        motsk.DealISwipedSecondCard(tsk, SNO);
+                        resp.Code = 1;
+                        resp.Message = "指纹识别成功";
+                    }
+                    else
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                        resp.Message = "正在作业，请稍后";
+                    }
+                    return resp;
+                }
+                #endregion
+                #region 取车
+                else
+                {
+                    if (lct.Status != EnmLocationStatus.Occupy)
+                    {
+                        //正在作业，
+                        motsk.AddNofication(warehouse, code, "65.wav");
+                        resp.Message = "车位状态不是占用状态";
+                        return resp;
+                    }
+                    if (getcarCount > mHallGetCount)
+                    {
+                        motsk.AddNofication(warehouse, code, "12.wav");
+                        resp.Message = "取车队列已满，请稍后取车";
+                        return resp;
+                    }
+                    //生成取车作业，加入队列
+                    motsk.DealOSwipedCard(moHall, lct, null);
+                    resp.Code = 1;
+                    resp.Message = "已经加入取车队列，请稍后";
+                    return resp;
+                }
+                #endregion
+            }
+            #endregion
+
+
+            return resp;
+        }
+
+        /// <summary>
+        /// 处理指纹机刷卡动作
+        /// </summary>
+        /// <param name="physiccode"></param>
+        public Response DealFingerICCardMessage(string physiccode)
+        {
+            Log log = LogFactory.GetLogger("CWTaskTransfer.DealFingerICCardMessage");
+            Response resp = new Response();
+            try
+            {
+                int warehouse = moHall.Warehouse;
+                int code = moHall.DeviceCode;
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    motsk.AddNofication(warehouse, code, "5.wav");
+                    resp.Message = "已转为人工作业";
+                    return resp;
+                }
+                ICCard iccd = new CWICCard().Find(ic => ic.PhysicCode == physiccode);
+                if (iccd == null)
+                {
+                    motsk.AddNofication(warehouse, code, "6.wav");
+                    resp.Message = "不是本系统用户";
+                    return resp;
+                }
+                if (iccd.Status == EnmICCardStatus.Lost ||
+                    iccd.Status == EnmICCardStatus.Disposed)
+                {
+                    motsk.AddNofication(warehouse, code, "7.wav");
+                    resp.Message = "卡已注销或挂失";
+                    return resp;
+                }
+                ImplementTask task = motsk.Find(tk => tk.ICCardCode == iccd.UserCode && tk.IsComplete == 0);
+                if (task != null)
+                {
+                    if (task.HallCode != moHall.DeviceCode)
+                    {
+                        motsk.AddNofication(warehouse, code, "8.wav");
+                        resp.Message = "正在别的车厅作业";
+                        return resp;
+                    }
+                    if (task.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard &&
+                        task.Status != EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                        resp.Message = "正在作业";
+                        return resp;
+                    }
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccd.UserCode);
+                if (queue != null)
+                {
+                    motsk.AddNofication(warehouse, code, "9.wav");
+                    resp.Message = "正在作业";
+                    return resp;
+                }
+                int getcarCount = motsk.GetHallGetCarCount(warehouse, code);
+                Location lct = new CWLocation().FindLocation(lt => lt.ICCode == iccd.UserCode && lt.Type == EnmLocationType.Normal);
+
+                #region 进车厅
+                if (moHall.HallType == EnmHallType.Entrance)
+                {
+                    if (lct != null)
+                    {
+                        //请到出车厅刷卡取车
+                        motsk.AddNofication(warehouse, code, "11.wav");
+                        resp.Message = "请到出车厅刷卡取车";
+                        return resp;
+                    }
+                    if (moHall.TaskID == 0)
+                    {
+                        //车厅无车，不能存车
+                        motsk.AddNofication(warehouse, code, "10.wav");
+                        resp.Message = "车厅无车，不能存车";
+                        return resp;
+                    }
+                    ImplementTask tsk = motsk.Find(moHall.TaskID);
+                    if (tsk == null)
+                    {
+                        log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
+                        //系统故障
+                        motsk.AddNofication(warehouse, code, "20.wav");
+                        resp.Message = "系统故障";
+                        return resp;
+                    }
+                    if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                    {
+                        //处理刷第一次卡
+                        motsk.DealISwipedFirstCard(tsk, iccd.UserCode);
+                        resp.Code = 1;
+                        resp.Message = "刷卡成功";
+                        return resp;
+                    }
+                    else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                    {
+                        //处理刷第二次卡
+                        if (tsk.ICCardCode != iccd.UserCode)
+                        {
+                            motsk.AddNofication(warehouse, code, "64.wav");
+                            resp.Message = "与第一次刷卡不一致";
+                            return resp;
+                        }
+                        motsk.DealISwipedSecondCard(tsk, iccd.UserCode);
+                        resp.Code = 1;
+                        resp.Message = "刷卡成功";
+                        return resp;
+                    }
+                    else
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                        resp.Message = "正在作业";
+                        return resp;
+                    }
+                }
+                #endregion
+                #region 出车厅
+                else if (moHall.HallType == EnmHallType.Exit)
+                {
+                    if (lct == null)
+                    {
+                        //该卡没有存车
+                        motsk.AddNofication(warehouse, code, "14.wav");
+                        resp.Message = "该卡没有存车";
+                        return resp;
+                    }
+                    if (lct.Status != EnmLocationStatus.Occupy)
+                    {
+                        //正在作业，
+                        motsk.AddNofication(warehouse, code, "65.wav");
+                        resp.Message = "车位状态不是占用";
+                        return resp;
+                    }
+                    string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
+                    bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
+                    if (isChargeEnable)
+                    {
+                        #region
+                        if (iccd.Type == EnmICCardType.Temp)
+                        {
+                            motsk.AddNofication(warehouse, code, "29.wav");
+                            resp.Message = "临时卡，请到管理室缴费出车";
+                            return resp;
+                        }
+                        else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                        {
+                            if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                            {
+                                motsk.AddNofication(warehouse, code, "31.wav");
+                                resp.Message = "卡已欠费，请缴费";
+                                return resp;
+                            }
+                            if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                            {
+                                motsk.AddNofication(warehouse, code, "67.wav");
+                            }
+                            else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                            {
+                                motsk.AddNofication(warehouse, code, "66.wav");
+                            }
+                        }
+                        #endregion
+                    }
+                    if (getcarCount > mHallGetCount)
+                    {
+                        motsk.AddNofication(warehouse, code, "12.wav");
+                        resp.Message = "取车队列已满，请稍后取车";
+                        return resp;
+                    }
+                    //生成取车作业，加入队列
+                    motsk.DealOSwipedCard(moHall, lct, iccd);
+                    resp.Code = 1;
+                    resp.Message = "已加入取车队列，请稍后";
+                    return resp;
+                }
+                #endregion
+                #region 进出车厅
+                else if (moHall.HallType == EnmHallType.EnterOrExit)
+                {
+                    #region 存车
+                    if (lct == null) //是进车状态
+                    {
+                        if (moHall.TaskID == 0)
+                        {
+                            //车厅无车，不能存车
+                            motsk.AddNofication(warehouse, code, "10.wav");
+                            resp.Message = "车厅无车，不能存车";
+                            return resp;
+                        }
+                        ImplementTask tsk = motsk.Find(moHall.TaskID);
+                        if (tsk == null)
+                        {
+                            log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
+                            //系统故障
+                            motsk.AddNofication(warehouse, code, "20.wav");
+                            resp.Message = "系统故障";
+                            return resp;
+                        }
+                        if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                        {
+                            //处理刷第一次卡
+                            motsk.DealISwipedFirstCard(tsk, iccd.UserCode);
+                            resp.Message = "刷卡成功";
+                            return resp;
+                        }
+                        else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
+                        {
+                            //处理刷第二次卡
+                            if (tsk.ICCardCode != iccd.UserCode)
+                            {
+                                motsk.AddNofication(warehouse, code, "64.wav");
+                                resp.Message = "与第一次刷卡不一致";
+                                return resp;
+                            }
+                            motsk.DealISwipedSecondCard(tsk, iccd.UserCode);
+                            resp.Code = 1;
+                            resp.Message = "刷卡成功";
+                            return resp;
+                        }
+                        else
+                        {
+                            motsk.AddNofication(warehouse, code, "9.wav");
+                            resp.Message = "正在作业";
+                            return resp;
+                        }
+                    }
+                    #endregion
+                    #region 取车
+                    else
+                    {
+                        if (lct.Status != EnmLocationStatus.Occupy)
+                        {
+                            //正在作业，
+                            motsk.AddNofication(warehouse, code, "65.wav");
+                            resp.Message = "车位状态不是占用";
+                            return resp;
+                        }
+                        string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
+                        bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
+                        if (isChargeEnable)
+                        {
+                            #region
+                            if (iccd.Type == EnmICCardType.Temp)
+                            {
+                                motsk.AddNofication(warehouse, code, "29.wav");
+                                resp.Message = "临时卡，请到管理室缴费出车";
+                                return resp;
+                            }
+                            else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                            {
+                                if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                                {
+                                    motsk.AddNofication(warehouse, code, "31.wav");
+                                    resp.Message = "卡已欠费，请缴费";
+                                    return resp;
+                                }
+                                if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                                {
+                                    motsk.AddNofication(warehouse, code, "67.wav");
+                                }
+                                else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                                {
+                                    motsk.AddNofication(warehouse, code, "66.wav");
+                                }
+                            }
+                            #endregion
+                        }
+                        if (getcarCount > mHallGetCount)
+                        {
+                            motsk.AddNofication(warehouse, code, "12.wav");
+                            resp.Message = "取车队列已满，请稍后取车";
+                            return resp;
+                        }
+                        //生成取车作业，加入队列
+                        motsk.DealOSwipedCard(moHall, lct, iccd);
+                        resp.Code = 1;
+                        resp.Message = "已加入取车队列，请稍后";
+                        return resp;
+
+                    }
+                    #endregion
+                }
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+                resp.Message = "系统异常";
+            }
+            return resp;
+        }
 
     }
 }

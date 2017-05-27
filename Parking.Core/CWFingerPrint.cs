@@ -27,6 +27,11 @@ namespace Parking.Core
             return manager.Add(finger);
         }
 
+        public Response Update(FingerPrint finger)
+        {
+            return manager.Update(finger);
+        }
+
         public FingerPrint Find(Expression<Func<FingerPrint, bool>> where)
         {
             return manager.Find(where);
@@ -56,10 +61,9 @@ namespace Parking.Core
         /// 5、添加指纹特性到指纹库内
         /// 6、关闭指纹仪
         /// 7、返回 response
-        /// </summary>
-        /// <param name="custID"></param>
+        /// </summary>      
         /// <returns></returns>
-        public async Task<Response> FindFingerPrintAsync(int custID)
+        public async Task<Response> AddFingerPrintAsync(int custID)
         {
             return await Task.Run(()=> {
                 Response resp = new Response();
@@ -100,7 +104,7 @@ namespace Parking.Core
                     if (origPrint == null)
                     {
                         origPrint = new FingerPrint();
-                        short max =10000;
+                        short max = 10000;
                         if (printList.Count > 0)
                         {
                             max = printList.Select(m => m.SN_Number).Max();
@@ -120,26 +124,25 @@ namespace Parking.Core
                             resp.Data = origPrint.SN_Number;
                         }
                     }
-                    else
+                    else //有匹配指纹
                     {
-                        resp.Code = 1;
-                        resp.Data = origPrint.SN_Number;
-                        if (origPrint.CustID == custID)
+                        resp.Code = 0;
+                        resp.Data = null;
+                        Customer cust = new CWICCard().FindCust(origPrint.CustID);
+                        if (cust != null)
                         {
-                            resp.Message = "指纹已经绑定到该用户";                            
+                            resp.Message = "指纹已绑定到用户-" + cust.UserName + " ,车牌-" + cust.PlateNum;
                         }
                         else
                         {
-                            Customer cust = new CWICCard().FindCust(custID);
-                            if (cust != null)
+                            resp.Message = "指纹库内有匹配指纹，CustID-" + origPrint.CustID;
+                        }
+                        if (custID != 0)
+                        {
+                            if (origPrint.CustID == custID)
                             {
-                                resp.Message = "指纹已绑定到用户-" + cust.UserName + " ,车牌-" + cust.PlateNum;
+                                resp.Message = "库内已有匹配指纹已绑定到车主";
                             }
-                            else
-                            {
-                                resp.Message = "指纹库内有匹配指纹，CustID-" + origPrint.CustID;
-                            }
-
                         }
                     }
                     
