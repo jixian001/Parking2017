@@ -2,6 +2,8 @@
 <root>
   <!--计费功能 -->
   <ChargeEnable>0</ChargeEnable>
+  <!-- 1、后台读卡 0、前端读卡-->
+  <BackGroundRdCd>0</BackGroundRdCd>
   <!--主plc连接的数量-->
   <PlcCount>1</PlcCount>
   <PLCRefresh>500</PLCRefresh>  

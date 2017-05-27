@@ -18,7 +18,7 @@ namespace Parking.Web.Areas.ExternalManager
                 this.AreaName + "_default",
                 this.AreaName + "/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                 new string[] { "Parking.Web.Areas." + this.AreaName + ".Controllers" }
+                new string[] { "Parking.Web.Areas." + this.AreaName + ".Controllers" }
             );
         }
     }

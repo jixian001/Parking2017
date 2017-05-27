@@ -4,6 +4,14 @@
     ViewBag.Title = "添加车主";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+<style type="text/css">
+    img{
+        width:80px;
+        height:100px;
+        border:1px dashed #808080;
+        margin-right:10px
+    }
+</style>
 
 <br />
 <div class="row">
@@ -21,8 +29,7 @@
             @using (Html.BeginForm())
             {
                 @Html.AntiForgeryToken()
-
-                <div class="form-horizontal">                   
+                <div class="form-horizontal">
                     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
                     <div class="form-group">
                         @Html.LabelFor(model => model.UserName, htmlAttributes: new { @class = "control-label col-md-2" })
@@ -38,12 +45,12 @@
                             @Html.EditorFor(model => model.UserCode, new { htmlAttributes = new { @class = "form-control" } })
                             @Html.ValidationMessageFor(model => model.UserCode, "", new { @class = "text-danger" })
                         </div>
-                    </div>                    
+                    </div>
 
                     <div class="form-group">
                         @Html.LabelFor(model => model.Type, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.EnumDropDownListFor(model => model.Type,new { @class = "form-control" })
+                            @Html.EnumDropDownListFor(model => model.Type, new { @class = "form-control" })
                             @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
                         </div>
                     </div>
@@ -85,19 +92,27 @@
                     <div class="form-group">
                         @Html.LabelFor(model => model.FamilyAddress, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.EditorFor(model => model.FamilyAddress, new { htmlAttributes = new { @class = "form-control"} })
+                            @Html.EditorFor(model => model.FamilyAddress, new { htmlAttributes = new { @class = "form-control" } })
                             @Html.ValidationMessageFor(model => model.FamilyAddress, "", new { @class = "text-danger" })
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <div class="col-md-offset-2 col-md-10">
+                        <label class="control-label col-md-2">指纹信息</label>
+                        <div class="col-md-10">
+                            <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger1" title="0" /></a>
+                            <a href="javascript:void(0)"><img src="~/Image/scan.gif" alt="finger2" title="-1" /></a>
+                            <a href="javascript:void(0)"><img src="~/Image/fingerprint.jpg" alt="finger3" title="1" /></a>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-4">
                             <input type="submit" value="添 加" class="btn btn-default" />
                         </div>
                     </div>
                 </div>
             }
-
         </div>
     </div>
 </div>
@@ -122,6 +137,63 @@
                     $("#LocAddress").val("");
                 }
             });
+
+            $("img[alt='finger1']").click(function () {
+                var ig = $(this);
+                var title = ig.attr("title");
+                //添加
+                if (title == 0) {
+                   
+                    $(this).attr("title", "-1");
+
+                    $.ajax({
+                        type: "GET",
+                        url: "@Url.Action("ReadFingerPrint")",
+                        timeout:10000,
+                        dataType: "json",
+                        cache: false,
+                        beforeSend: function (XMLHttpRequest) {
+                            ig.attr("src", "/Image/scan.gif");
+                        },
+                        success: function (resp) {
+                            
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: resp.Message
+                            });
+
+                            if (resp.Code == 1)
+                            {
+                                ig.attr("src", "/Image/fingerprint.jpg");
+                                $(this).attr("title", resp.Data);
+                            }
+                            else
+                            {
+                                $(this).attr("title", "0");
+                                ig.attr("src", "/Image/add.jpg");
+                            }
+
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+
+                            if (textStatus == 'timeout')
+                            {
+                                $(this).attr("title", "0");
+                                ig.attr("src", "/Image/add.jpg");
+                            }
+                        }
+                    });
+
+                }
+                //扫描中
+                if (title == -1) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "等待扫描指纹中"
+                    });
+                }
+            });
+
         });
       
 

@@ -47,6 +47,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             return Json(data, JsonRequestBehavior.AllowGet);
         }
 
+        public ActionResult GetReadCardWay()
+        {
+            string bgReadcard = XMLHelper.GetRootNodeValueByXpath("root", "BackGroundRdCd");
+            return Content(bgReadcard);
+        }
+
         /// <summary>
         /// 异步读卡
         /// </summary>

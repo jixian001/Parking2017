@@ -9,12 +9,12 @@ using Parking.Auxiliary;
 
 namespace Parking.Web.Areas.ExternalManager.Controllers
 {
-    public class HomeController : Controller
+    public class ExternalController : Controller
     {
-        // GET: ExternalManager/Home/GetCurrentSound
-        public ActionResult GetCurrentSound(int warehouse,int devicecode)
+        // GET: ExternalManager/External      
+        public ActionResult GetCurrentSound(int warehouse, int devicecode)
         {
-            string sound = new CWTask().GetNotification(warehouse,devicecode);           
+            string sound = new CWTask().GetNotification(warehouse, devicecode);
             return Content(sound);
         }
 
@@ -30,9 +30,10 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             string fingerPrint = Request.Form["fingerInfo"];
 
 
-            var data = new {
-                Status="",
-                Message="success"
+            var data = new
+            {
+                Status = "",
+                Message = "success"
             };
             return Json(data);
         }

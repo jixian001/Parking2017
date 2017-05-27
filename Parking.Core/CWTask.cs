@@ -248,8 +248,12 @@ namespace Parking.Core
             PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == hall.Warehouse && pt.DeviceCode == hall.DeviceCode);
             if (device_plate != null)
             {
-                lct.PlateNum = device_plate.PlateNum;
-                lct.ImagePath = device_plate.HeadImagePath;
+                if (!string.IsNullOrEmpty(device_plate.PlateNum) && 
+                    DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(3)) < 0)
+                {
+                    lct.PlateNum = device_plate.PlateNum;
+                    lct.ImagePath = device_plate.HeadImagePath;
+                }
             }
 
             //补充车位信息

@@ -72,6 +72,8 @@
   <ItemGroup>
     <Compile Include="Config\Configs.cs" />
     <Compile Include="DataTableExtensions.cs" />
+    <Compile Include="FingerPrint\FPDll.cs" />
+    <Compile Include="FingerPrint\FPrint.cs" />
     <Compile Include="Log\Log.cs" />
     <Compile Include="Log\LogFactory.cs" />
     <Compile Include="OrderParam.cs" />
@@ -89,9 +91,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="FingerPrint\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

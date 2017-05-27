@@ -124,11 +124,79 @@
 @section scripts{
     @Styles.Render("~/Content/defform")
     <script>       
-        $(function () {            
+        $(function () { 
+            
+            var sh;
+            var ic= "";
+            var isstart = false;
+            var isBackgroundRead = false;
+            var isBlock = false;
 
             setTimeout(function () {
-                $(".formInfo").css("display","block");
-            },500);
+                $(".formInfo").css("display", "block");
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetReadCardWay")",
+                    cache: false,
+                    success: function (data) {
+                        console.log("ReadMode-" + data);
+                        if (data == 0) {
+                            isBackgroundRead = true;
+                            $("#btnRead").css("display", "none");
+                        }
+                    }
+                });
+
+            }, 500);
+            
+            $(document).keydown(function (ev) {
+                if (isBlock)
+                {
+                    return;
+                }
+
+                if(!isBackgroundRead)
+                {
+                    return;
+                }
+                var key = ev.which;               
+                var num = String.fromCharCode(key);
+                if (isNaN(num)) {
+                    return;
+                }
+                ic += num;
+                if (isstart == false)
+                {
+                    $("#physiccode").val("");
+                    $("#iccode").val("");
+
+                    sh = setInterval(showiccode, 500);
+                    isstart = true;
+                }
+            });
+
+            function showiccode() {
+                var $phys = $("#physiccode");
+                console.log(ic);
+                if (ic.length > 6)
+                {
+                    $phys.val(ic);
+                }
+                isstart = false;              
+                clearInterval(sh);               
+                ic = "";
+            }
+
+            $("#iccode").focus(function () {
+                isBlock = true;
+                console.log("isBlock-"+isBlock);
+            });
+
+            $("#iccode").blur(function () {
+                isBlock = false;
+                console.log("isBlock-" + isBlock);
+            });
 
             //读卡
             $("#btnRead").click(function () {

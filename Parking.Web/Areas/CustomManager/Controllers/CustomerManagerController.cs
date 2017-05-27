@@ -7,6 +7,7 @@ using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
 using Parking.Web.Areas.CustomManager.Models;
+using System.Threading.Tasks;
 
 namespace Parking.Web.Areas.CustomManager.Controllers
 {   
@@ -545,6 +546,20 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             };
             return Json(nback, JsonRequestBehavior.AllowGet);
         }
+        
+        /// <summary>
+        /// 绑定指纹
+        /// </summary>
+        /// <param name="custID"></param>
+        /// <returns></returns>
+        public async Task<ActionResult> ReadFingerPrint(int custID)
+        {
+            CWFingerPrint fprint = new CWFingerPrint();
+            Response resp = await fprint.FindFingerPrintAsync(custID);
+
+            return Json(resp, JsonRequestBehavior.AllowGet);
+        }
+
 
     }
 }

@@ -183,7 +183,7 @@
     <Compile Include="Areas\CustomManager\CustomManagerAreaRegistration.cs" />
     <Compile Include="Areas\CustomManager\Models\CustomerModel.cs" />
     <Compile Include="Areas\CustomManager\Models\SelectItem.cs" />
-    <Compile Include="Areas\ExternalManager\Controllers\HomeController.cs" />
+    <Compile Include="Areas\ExternalManager\Controllers\ExternalController.cs" />
     <Compile Include="Areas\ExternalManager\ExternalManagerAreaRegistration.cs" />
     <Compile Include="Areas\ReportManager\Controllers\ReportController.cs" />
     <Compile Include="Areas\ReportManager\Models\SelectItem.cs" />
@@ -245,6 +245,9 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Image\add.jpg" />
+    <Content Include="Image\scan.gif" />
+    <Content Include="Image\fingerprint.jpg" />
     <Content Include="Image\first.jpg" />
     <Content Include="Image\second.jpg" />
     <Content Include="Image\three.jpg" />
@@ -353,7 +356,7 @@
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
     <Folder Include="Areas\ExternalManager\Models\" />
-    <Folder Include="Areas\ExternalManager\Views\Home\" />
+    <Folder Include="Areas\ExternalManager\Views\External\" />
     <Folder Include="Areas\ExternalManager\Views\Shared\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
     <Folder Include="Areas\SystemManager\Views\Shared\" />
