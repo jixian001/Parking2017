@@ -208,19 +208,42 @@ namespace Parking.Core
                 return;
             }
             #endregion
-            
+            Customer cust = null;
             //暂以卡号为准
-            ICCard iccd = new CWICCard().Find(ic=>ic.UserCode==htsk.ICCardCode);
-            if (iccd == null)
+            if (Convert.ToInt32(htsk.ICCardCode) >= 10000) //是指纹激活的
             {
-                //上位控制系统故障
-                this.AddNofication(htsk.Warehouse,hallID,"20.wav");
-                this.AddNofication(htsk.Warehouse, hallID, "6.wav");
-                return;
+                FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == Convert.ToInt32(htsk.ICCardCode));
+                if (print == null)
+                {
+                    //上位控制系统故障
+                    this.AddNofication(htsk.Warehouse, hallID, "20.wav");
+                    return;
+                }
+                cust = new CWICCard().FindCust(print.CustID);
+                if (cust == null)
+                {
+                    //上位控制系统故障
+                    this.AddNofication(htsk.Warehouse, hallID, "20.wav");
+                    return;
+                }
+            }
+            else
+            {
+                ICCard iccd = new CWICCard().Find(ic => ic.UserCode == htsk.ICCardCode);
+                if (iccd == null)
+                {
+                    //上位控制系统故障
+                    this.AddNofication(htsk.Warehouse, hallID, "20.wav");
+                    return;
+                }
+                if (iccd.CustID != 0)
+                {
+                    cust = new CWICCard().FindCust(iccd.CustID);
+                }
             }
             Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
             int tvID=0;
-            Location lct = new AllocateLocation().IAllocateLocation(checkCode, iccd, hall, out tvID);
+            Location lct = new AllocateLocation().IAllocateLocation(checkCode, cust, hall, htsk.ICCardCode, out tvID);
             if (lct == null)
             {
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
@@ -261,7 +284,7 @@ namespace Parking.Core
             lct.CarSize = checkCode;
             lct.InDate = DateTime.Now;
             lct.Status = EnmLocationStatus.Entering;
-            lct.ICCode = iccd.UserCode;
+            lct.ICCode = htsk.ICCardCode;
             lct.CarWeight = weight;
             Response resp = new CWLocation().UpdateLocation(lct);
            
@@ -293,7 +316,7 @@ namespace Parking.Core
                 SubTelegramType=1,
                 FromLctAddress=hall.Address,
                 ToLctAddress=lct.Address,
-                ICCardCode=iccd.UserCode,
+                ICCardCode=htsk.ICCardCode,
                 Distance=distance,
                 CarSize=checkCode,
                 CarWeight=weight

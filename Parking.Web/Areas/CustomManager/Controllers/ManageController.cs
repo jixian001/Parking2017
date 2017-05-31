@@ -160,57 +160,5 @@ namespace Parking.Web.Areas.CustomManager.Controllers
 
             return Json(resp);
         }
-
-        public ActionResult ChangeDeadline(string iccode)
-        {
-            CWICCard cwiccd = new CWICCard();
-            ChangeDeadlineModel model = new ChangeDeadlineModel();
-            ICCard iccd = cwiccd.Find(ic => ic.UserCode == iccode);            
-            if (iccd != null)
-            {
-                model.ID = iccd.ID;
-                model.ICCode = iccd.UserCode;
-                model.OldDeadline = iccd.Deadline;
-                model.Type = (int)iccd.Type;
-                if (model.Type < 2)
-                {
-                    ModelState.AddModelError("", "临时卡，无法设置使用期限");
-                }
-                return View(model);
-            }
-            else
-            {
-                return RedirectToAction("ICCard");
-            }           
-        }
-
-        [HttpPost]
-        public ActionResult ChangeDeadline(ChangeDeadlineModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                ModelState.AddModelError("", "参数设置不正确");
-                return View(model);
-            }
-            if (model.Type < 2)
-            {
-                ModelState.AddModelError("", "临时卡，无法设置使用期限");
-                return View(model);
-            }
-            CWICCard cwiccd = new CWICCard();
-            ICCard iccd = cwiccd.Find(ic => ic.UserCode == model.ICCode);
-            if (iccd != null)
-            {
-                iccd.Deadline = model.NewDeadline;
-                Response resp = cwiccd.Update(iccd);
-                if (resp.Code == 1)
-                {
-                    return RedirectToAction("ICCard");
-                }
-                ModelState.AddModelError("", resp.Message);
-            }
-            return View(model);
-        }
-
     }
 }

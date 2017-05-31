@@ -289,7 +289,6 @@
     <Content Include="Areas\SystemManager\Views\ManualOprt\TempGet.cshtml" />
     <Content Include="Areas\CustomManager\Views\Manage\_PartialSideNav.cshtml" />
     <Content Include="Areas\CustomManager\Views\Manage\ICCard.cshtml" />
-    <Content Include="Areas\CustomManager\Views\Manage\ChangeDeadline.cshtml" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Index.cshtml" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\_PartialSideNav.cshtml" />
     <Content Include="Content\bootstrap-select\css\bootstrap-select.css.map" />

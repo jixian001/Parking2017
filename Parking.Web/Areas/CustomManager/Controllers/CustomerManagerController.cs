@@ -75,10 +75,10 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             }
             if (model.Type == EnmICCardType.FixedLocation)
             {               
-                ICCard fixiccd = cwiccd.Find(ic => ic.Warehouse == model.Warehouse && ic.LocAddress == model.LocAddress);
-                if (fixiccd != null)
+               Customer cust= cwiccd.FindCust(cc => cc.Warehouse == model.Warehouse && cc.LocAddress == model.LocAddress);
+                if (cust != null)
                 {
-                    ModelState.AddModelError("", "该车位已被其他卡绑定，无法使用该车位-"+model.LocAddress);
+                    ModelState.AddModelError("", "该车位已被其他卡绑定，无法使用该车位- "+model.LocAddress+" ,Warehouse- "+model.Warehouse);
                     return View(model);
                 }               
             }
@@ -93,16 +93,16 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             {
                 if ((int)model.Type > 0)
                 {
-                    iccd.Type = model.Type;
+                    addcust.Type = model.Type;
                     if(model.Type == EnmICCardType.FixedLocation)
                     {
-                        iccd.Warehouse = (int)model.Warehouse;
-                        iccd.LocAddress = model.LocAddress;
+                        addcust.Warehouse = (int)model.Warehouse;
+                        addcust.LocAddress = model.LocAddress;
                     }
                 }
                 else
                 {
-                    iccd.Type = EnmICCardType.Temp;
+                    addcust.Type = EnmICCardType.Temp;
                 }
                 iccd.CustID = addcust.ID;
                 resp= cwiccd.Update(iccd);
@@ -190,11 +190,11 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                             cu.ID,
                             cu.UserName,
                             UserCode=(tt==null?"":tt.UserCode),
-                            Type= (tt == null ? 0 : tt.Type),
+                            Type= (tt == null ? 0 : cu.Type),
                             Status= (tt == null ? 0 : tt.Status),
-                            Warehouse= (tt == null ? 0 : tt.Warehouse),
-                            LocAddress= (tt == null ? "" : tt.LocAddress),
-                            Deadline= (tt == null ? DateTime.Parse("2017-1-1") : tt.Deadline),
+                            Warehouse= (tt == null ? 0 : cu.Warehouse),
+                            LocAddress= (tt == null ? "" : cu.LocAddress),
+                            Deadline= (tt == null ? DateTime.Parse("2017-1-1") : cu.Deadline),
                             cu.MobilePhone,
                             cu.PlateNum,
                             cu.FamilyAddress
@@ -385,21 +385,21 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             CustomerModel model = new CustomerModel();
             CWICCard cwiccd = new CWICCard();
             Customer cust = cwiccd.FindCust(ID);
-            ICCard iccd = cwiccd.Find(ic=>ic.CustID==ID);
+            ICCard iccd = cwiccd.Find(ic => ic.CustID == ID);
 
             model.ID = cust.ID;
             model.UserName = cust.UserName;
             model.FamilyAddress = cust.FamilyAddress;
             model.MobilePhone = cust.MobilePhone;
             model.PlateNum = cust.PlateNum;
+            model.Type = cust.Type;
+            model.Warehouse = cust.Warehouse;
+            model.LocAddress = cust.LocAddress;
+            model.Deadline = cust.Deadline;
             if (iccd != null)
             {
-                model.UserCode = iccd.UserCode;
-                model.Type = iccd.Type;
-                model.Status = iccd.Status;
-                model.Warehouse = iccd.Warehouse;
-                model.LocAddress = iccd.LocAddress;
-                model.Deadline = iccd.Deadline;
+                model.UserCode = iccd.UserCode;               
+                model.Status = iccd.Status;              
             }
 
             List<SelectListItem> items = new List<SelectListItem>();
@@ -485,12 +485,13 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                         ModelState.AddModelError("", "固定卡，请正确的库区及车位地址！");
                         return View(model);
                     }
-                    ICCard iccd = cwiccd.Find(ic=>ic.Warehouse==model.Warehouse&&ic.LocAddress==model.LocAddress);
-                    if (iccd != null)
+                    
+                    Customer custo = cwiccd.FindCust(cc=>cc.Warehouse==model.Warehouse&&cc.LocAddress==model.LocAddress);
+                    if (custo != null)
                     {
-                        if (iccd.UserCode != newIccd.UserCode)
+                        if (custo.ID!=cust.ID)
                         {
-                            ModelState.AddModelError("", "当前车位已被别的卡绑定，卡号-" + iccd.UserCode);
+                            ModelState.AddModelError("", "当前车位已被别的用户绑定");
                             return View(model);
                         }
                     }
@@ -504,35 +505,15 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 }
                 if(oriIccd.UserCode != newIccd.UserCode)
                 {
-                    //释放旧卡
-                    oriIccd.Type = EnmICCardType.Temp;
-                    oriIccd.CustID = 0;
-                    oriIccd.Deadline = DateTime.Parse("2017-1-1");
-                    oriIccd.Warehouse = 0;
-                    oriIccd.LocAddress = "";
+                    //释放旧卡                  
+                    oriIccd.CustID = 0;                   
                     cwiccd.Update(oriIccd);
-                    //绑定新卡
-                    newIccd.Type = model.Type;
-                    newIccd.Warehouse = 0;
-                    newIccd.LocAddress = "";
-                    if (model.Type == EnmICCardType.FixedLocation)
-                    {
-                        newIccd.Warehouse = (int)model.Warehouse;
-                        newIccd.LocAddress = model.LocAddress;
-                    }
+                    //绑定新卡                  
                     newIccd.CustID = cust.ID;
                     cwiccd.Update(newIccd);
                 }
                 else
-                {
-                    newIccd.Type = model.Type;
-                    newIccd.Warehouse = 0;
-                    newIccd.LocAddress = "";
-                    if (model.Type == EnmICCardType.FixedLocation)
-                    {
-                        newIccd.Warehouse = (int)model.Warehouse;
-                        newIccd.LocAddress = model.LocAddress;
-                    }
+                {                    
                     newIccd.CustID = cust.ID;
                     cwiccd.Update(newIccd);
                 }
@@ -542,6 +523,9 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             cust.MobilePhone = model.MobilePhone;
             cust.UserName = model.UserName;
             cust.FamilyAddress = model.FamilyAddress;
+            cust.Warehouse = (int)model.Warehouse;
+            cust.LocAddress = model.LocAddress;            
+
             cwiccd.UpdateCust(cust);
             #endregion
             return RedirectToAction("Index");
@@ -567,11 +551,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                         };
                         return Json(data,JsonRequestBehavior.AllowGet);
                     }
-                    iccd.CustID = 0;
-                    iccd.Type = EnmICCardType.Temp;
-                    iccd.Warehouse = 0;
-                    iccd.LocAddress = "";
-                    iccd.Deadline = DateTime.Parse("2017-1-1");
+                    iccd.CustID = 0;                   
                     Response _resp= cwiccd.Update(iccd);
                     if (_resp.Code == 0)
                     {

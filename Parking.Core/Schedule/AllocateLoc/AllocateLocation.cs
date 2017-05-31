@@ -14,34 +14,36 @@ namespace Parking.Core
         /// 一个巷道内只有单个移动设备，车位分配
         /// </summary>
         /// <param name="checkCode"></param>
-        /// <param name="iccd"></param>
+        /// <param name="cust"></param>
         /// <param name="htask"></param>
         /// <param name="smg"></param>
         /// <returns></returns>
-        public Location IAllocateLocation(string checkCode, ICCard iccd, Device hall, out int smg)
+        public Location IAllocateLocation(string checkCode, Customer cust, Device hall, string proof, out int smg)
         {
+            Log log = LogFactory.GetLogger("AllocateLocation.IAllocateLocation");
+
             smg = 0;
 
             int warehouse = hall.Warehouse;
             int hallCode = hall.DeviceCode;
             int hallCol = Convert.ToInt32(hall.Address.Substring(1, 2));
-           
+
             Location lct = null;
             CWTask cwtask = new CWTask();
 
-            if (iccd.Type == EnmICCardType.Temp || iccd.Type == EnmICCardType.Periodical)
+            if (cust==null||(cust.Type == EnmICCardType.Temp || cust.Type == EnmICCardType.Periodical))
             {
                 lct = this.PPYAllocate(warehouse, checkCode, hallCol);
             }
-            else if (iccd.Type == EnmICCardType.FixedLocation)
+            else if (cust.Type == EnmICCardType.FixedLocation)
             {
-                if (iccd.Warehouse != warehouse)
+                if (cust.Warehouse != warehouse)
                 {
                     //车辆停在其他库区
                     cwtask.AddNofication(warehouse, hallCode, "16.wav");
                     return null;
                 }
-                lct = new CWLocation().SelectLocByAddress(warehouse, iccd.LocAddress);
+                lct = new CWLocation().SelectLocByAddress(warehouse, cust.LocAddress);
                 if (lct != null)
                 {
                     if (compareSize(lct.LocSize, checkCode) < 0)
@@ -52,10 +54,11 @@ namespace Parking.Core
                     }
                 }
             }
+
             if (lct != null)
             {
                 //选择TV
-                Device tv = new CWDevice().Find(d=>d.Warehouse==warehouse&&d.Layer==lct.LocLayer);
+                Device tv = new CWDevice().Find(d => d.Warehouse == warehouse && d.Layer == lct.LocLayer);
                 if (tv != null)
                 {
                     smg = tv.DeviceCode;

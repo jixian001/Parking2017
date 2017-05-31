@@ -18,19 +18,7 @@ namespace Parking.Core
 
         public CWICCard()
         {
-        }
-
-        /// <summary>
-        /// 依车位地址查找是否被绑定
-        /// </summary>
-        /// <param name="warehouse"></param>
-        /// <param name="address"></param>
-        /// <returns></returns>
-        public ICCard FindFixLocationByAddress(int warehouse,string address)
-        {
-            return manager.Find(iccd => (iccd.Type == EnmICCardType.FixedLocation || iccd.Type == EnmICCardType.VIP) &&
-                                              iccd.Warehouse == warehouse && iccd.LocAddress == address);
-        }
+        }       
 
         public ICCard Find(int id)
         {
@@ -77,17 +65,12 @@ namespace Parking.Core
                     ICCard iccd = new ICCard()
                     {
                         PhysicCode = physic,
-                        UserCode = usercode,
-                        Type = EnmICCardType.Temp,
+                        UserCode = usercode,                       
                         Status = EnmICCardStatus.Normal,
                         CreateDate = DateTime.Now,
                         LossDate = DateTime.Parse("2017-1-1"),
-                        LogoutDate= DateTime.Parse("2017-1-1"),
-                        StartDTime=DateTime.Now,
-                        Deadline= DateTime.Parse("2017-1-1"),
-                        CustID=0,
-                        Warehouse=0,
-                        LocAddress=""
+                        LogoutDate= DateTime.Parse("2017-1-1"),                      
+                        CustID=0
                     };
                     resp = manager.Add(iccd);
                     if (resp.Code == 1)
@@ -166,6 +149,20 @@ namespace Parking.Core
         public List<Customer> FindCustList(Expression<Func<Customer, bool>> where)
         {
             return manager_cust.FindList(where);
+        }
+
+        /// <summary>
+        /// 依车位地址查找是否被绑定
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public Customer FindFixLocationByAddress(int warehouse, string address)
+        {
+            return manager_cust.Find(cust=>(cust.Type==EnmICCardType.FixedLocation||
+                                            cust.Type==EnmICCardType.VIP)&&
+                                            cust.Warehouse==warehouse&&
+                                            cust.LocAddress==address);           
         }
 
         #endregion

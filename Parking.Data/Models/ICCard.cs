@@ -19,43 +19,20 @@ namespace Parking.Data
         /// 物理卡号
         /// </summary>
         public string PhysicCode { get; set; }
+        [Required]
         [StringLength(4)]
         /// <summary>
         /// 用户卡号,4位用户卡号
         /// </summary>
-        public string UserCode { get; set; }
-        public EnmICCardType Type { get; set; }
+        public string UserCode { get; set; }       
         public EnmICCardStatus Status { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime LossDate { get; set; }
         public DateTime LogoutDate { get; set; }
-
-        /*
-         * 以下 顾客信息
-         */
-
-         /// <summary>
-         /// 最近的缴费日期
-         /// </summary>
-        public DateTime StartDTime { get; set; }
-        /// <summary>
-        /// 卡的使用截止期限
-        /// </summary>
-        public DateTime Deadline { get; set; }
-        
         /// <summary>
         /// 顾客ID
         /// </summary>     
-        public int CustID { get; set; }
-        /// <summary>
-        /// 库区
-        /// </summary>
-        public int Warehouse { get; set; }
-        [StringLength(10)]
-        /// <summary>
-        ///  绑定车位
-        /// </summary>
-        public string LocAddress { get; set; }
+        public int CustID { get; set; }  
     }
 
     public enum EnmICCardType

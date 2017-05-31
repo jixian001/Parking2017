@@ -242,23 +242,40 @@ namespace Parking.Core
                     if (isChargeEnable)
                     {
                         #region
-                        if (iccd.Type == EnmICCardType.Temp)
+                        if (iccd.CustID == 0)
+                        {
+                            motsk.AddNofication(warehouse, code, "29.wav");
+                            return;
+                        }
+                        Customer cust = new CWICCard().FindCust(iccd.CustID);
+                        if (cust == null)
+                        {
+                            log.Error("系统异常，ICCard绑定的CustID-"+iccd.CustID+" ,找不到顾客，为空！");
+                            motsk.AddNofication(warehouse, code, "20.wav");
+
+                            //生成取车作业，加入队列
+                            motsk.DealOSwipedCard(moHall, lct, iccd);
+
+                            return;
+                        }
+
+                        if (cust.Type == EnmICCardType.Temp)
                         {                           
                             motsk.AddNofication(warehouse, code, "29.wav");
                             return;
                         }
-                        else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                        else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
                         {
-                            if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                            if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "31.wav");
                                 return;
                             }
-                            if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                            if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "67.wav");
                             }
-                            else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                            else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "66.wav");
                             }                            
@@ -355,23 +372,40 @@ namespace Parking.Core
                         if (isChargeEnable)
                         {
                             #region
-                            if (iccd.Type == EnmICCardType.Temp)
+                            if (iccd.CustID == 0)
                             {
                                 motsk.AddNofication(warehouse, code, "29.wav");
                                 return;
                             }
-                            else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                            Customer cust = new CWICCard().FindCust(iccd.CustID);
+                            if (cust == null)
                             {
-                                if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                                log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
+                                motsk.AddNofication(warehouse, code, "20.wav");
+
+                                //生成取车作业，加入队列
+                                motsk.DealOSwipedCard(moHall, lct, iccd);
+
+                                return;
+                            }
+
+                            if (cust.Type == EnmICCardType.Temp)
+                            {
+                                motsk.AddNofication(warehouse, code, "29.wav");
+                                return;
+                            }
+                            else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
+                            {
+                                if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "31.wav");
                                     return;
                                 }
-                                if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                                if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "67.wav");
                                 }
-                                else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                                else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "66.wav");
                                 }
@@ -880,25 +914,44 @@ namespace Parking.Core
                     if (isChargeEnable)
                     {
                         #region
-                        if (iccd.Type == EnmICCardType.Temp)
+                        if (iccd.CustID == 0)
                         {
                             motsk.AddNofication(warehouse, code, "29.wav");
                             resp.Message = "临时卡，请到管理室缴费出车";
                             return resp;
                         }
-                        else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                        Customer cust = new CWICCard().FindCust(iccd.CustID);
+                        if (cust == null)
                         {
-                            if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                            log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
+                            motsk.AddNofication(warehouse, code, "20.wav");
+
+                            //生成取车作业，加入队列
+                            motsk.DealOSwipedCard(moHall, lct, iccd);
+
+                            resp.Message = "系统异常,找不到对应顾客";
+                            return resp;
+                        }
+
+                        if (cust.Type == EnmICCardType.Temp)
+                        {
+                            motsk.AddNofication(warehouse, code, "29.wav");
+                            resp.Message = "临时卡，请到管理室缴费出车";
+                            return resp;
+                        }
+                        else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
+                        {
+                            if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "31.wav");
                                 resp.Message = "卡已欠费，请缴费";
                                 return resp;
                             }
-                            if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                            if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "67.wav");
                             }
-                            else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                            else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
                             {
                                 motsk.AddNofication(warehouse, code, "66.wav");
                             }
@@ -984,25 +1037,44 @@ namespace Parking.Core
                         if (isChargeEnable)
                         {
                             #region
-                            if (iccd.Type == EnmICCardType.Temp)
+                            if (iccd.CustID == 0)
                             {
                                 motsk.AddNofication(warehouse, code, "29.wav");
                                 resp.Message = "临时卡，请到管理室缴费出车";
                                 return resp;
                             }
-                            else if (iccd.Type == EnmICCardType.Periodical || iccd.Type == EnmICCardType.FixedLocation)
+                            Customer cust = new CWICCard().FindCust(iccd.CustID);
+                            if (cust == null)
                             {
-                                if (DateTime.Compare(iccd.Deadline, DateTime.Now) < 0)
+                                log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
+                                motsk.AddNofication(warehouse, code, "20.wav");
+
+                                //生成取车作业，加入队列
+                                motsk.DealOSwipedCard(moHall, lct, iccd);
+
+                                resp.Message = "系统异常,找不到对应顾客";
+                                return resp;
+                            }
+
+                            if (cust.Type == EnmICCardType.Temp)
+                            {
+                                motsk.AddNofication(warehouse, code, "29.wav");
+                                resp.Message = "临时卡，请到管理室缴费出车";
+                                return resp;
+                            }
+                            else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
+                            {
+                                if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "31.wav");
                                     resp.Message = "卡已欠费，请缴费";
                                     return resp;
                                 }
-                                if (DateTime.Compare(iccd.Deadline.AddDays(-2), DateTime.Now) < 0)
+                                if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "67.wav");
                                 }
-                                else if (DateTime.Compare(iccd.Deadline.AddDays(-1), DateTime.Now) < 0)
+                                else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
                                 {
                                     motsk.AddNofication(warehouse, code, "66.wav");
                                 }

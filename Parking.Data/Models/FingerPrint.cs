@@ -15,12 +15,13 @@ namespace Parking.Data
     public class FingerPrint
     {
         public int ID { get; set; }
-        
+        [Required]
         /// <summary>
         /// 编号，5位数，唯一
         /// int16(最大32767) 范围（10000-30000）
         /// </summary>
-        public short SN_Number { get; set; }        
+        public short SN_Number { get; set; } 
+        [Required]       
         /// <summary>
         /// 指纹信息
         /// </summary>

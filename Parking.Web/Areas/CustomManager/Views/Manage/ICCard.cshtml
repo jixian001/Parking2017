@@ -112,7 +112,7 @@
                             <button type="button" id="btnDispose" class="btn btn-default">&nbsp;&nbsp;注&nbsp;销&nbsp;&nbsp;&nbsp;</button>
                         </div>
                         <div class="col-md-2">
-                            <button type="button" id="btnChangedt" class="btn btn-default">修改期限</button>
+                            <button type="button" id="btnChangedt" class="btn btn-default" hidden>修改期限</button>
                         </div>
                     </div>
                 </div>
@@ -411,19 +411,7 @@
 
                 });
             }
-            //修改用户卡使用期限
-            $("#btnChangedt").click(function () {
-                var iccode = $("#uiccd").val();
-                if (iccode == "") {
-                    BootstrapDialog.show({
-                        title: "温馨提示",
-                        message: "用户卡号不允许为空，请先执行查询操作！"
-                    });
-                    return;
-                }
-                window.location.href = "/CustomManager/Manage/ChangeDeadline?iccode=" + iccode;
-            });
-
+          
             //格式化日期显示
             //Date(1391141532000)的字符串转换成javascript中的日期对象
             function formatDate(dt) {
