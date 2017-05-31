@@ -5,20 +5,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Parking.Auxiliary;
 using Parking.Data;
+using Parking.Core.Schedule;
 
 namespace Parking.Core
 {
     public class AllocateLocation
     {
         /// <summary>
-        /// 一个巷道内只有单个移动设备，车位分配
+        /// 存车时，分配车位及ETV
         /// </summary>
-        /// <param name="checkCode"></param>
-        /// <param name="cust"></param>
-        /// <param name="htask"></param>
+        /// <param name="checkCode">外形尺寸</param>
+        /// <param name="cust">顾客</param>
+        /// <param name="hall">车厅</param>       
         /// <param name="smg"></param>
         /// <returns></returns>
-        public Location IAllocateLocation(string checkCode, Customer cust, Device hall, string proof, out int smg)
+        public Location IAllocateLocation(string checkCode, Customer cust, Device hall, out int smg)
         {
             Log log = LogFactory.GetLogger("AllocateLocation.IAllocateLocation");
 
@@ -30,10 +31,14 @@ namespace Parking.Core
 
             Location lct = null;
             CWTask cwtask = new CWTask();
-
-            if (cust==null||(cust.Type == EnmICCardType.Temp || cust.Type == EnmICCardType.Periodical))
+            if (cust == null)
             {
-                lct = this.PPYAllocate(warehouse, checkCode, hallCol);
+                lct = this.PXDAllocate(hall, checkCode,out smg);
+            }
+            else if (cust.Type == EnmICCardType.Temp || 
+                     cust.Type == EnmICCardType.Periodical)
+            {
+                lct = this.PXDAllocate(hall, checkCode, out smg);
             }
             else if (cust.Type == EnmICCardType.FixedLocation)
             {
@@ -43,7 +48,7 @@ namespace Parking.Core
                     cwtask.AddNofication(warehouse, hallCode, "16.wav");
                     return null;
                 }
-                lct = new CWLocation().SelectLocByAddress(warehouse, cust.LocAddress);
+                lct = new CWLocation().SelectLocByAddress(cust.Warehouse, cust.LocAddress);
                 if (lct != null)
                 {
                     if (compareSize(lct.LocSize, checkCode) < 0)
@@ -53,183 +58,53 @@ namespace Parking.Core
                         return null;
                     }
                 }
-            }
+                //分配ETV
 
-            if (lct != null)
-            {
-                //选择TV
-                Device tv = new CWDevice().Find(d => d.Warehouse == warehouse && d.Layer == lct.LocLayer);
-                if (tv != null)
-                {
-                    smg = tv.DeviceCode;
-                }
+
             }
+              
             return lct;
         }
 
         /// <summary>
-        /// 平面移动临时卡车位分配
+        /// 巷道堆垛临时卡车位分配       
         /// </summary>
         /// <returns></returns>
-        private Location PPYAllocate(int warehouse, string checkCode, int hallCol)
+        private Location PXDAllocate(Device hall,string checkCode, out int smg)
         {
-            CWICCard cwiccard = new CWICCard();
-            CWDevice cwdevice = new CWDevice();
-            CWLocation cwlctn = new CWLocation();
-            #region 找出可用的TV
-            List<Device> availableTvs = cwdevice.FindList(dev => dev.IsAble == 1 &&
-                                                                 dev.Warehouse == warehouse &&
-                                                                 dev.Type == EnmSMGType.ETV);
-            //TV层集合
-            List<int> availlayers = new List<int>();
-            foreach (Device dev in availableTvs)
-            {
-                availlayers.Add(dev.Layer);
-            }
-            #endregion
-            //获取空闲车位
-            List<Location> spacelocations = cwlctn.FindLocationList(loc => loc.Warehouse == warehouse &&
-                                                                                loc.Type == EnmLocationType.Normal &&
-                                                                                loc.Status == EnmLocationStatus.Space &&
-                                                                                cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
-                                                                                availlayers.Exists(layer => layer == loc.LocLayer));
-            //获取占用或正在作业的车位
-            List<Location> busylocations = cwlctn.FindLocationList(loc => loc.Warehouse == warehouse &&
-                                                                                    loc.Type == EnmLocationType.Normal &&
-                                                                                    loc.Status != EnmLocationStatus.Space &&
-                                                                                    cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
-                                                                                    availlayers.Exists(layer => layer == loc.LocLayer));
-            //优先分配靠近车厅的小车位
-            List<Location> smallLocations = (spacelocations.Where(loc => compareSize(loc.LocSize, checkCode) == 0).
-                                                                      OrderBy(loc => Math.Abs(loc.LocColumn - hallCol))).ToList();
-            //再分配靠近车厅的大车位
-            List<Location> bigLocations = (spacelocations.Where(loc => compareSize(loc.LocSize, checkCode) > 0).
-                                                          OrderBy(loc => Math.Abs(loc.LocColumn - hallCol))).ToList();
+            smg = 0;
 
-            #region 优先分配车位尺寸一致的
-            #region 找出空闲的TV，优先分配 
-            //空闲可用的
-            List<Device> freeDevices = availableTvs.FindAll(av=>av.TaskID==0);
-            foreach (Device tv in freeDevices)
+            CWLocation cwlctn = new CWLocation();
+            CWDevice cwdevice = new CWDevice();
+
+            List<Device> nEtvList = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
+            WorkScope workscope = new WorkScope(nEtvList);
+            int hallColmn = Convert.ToInt32(hall.Address.Substring(1,2));
+            List<Device> reachHall = new List<Device>();
+            #region 找出可达车厅的ETV集合
+            foreach(Device dev in nEtvList)
             {
-                foreach (Location loc in smallLocations)
+                CScope scope = workscope.GetEtvScope(dev);
+                if (scope.LeftCol <= hallColmn && hallColmn <= scope.RightCol)
                 {
-                    if (loc.LocLayer == tv.Layer)
+                    if (dev.IsAble == 1)
                     {
-                        return loc;
+                        reachHall.Add(dev);
                     }
                 }
             }
             #endregion
-            #region 分配车位占用较少的层
-            Dictionary<int, int> dicLayerAndOppucyCnt = new Dictionary<int, int>();
-            foreach(int layer in availlayers)
-            {
-                int count = 0;
-                foreach(Location loc in busylocations)
-                {
-                    if(compareSize(loc.LocSize, checkCode) == 0)
-                    {
-                        if (loc.LocLayer == layer)
-                        {
-                            count++;
-                        }
-                    }
-                }
-                dicLayerAndOppucyCnt.Add(layer,count);
-            }
-            Dictionary<int, int> dicOrderBy = dicLayerAndOppucyCnt.OrderBy(r => r.Value).ToDictionary(d => d.Key, c => c.Value);
-            foreach (KeyValuePair<int,int> pair in dicOrderBy)
-            {
-                foreach (Location loc in smallLocations)
-                {
-                    if (loc.LocLayer == pair.Key)
-                    {
-                        return loc;
-                    }
-                }
-            }
-            #endregion
-            #endregion
-            #region 优先分配车位尺寸大于的
-            #region 找出空闲的TV，优先分配 
-            //空闲可用的          
-            foreach (Device tv in freeDevices)
-            {
-                foreach (Location loc in bigLocations)
-                {
-                    if (loc.LocLayer == tv.Layer)
-                    {
-                        return loc;
-                    }
-                }
-            }
-            #endregion
-            #region 分配车位占用较少的层
-            Dictionary<int, int> dicLayerAndOppucyCnt_big = new Dictionary<int, int>();
-            foreach (int layer in availlayers)
-            {
-                int count = 0;
-                foreach (Location loc in busylocations)
-                {
-                    if (compareSize(loc.LocSize, checkCode) > 0)
-                    {
-                        if (loc.LocLayer == layer)
-                        {
-                            count++;
-                        }
-                    }
-                }
-                dicLayerAndOppucyCnt_big.Add(layer, count);
-            }
-            Dictionary<int, int> dicOrderBy_big = dicLayerAndOppucyCnt_big.OrderBy(r => r.Value).ToDictionary(d => d.Key, c => c.Value);
-            foreach (KeyValuePair<int, int> pair in dicOrderBy_big)
-            {
-                foreach (Location loc in bigLocations)
-                {
-                    if (loc.LocLayer == pair.Key)
-                    {
-                        return loc;
-                    }
-                }
-            }
-            #endregion
-            #endregion
+
+
             return null;
         }
 
         /// <summary>
-        /// 巷道堆垛临时卡车位分配
-        /// 单堆垛机
+        /// 比较尺寸
         /// </summary>
+        /// <param name="size"></param>
+        /// <param name="carSize"></param>
         /// <returns></returns>
-        private Location PXDAllocate(int warehouse,int hallCol,string checkCode)
-        {
-            CWLocation cwlctn = new CWLocation();
-            CWICCard cwiccard = new CWICCard();
-            //获取空闲的车位集合
-            List<Location> spacelocations = cwlctn.FindLocationList(loc => loc.Warehouse == warehouse &&
-                                                                                loc.Type == EnmLocationType.Normal &&
-                                                                                loc.Status == EnmLocationStatus.Space &&
-                                                                                cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null);
-            //优先分配靠近车厅的小车位
-            List<Location> smallLocations = (spacelocations.Where(loc => compareSize(loc.LocSize, checkCode) == 0).
-                                                                      OrderBy(loc => Math.Abs(loc.LocColumn - hallCol))).ToList();
-            if (smallLocations.Count > 0)
-            {
-                return smallLocations.First();
-            }
-            //再分配靠近车厅的大车位
-            List<Location> bigLocations = (spacelocations.Where(loc => compareSize(loc.LocSize, checkCode) > 0).
-                                                          OrderBy(loc => Math.Abs(loc.LocColumn - hallCol))).ToList();
-            if (bigLocations.Count > 0)
-            {
-                return bigLocations.First();
-            }
-
-            return null;
-        }
-
         private int compareSize(string size, string carSize)
         {
             int CarLong = Convert.ToInt32(carSize.Substring(0, 1));
@@ -242,11 +117,15 @@ namespace Parking.Core
 
             if ((lCarLong == CarLong) && (lCarWide == CarWide) && (lCarHigh == CarHigh))
             {
-                return 0;
+                return 1;
+            }
+            else if ((lCarLong == CarLong) && (lCarWide > CarWide) && (lCarHigh == CarHigh))
+            {
+                return 2;
             }
             else if ((lCarLong >= CarLong) && (lCarWide >= CarWide) && (lCarHigh >= CarHigh))
             {
-                return 1;
+                return 3;
             }
             return -1;
         }

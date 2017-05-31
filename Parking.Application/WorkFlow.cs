@@ -69,7 +69,7 @@ namespace Parking.Application
                 {
                     return;
                 }
-                //优先发送是报文的队列
+                //优先发送是报文(子作业)的队列
                 List<WorkTask> lstWaitTelegram = queueList.FindAll(ls => ls.IsMaster == 1);
                 #region 优先发送是避让的队列
                 List<WorkTask> avoidTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType == EnmTaskType.Avoid);
@@ -92,7 +92,7 @@ namespace Parking.Application
                     {
                         if (dev.TaskID == 0)
                         {
-                            //当前TV没有作业，则绑定设备
+                            //当前TV没有作业，则绑定设备,执行避让
                             Response resp = cwtask.CreateAvoidTaskByQueue(queue);
                             log.Info(resp.Message);
                         }
@@ -148,7 +148,7 @@ namespace Parking.Application
                                     cwtask.CreateDeviceTaskByQueue(queue, dev);
                                 }
                             }
-                            else
+                            else //处理卸载指令
                             {
                                 ImplementTask itask = cwtask.Find(dev.TaskID);
                                 if (itask != null)
@@ -183,7 +183,7 @@ namespace Parking.Application
                         log.Error("执行取车队列时，找不到车厅-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
                         continue;
                     }
-                    Location lctn = new CWLocation().FindLocation(l=>l.ICCode==queue.ICCardCode);
+                    Location lctn = new CWLocation().FindLocation(l => l.ICCode == queue.ICCardCode);
                     if (lctn == null)
                     {
                         log.Error("执行取车队列时，找不到存车车位，删除队列，iccode-" + queue.ICCardCode);
@@ -205,7 +205,7 @@ namespace Parking.Application
                         ImplementTask hallTask = cwtask.Find(hall.TaskID);
                         if (hallTask == null)
                         {
-                            log.Error("依TASKID-" + hall.TaskID+" 找不到对应的作业！");
+                            log.Error("依TaskID-" + hall.TaskID+" 找不到对应的作业！");
                             continue;
                         }
                         if (hallTask.Type == EnmTaskType.GetCar)
@@ -216,7 +216,9 @@ namespace Parking.Application
                             {
                                 //保证只有一个作业提前下发
                                 //防止不同巷道的取车同时下发
-                                WorkTask hallWillCommit = cwtask.FindQueue(tsk => tsk.DeviceCode == hall.DeviceCode && tsk.IsMaster == 1 && tsk.MasterType == EnmTaskType.GetCar);
+                                WorkTask hallWillCommit = cwtask.FindQueue(tsk => tsk.DeviceCode == hall.DeviceCode && 
+                                                                                    tsk.IsMaster == 1 && 
+                                                                                    tsk.MasterType == EnmTaskType.GetCar);
                                 if (hallWillCommit != null)
                                 {
                                     continue;

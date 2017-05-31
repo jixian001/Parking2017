@@ -191,10 +191,7 @@ namespace Parking.Core
         /// <param name="carSize"></param>
         public void IDealCheckedCar(ImplementTask htsk, int hallID,int distance,string checkCode,int weight)
         {
-            htsk.CarSize = checkCode;
-            htsk.Distance = distance;
-            htsk.SendDtime = DateTime.Now;
-            htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+
 
             Log log = LogFactory.GetLogger("CWTask IDealCheckedCar");
 
@@ -241,9 +238,10 @@ namespace Parking.Core
                     cust = new CWICCard().FindCust(iccd.CustID);
                 }
             }
+
             Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
             int tvID=0;
-            Location lct = new AllocateLocation().IAllocateLocation(checkCode, cust, hall, htsk.ICCardCode, out tvID);
+            Location lct = new AllocateLocation().IAllocateLocation(checkCode, cust, hall, out tvID);
             if (lct == null)
             {
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
@@ -874,7 +872,7 @@ namespace Parking.Core
         /// </summary>
         /// <param name="task"></param>
         /// <param name="lct"></param>
-        public void DealOSwipedCard(Device mohall,Location lct,ICCard iccd)
+        public void DealOSwipedCard(Device mohall,Location lct)
         {
             Log log = LogFactory.GetLogger("CWTask.DealOSwipedCard");
             //这里判断是否有可用的TV
@@ -1491,6 +1489,7 @@ namespace Parking.Core
             {
                 isAdd = true;
             }
+
             if (isAdd)
             {
                 WorkTask waitqueue = new WorkTask()

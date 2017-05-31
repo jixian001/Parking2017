@@ -254,7 +254,7 @@ namespace Parking.Core
                             motsk.AddNofication(warehouse, code, "20.wav");
 
                             //生成取车作业，加入队列
-                            motsk.DealOSwipedCard(moHall, lct, iccd);
+                            motsk.DealOSwipedCard(moHall, lct);
 
                             return;
                         }
@@ -288,7 +288,7 @@ namespace Parking.Core
                         return;
                     }
                     //生成取车作业，加入队列
-                    motsk.DealOSwipedCard(moHall, lct,iccd);
+                    motsk.DealOSwipedCard(moHall, lct);
                 }
                 #endregion
                 #region 进出车厅
@@ -384,7 +384,7 @@ namespace Parking.Core
                                 motsk.AddNofication(warehouse, code, "20.wav");
 
                                 //生成取车作业，加入队列
-                                motsk.DealOSwipedCard(moHall, lct, iccd);
+                                motsk.DealOSwipedCard(moHall, lct);
 
                                 return;
                             }
@@ -418,7 +418,7 @@ namespace Parking.Core
                             return;
                         }
                         //生成取车作业，加入队列
-                        motsk.DealOSwipedCard(moHall, lct, iccd);
+                        motsk.DealOSwipedCard(moHall, lct);
                     }
                     #endregion
                 }
@@ -705,7 +705,7 @@ namespace Parking.Core
                     return resp;
                 }
                 //生成取车作业，加入队列
-                motsk.DealOSwipedCard(moHall, lct, null);
+                motsk.DealOSwipedCard(moHall, lct);
                 resp.Code = 1;
                 resp.Message = "已经加入取车队列，请稍后";
                 return resp;
@@ -764,7 +764,7 @@ namespace Parking.Core
                         return resp;
                     }
                     //生成取车作业，加入队列
-                    motsk.DealOSwipedCard(moHall, lct, null);
+                    motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
                     resp.Message = "已经加入取车队列，请稍后";
                     return resp;
@@ -927,7 +927,7 @@ namespace Parking.Core
                             motsk.AddNofication(warehouse, code, "20.wav");
 
                             //生成取车作业，加入队列
-                            motsk.DealOSwipedCard(moHall, lct, iccd);
+                            motsk.DealOSwipedCard(moHall, lct);
 
                             resp.Message = "系统异常,找不到对应顾客";
                             return resp;
@@ -965,7 +965,7 @@ namespace Parking.Core
                         return resp;
                     }
                     //生成取车作业，加入队列
-                    motsk.DealOSwipedCard(moHall, lct, iccd);
+                    motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
                     resp.Message = "已加入取车队列，请稍后";
                     return resp;
@@ -1050,7 +1050,7 @@ namespace Parking.Core
                                 motsk.AddNofication(warehouse, code, "20.wav");
 
                                 //生成取车作业，加入队列
-                                motsk.DealOSwipedCard(moHall, lct, iccd);
+                                motsk.DealOSwipedCard(moHall, lct);
 
                                 resp.Message = "系统异常,找不到对应顾客";
                                 return resp;
@@ -1088,7 +1088,7 @@ namespace Parking.Core
                             return resp;
                         }
                         //生成取车作业，加入队列
-                        motsk.DealOSwipedCard(moHall, lct, iccd);
+                        motsk.DealOSwipedCard(moHall, lct);
                         resp.Code = 1;
                         resp.Message = "已加入取车队列，请稍后";
                         return resp;

@@ -201,6 +201,10 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201705310230525_init.cs" />
+    <Compile Include="Migrations\201705310230525_init.Designer.cs">
+      <DependentUpon>201705310230525_init.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
@@ -382,6 +386,11 @@
       <Project>{70e3e367-f88a-4c6a-999e-5757bf4e6a9f}</Project>
       <Name>Parking.Data</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\201705310230525_init.resx">
+      <DependentUpon>201705310230525_init.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
