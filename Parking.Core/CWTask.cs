@@ -191,8 +191,6 @@ namespace Parking.Core
         /// <param name="carSize"></param>
         public void IDealCheckedCar(ImplementTask htsk, int hallID,int distance,string checkCode,int weight)
         {
-
-
             Log log = LogFactory.GetLogger("CWTask IDealCheckedCar");
 
             #region 上报外形数据不正确
@@ -206,7 +204,7 @@ namespace Parking.Core
             }
             #endregion
             Customer cust = null;
-            //暂以卡号为准
+            #region
             if (Convert.ToInt32(htsk.ICCardCode) >= 10000) //是指纹激活的
             {
                 FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == Convert.ToInt32(htsk.ICCardCode));
@@ -238,6 +236,7 @@ namespace Parking.Core
                     cust = new CWICCard().FindCust(iccd.CustID);
                 }
             }
+            #endregion
 
             Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
             int tvID=0;
@@ -332,25 +331,27 @@ namespace Parking.Core
         public void ITempDealCheckCar(ImplementTask htsk,Location lct, int distance,string carsize, int weight)
         {
             Log log = LogFactory.GetLogger("CWTask ITempDealCheckCar");
-            //平面移动的
-            Device smg = new CWDevice().Find(de=>de.Warehouse==lct.Warehouse&&de.Layer==lct.LocLayer);
+
+            Device hall = new CWDevice().SelectSMG(htsk.HallCode, htsk.Warehouse);
+            if (hall == null)
+            {
+                this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "20.wav");
+                log.Error("系统故障，找不到对应的车厅，HallCode-" + htsk.HallCode);
+                return;
+            }
+            Device smg = new AllocateLocation().PXDAllocateEtvOfFixLoc(hall, lct);
             if (smg == null)
             {
                 this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "42.wav");
                 log.Error("系统故障，找不到TV");
                 return;
             }
-            ICCard iccd = new CWICCard().Find(ic=>ic.UserCode==htsk.ICCardCode);
-            if (iccd == null)
-            {
-                log.Error("系统故障，找不到卡号-"+htsk.ICCardCode);
-                return;
-            }
+           
             //补充车位信息
             lct.WheelBase = distance;
             lct.CarSize = carsize;
             lct.InDate = DateTime.Now;
-            lct.ICCode = iccd.UserCode;
+            lct.ICCode = htsk.ICCardCode;
             lct.Status = EnmLocationStatus.Entering;           
             Response resp = new CWLocation().UpdateLocation(lct);           
             if (resp.Code == 1)
@@ -377,7 +378,7 @@ namespace Parking.Core
                 SubTelegramType = 1,
                 FromLctAddress = htsk.FromLctAddress,
                 ToLctAddress = lct.Address,
-                ICCardCode = iccd.UserCode,
+                ICCardCode = htsk.ICCardCode,
                 Distance = distance,
                 CarSize = carsize,
                 CarWeight = weight

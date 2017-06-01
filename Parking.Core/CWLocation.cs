@@ -22,6 +22,15 @@ namespace Parking.Core
         }
 
         /// <summary>
+        /// 获取所有车位
+        /// </summary>
+        /// <returns></returns>
+        public List<Location> FindLocList()
+        {
+            return manager.FindList().ToList();
+        }
+
+        /// <summary>
         /// 存车时获取效车位
         /// </summary>
         /// <param name="warehouse"></param>
