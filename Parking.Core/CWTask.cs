@@ -1302,10 +1302,14 @@ namespace Parking.Core
         /// 将队列中的报文作业队列下发
         /// </summary>
         /// <param name="queue"></param>
+        /// <param name="dev">要执行作业的设备</param>
         /// <returns></returns>
-        public Response CreateDeviceTaskByQueue(WorkTask queue,Device dev)
+        public Response CreateDeviceTaskByQueue(WorkTask queue,Device dev,bool isUnload)
         {
-            Log log = LogFactory.GetLogger("CWTask.CreateHallTaskByQueue");
+            Log log = LogFactory.GetLogger("CWTask.CreateDeviceTaskByQueue");
+            CWLocation cwlctn = new CWLocation();
+            CWDevice cwdevice = new CWDevice();
+
             Response resp = new Response();
             EnmTaskStatus state = EnmTaskStatus.Init;
             #region
@@ -1340,8 +1344,160 @@ namespace Parking.Core
                 log.Error("没有办法生成对应的报文状态，TelegramType-" +queue.TelegramType+ "  SubTelegramType-"+queue.SubTelegramType);
                 return resp;
             }
-
             #endregion
+            
+            if (queue.MasterType == EnmTaskType.Transpose)
+            {
+                //如果当前要执行的作业是挪移作业
+                #region 如果目的车位是2边，则判断后面的车位是否在等待作业，如果是，则不允许下发的
+                if (dev.TaskID == 0)
+                {
+                    Location toLct = cwlctn.FindLocation(lc=>lc.Address==queue.ToLctAddress);
+                    if (toLct != null)
+                    {
+                        if (toLct.LocSide == 2)
+                        {
+                            Location inner = cwlctn.FindLocation(lc => lc.Address == string.Format((toLct.LocSide + 2).ToString() + toLct.Address.Substring(1)));
+                            if (inner != null)
+                            {
+                                if (inner.Status == EnmLocationStatus.Entering || inner.Status == EnmLocationStatus.Outing)
+                                {
+                                    resp.Message = "后面车位要进行出入库，暂不允许挪移！";
+                                    return resp;
+                                }
+                            }
+                        }
+                    }
+                }
+                #endregion
+            }
+            if (dev.Type == EnmSMGType.ETV)
+            {
+                #region 生成挪移作业
+                string toaddrs = "";
+                if (isUnload)
+                {
+                    toaddrs = queue.ToLctAddress;
+                }
+                else
+                {
+                    if (queue.MasterType == EnmTaskType.SaveCar)
+                    {
+                        toaddrs = queue.ToLctAddress;
+                    }
+                    else
+                    {
+                        toaddrs = queue.FromLctAddress;
+                    }
+                }
+                int wh = queue.Warehouse;
+                Location tolctn = cwlctn.FindLocation(lc => lc.Address == toaddrs && lc.Warehouse == wh);
+                if (tolctn != null)
+                {
+                    if (tolctn.LocSide == 4)
+                    {
+                        string side = "";
+                        side = (tolctn.LocSide - 2).ToString();
+                        string forwardaddrs = side + tolctn.Address.Substring(1);
+                        Location forwardLctn = cwlctn.FindLocation(lc => lc.Address == forwardaddrs && lc.Warehouse == wh);
+                        if (forwardLctn == null)
+                        {
+                            log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其前面车位，地址-" + forwardaddrs);
+                            return resp;
+                        }
+
+                        if (forwardLctn.Status == EnmLocationStatus.Occupy)
+                        {
+                            #region
+                            //找出要挪移的车位
+                            Location transLctn = new AllocateTV().AllocateTvNeedTransfer(dev, forwardLctn);
+                            if (transLctn == null)
+                            {
+                                log.Error(string.Format("找不到{0}的挪移车位", forwardLctn));
+                                return resp;
+                            }
+                            #region 更新车位
+                            forwardLctn.Status = EnmLocationStatus.Outing;
+
+                            transLctn.Status = EnmLocationStatus.Entering;
+                            transLctn.ICCode = forwardLctn.ICCode;
+
+                            cwlctn.UpdateLocation(forwardLctn);
+                            cwlctn.UpdateLocation(transLctn);
+                            #endregion
+                            //生成挪移作业，绑定设备，当前作业暂不执行
+                            ImplementTask transtask = new ImplementTask()
+                            {
+                                Warehouse = queue.Warehouse,
+                                DeviceCode = dev.DeviceCode,
+                                Type = EnmTaskType.Transpose,
+                                Status = EnmTaskStatus.TWaitforLoad,
+                                SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                SendDtime = DateTime.Now,
+                                HallCode = 11,
+                                FromLctAddress = forwardLctn.Address,
+                                ToLctAddress = transLctn.Address,
+                                ICCardCode = forwardLctn.ICCode,
+                                Distance = forwardLctn.WheelBase,
+                                CarSize = forwardLctn.CarSize,
+                                CarWeight = forwardLctn.CarWeight,
+                                IsComplete = 0
+                            };
+                            resp = manager.Add(transtask);
+                            if (resp.Code == 1)
+                            {
+                                dev.SoonTaskID = 0;
+                                dev.TaskID = transtask.ID;
+                                resp = new CWDevice().Update(dev);
+                                log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
+
+                                #region 判断是否生成回挪作业
+                                bool isBack = false;
+                                Customer cust = new CWICCard().FindFixLocationByAddress(forwardLctn.Warehouse, forwardLctn.Address);
+                                if (cust != null)
+                                {
+                                    isBack = true;
+                                }
+                                if (isBack || transLctn.Type == EnmLocationType.Temporary)
+                                {
+                                    WorkTask transback_queue = new WorkTask {
+                                        IsMaster = 1,
+                                        Warehouse = forwardLctn.Warehouse,
+                                        DeviceCode = dev.DeviceCode,
+                                        MasterType = EnmTaskType.Transpose,
+                                        TelegramType = 13,
+                                        SubTelegramType = 1,
+                                        HallCode = 11,
+                                        FromLctAddress = transLctn.Address,
+                                        ToLctAddress = forwardLctn.Address,
+                                        ICCardCode = forwardLctn.ICCode,
+                                        Distance = forwardLctn.WheelBase,
+                                        CarSize = forwardLctn.CarSize,
+                                        CarWeight = forwardLctn.CarWeight
+                                    };
+                                    manager_queue.Add(transback_queue);
+                                }
+                                #endregion
+                            }
+                            return resp;
+                            #endregion
+                        }
+                        else if (forwardLctn.Status == EnmLocationStatus.Entering ||
+                            forwardLctn.Status == EnmLocationStatus.Outing)
+                        {
+                            //前面的车位正在出入库，优先让其先完成,当前作业暂不执行
+                            return resp;
+                        }
+                    }
+                }
+                else
+                {
+                    log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其车位");
+                    return resp;
+                }
+                #endregion
+            }
+
             ImplementTask subtask = new ImplementTask()
             {
                 Warehouse = queue.Warehouse,
@@ -1374,15 +1530,343 @@ namespace Parking.Core
             return resp;
         }
 
+
+
         /// <summary>
         /// 判断作业是否可以实行，要不生成别的TV的避让作业
         /// </summary>
         /// <param name="task"></param>
-        /// <param name="dev"></param>
+        /// <param name="dev">ETV</param>
         /// <returns></returns>
-        public bool DealAvoid(WorkTask queue,Device dev)
+        public bool DealAvoid(WorkTask queue,Device smg)
         {
-            return true;
+            Log log = LogFactory.GetLogger("CWTask.DealAvoid");
+            try
+            {
+                #region
+                CWTask cwtask = new CWTask();
+
+                if (queue.IsMaster == 2)
+                {
+                    return false;
+                }
+                int nWarehouse = smg.Warehouse;
+                List<Device> Etvs = new CWDevice().FindList(d => d.Type == EnmSMGType.ETV);
+                int curEtvCol = BasicClss.GetColumnByAddrs(smg.Address);
+                string toAddrs = "";
+                if (queue.TelegramType == 13 && queue.SubTelegramType == 1)
+                {
+                    toAddrs = queue.FromLctAddress;
+                }
+                else
+                {
+                    toAddrs = queue.ToLctAddress;
+                }
+                int curToCol = BasicClss.GetColumnByAddrs(toAddrs);
+
+                int curMax;
+                int curMin;
+                #region
+                if (curEtvCol > curToCol)
+                {
+                    curMax = curEtvCol;
+                    curMin = curToCol - 3;
+                    if (curMin < 1)
+                    {
+                        curMin = 1;
+                    }
+                }
+                else
+                {
+                    curMax = curToCol + 3;
+                    if (curMax > 18)
+                    {
+                        curMax = 18;
+                    }
+                    curMin = curEtvCol;
+                }
+                #endregion
+                //对面ETV
+                Device otherEtv = null;
+                #region
+                foreach (Device et in Etvs)
+                {
+                    if (et.DeviceCode != smg.DeviceCode)
+                    {
+                        otherEtv = et;
+                        break;
+                    }
+                }
+                #endregion
+                if (otherEtv == null)
+                {
+                    return false;
+                }
+                int otherCol = BasicClss.GetColumnByAddrs(otherEtv.Address);
+                #region ETV1与ETV2的位置信号不对，即 列数与实际不合的，先不让其去执行
+                bool isTrue = true;
+                if (smg.DeviceCode > otherEtv.DeviceCode)
+                {
+                    if (curEtvCol < otherCol)
+                    {
+                        isTrue = false;
+                    }
+                }
+                else
+                {
+                    if (curEtvCol > otherCol)
+                    {
+                        isTrue = false;
+                    }
+                }
+                if (!isTrue)
+                {
+                    string msg = String.Format("异常： ETV{0} 当前列{1},ETV{2} 当前列{3}", smg.DeviceCode, curEtvCol, otherEtv.DeviceCode, otherCol);
+                    log.Error(msg);
+                    return false;
+                }
+                #endregion
+                if (otherEtv.TaskID == 0)
+                {
+                    #region 另一台ETV空闲的
+                    if (curMin < otherCol && otherCol < curMax)
+                    {
+                        if (otherEtv.IsAble == 0)
+                        {
+                            return false;
+                        }
+                        #region 生成避让作业
+                        string oList = "";
+                        if (curEtvCol > curToCol)     //需向左避让
+                        {
+                            oList = curMin.ToString().PadLeft(2, '0');
+                        }
+                        else
+                        {
+                            oList = curMax.ToString().PadLeft(2, '0');
+                        }
+                        string toAddress = string.Concat("2", oList, otherEtv.Address.Substring(3));
+
+                        if (otherEtv.IsAvailabe == 1)
+                        {
+                            #region 直接下发
+                            ImplementTask subtask = new ImplementTask()
+                            {
+                                Warehouse = otherEtv.Warehouse,
+                                DeviceCode = otherEtv.DeviceCode,
+                                Type = EnmTaskType.Avoid,
+                                Status = EnmTaskStatus.TWaitforMove,
+                                SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                SendDtime = DateTime.Now,
+                                HallCode = queue.HallCode,
+                                FromLctAddress = otherEtv.Address,
+                                ToLctAddress = toAddress,
+                                ICCardCode = queue.ICCardCode,
+                                Distance = 0,
+                                CarSize = "",
+                                CarWeight = 0,
+                                IsComplete = 0
+                            };
+                            Response resp = manager.Add(subtask);
+                            if (resp.Code == 1)
+                            {
+                                otherEtv.SoonTaskID = 0;
+                                otherEtv.TaskID = subtask.ID;
+                                resp = new CWDevice().Update(otherEtv);
+                                log.Info("生成避让作业，并绑定于设备 , 避让卡号- " + queue.ICCardCode + " , 目的车位-" + toAddress);
+
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                            #endregion
+                        }
+                        else
+                        {
+                            #region 加入队列
+                            WorkTask queue_avoid = new WorkTask()
+                            {
+                                IsMaster = 1,
+                                Warehouse = otherEtv.Warehouse,
+                                DeviceCode = otherEtv.DeviceCode,
+                                MasterType = EnmTaskType.Avoid,
+                                TelegramType = 11,
+                                SubTelegramType = 1,
+                                HallCode = 11,
+                                FromLctAddress = otherEtv.Address,
+                                ToLctAddress = toAddress,
+                                ICCardCode = queue.ICCardCode,
+                                Distance = 0,
+                                CarSize = "",
+                                CarWeight = 0
+                            };
+                            Response resp = manager_queue.Add(queue_avoid);
+                            if (resp.Code == 1)
+                            {
+                                log.Info("添加避让入队列，避让卡号-" + queue_avoid.ICCardCode + "，目的车位-" + toAddress);
+                            }
+                            #endregion
+                            return true;
+                        }
+                        #endregion
+                    }
+                    return true;
+                    #endregion
+                }
+                else  //另一台ETV在忙
+                {
+                    ImplementTask othertak = cwtask.Find(otherEtv.TaskID);
+
+                    #region 要下发的作业的TV 处于卸载等待时
+                    if (smg.TaskID != 0)
+                    {
+                        //两TV处于等待卸载中
+                        ImplementTask itask = cwtask.Find(smg.TaskID);
+
+                        if (itask.Status == EnmTaskStatus.WillWaitForUnload ||
+                            othertak.Status == EnmTaskStatus.WillWaitForUnload)
+                        {
+                            #region 如果是前后排的关系，则在卸载时优先后面的先动作                      
+                            string curAddrs = itask.ToLctAddress.Substring(1);
+                            string otherAddrs = othertak.ToLctAddress.Substring(1);
+                            //终点的坐标一致
+                            if (curAddrs == otherAddrs)
+                            {
+                                //如果是前后排关系
+                                int curSide = Convert.ToInt32(itask.ToLctAddress.Substring(0, 1));
+                                int otherSide = Convert.ToInt32(othertak.ToLctAddress.Substring(0, 1));
+                                //同列卸载，优先前面的作业
+                                if (curSide == 3 && otherSide == 1)
+                                {
+                                    return false;
+                                }
+                                if (curSide == 4 && otherSide == 2)
+                                {
+                                    return false;
+                                }
+                            }
+                            #endregion
+                        }
+
+                        if (othertak.Status == EnmTaskStatus.WillWaitForUnload)
+                        {
+                            if (curMin < otherCol && otherCol < curMax)
+                            {
+                                if (otherEtv.IsAvailabe == 0)
+                                {
+                                    return false;
+                                }
+                                #region 生成避让作业    
+                                string oList = "";
+                                if (curEtvCol > curToCol)     //需向左避让
+                                {
+                                    oList = curMin.ToString().PadLeft(2, '0');
+                                }
+                                else
+                                {
+                                    oList = curMax.ToString().PadLeft(2, '0');
+                                }
+                                string toAddress = string.Concat("2", oList, otherEtv.Address.Substring(3));
+
+                                ImplementTask subtask = new ImplementTask()
+                                {
+                                    Warehouse = otherEtv.Warehouse,
+                                    DeviceCode = otherEtv.DeviceCode,
+                                    Type = EnmTaskType.Avoid,
+                                    Status = EnmTaskStatus.TWaitforMove,
+                                    SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                    SendDtime = DateTime.Now,
+                                    HallCode = queue.HallCode,
+                                    FromLctAddress = otherEtv.Address,
+                                    ToLctAddress = toAddress,
+                                    ICCardCode = queue.ICCardCode,
+                                    Distance = 0,
+                                    CarSize = "",
+                                    CarWeight = 0,
+                                    IsComplete = 0
+                                };
+                                Response resp = manager.Add(subtask);
+                                if (resp.Code == 1)
+                                {
+                                    otherEtv.SoonTaskID = othertak.ID;
+                                    otherEtv.TaskID = subtask.ID;
+                                    resp = new CWDevice().Update(otherEtv);
+                                    log.Info("生成避让作业，并绑定于设备 , 避让卡号- " + queue.ICCardCode + " , 目的车位-" + toAddress);
+
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                                #endregion
+                            }
+                            return true;
+                        }
+                    }
+                    #endregion
+
+                    string oToAddrs = "";
+                    if (othertak.Status == EnmTaskStatus.WillWaitForUnload ||
+                        othertak.Status == EnmTaskStatus.TWaitforUnload)
+                    {
+                        oToAddrs = othertak.ToLctAddress;
+                    }
+                    else
+                    {
+                        oToAddrs = othertak.FromLctAddress;
+                    }
+                    int toColumn = BasicClss.GetColumnByAddrs(oToAddrs);
+
+                    #region 如果当前TV还没有进行动作，则这里就限制其下发
+                    if (otherCol > curMin && otherCol < curMax)
+                    {
+                        return false;
+                    }
+                    if (toColumn > curMin && toColumn < curMax)
+                    {
+                        return false;
+                    }
+                    if (otherCol > curMax)
+                    {
+                        if (toColumn < curMax)
+                        {
+                            return false;
+                        }
+                    }
+                    if (toColumn > curMax)
+                    {
+                        if (toColumn < curMax)
+                        {
+                            return false;
+                        }
+                    }
+                    if (otherCol < curMin)
+                    {
+                        if (toColumn > curMin)
+                        {
+                            return false;
+                        }
+                    }
+                    if (toColumn < curMin)
+                    {
+                        if (otherCol > curMin)
+                        {
+                            return false;
+                        }
+                    }
+                    #endregion
+                }
+                #endregion
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+                return false;
+            }            
         }
 
         /// <summary>
@@ -1391,23 +1875,24 @@ namespace Parking.Core
         /// <param name="queue"></param>
         /// <param name="lct"></param>
         /// <returns></returns>
-        public Response SendHallTelegramAndBuildTV(WorkTask master,Location lct,Device hall)
+        public Response SendHallTelegramAndBuildTV(WorkTask master, Location lct, Device hall)
         {
             Log log = LogFactory.GetLogger("CWTask.SendHallTelegramAndBuildTV");
             #region
             Response resp = new Response();
             CWDevice cwdevice = new CWDevice();
+            CWLocation cwlctn = new CWLocation();
 
-            Device tv = new AllocateTV().Allocate(hall,lct);
+            Device tv = new AllocateTV().Allocate(hall, lct);
             if (tv == null)
             {
-                log.Error("队列-卡号：" + master.ICCardCode + " 车厅：" 
+                log.Error("队列-卡号：" + master.ICCardCode + " 车厅："
                     + master.DeviceCode + " 车位：" + lct.Address + " 在执行时找不到TV！");
                 return resp;
             }
             if (tv.Mode != EnmModel.Automatic)
             {
-                log.Error("队列-卡号：" + master.ICCardCode + " 车厅：" 
+                log.Error("队列-卡号：" + master.ICCardCode + " 车厅："
                     + master.DeviceCode + " 车位：" + lct.Address + " 在执行时TV不是全自动模式！");
                 return resp;
             }
@@ -1456,6 +1941,169 @@ namespace Parking.Core
             {
                 if (tv.TaskID == 0)
                 {
+                    //要判断是否生成倒库作业
+                    #region 生成挪移作业
+                    string toaddrs = master.ToLctAddress;                   
+                    int wh = master.Warehouse;
+                    Location tolctn = cwlctn.FindLocation(lc => lc.Address == toaddrs && lc.Warehouse == wh);
+                    if (tolctn != null)
+                    {
+                        if (tolctn.LocSide == 4)
+                        {
+                            string side = "";
+                            side = (tolctn.LocSide - 2).ToString();
+                            string forwardaddrs = side + tolctn.Address.Substring(1);
+                            Location forwardLctn = cwlctn.FindLocation(lc => lc.Address == forwardaddrs && lc.Warehouse == wh);
+                            if (forwardLctn == null)
+                            {
+                                log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其前面车位，地址-" + forwardaddrs);
+                                return resp;
+                            }
+
+                            if (forwardLctn.Status == EnmLocationStatus.Occupy)
+                            {
+                                #region
+                                //找出要挪移的车位
+                                Location transLctn = new AllocateTV().AllocateTvNeedTransfer(tv, forwardLctn);
+                                if (transLctn == null)
+                                {
+                                    log.Error(string.Format("找不到{0}的挪移车位", forwardLctn));
+                                    return resp;
+                                }
+                                #region 更新车位
+                                forwardLctn.Status = EnmLocationStatus.Outing;
+
+                                transLctn.Status = EnmLocationStatus.Entering;
+                                transLctn.ICCode = forwardLctn.ICCode;
+
+                                cwlctn.UpdateLocation(forwardLctn);
+                                cwlctn.UpdateLocation(transLctn);
+                                #endregion
+                                //生成挪移作业，绑定设备，生成当前TV装载作业，加入队列
+                                ImplementTask transtask = new ImplementTask()
+                                {
+                                    Warehouse = master.Warehouse,
+                                    DeviceCode = master.DeviceCode,
+                                    Type = EnmTaskType.Transpose,
+                                    Status = EnmTaskStatus.TWaitforLoad,
+                                    SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                    SendDtime = DateTime.Now,
+                                    HallCode = 11,
+                                    FromLctAddress = forwardLctn.Address,
+                                    ToLctAddress = transLctn.Address,
+                                    ICCardCode = forwardLctn.ICCode,
+                                    Distance = forwardLctn.WheelBase,
+                                    CarSize = forwardLctn.CarSize,
+                                    CarWeight = forwardLctn.CarWeight,
+                                    IsComplete = 0
+                                };
+                                resp = manager.Add(transtask);
+                                if (resp.Code == 1)
+                                {
+                                    tv.SoonTaskID = 0;
+                                    tv.TaskID = transtask.ID;
+                                    resp = new CWDevice().Update(tv);
+                                    log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
+
+                                    #region 生成原来TV装载作业，同时删除该队列
+
+                                    WorkTask waitqueue = new WorkTask()
+                                    {
+                                        IsMaster = 1,
+                                        Warehouse = tv.Warehouse,
+                                        DeviceCode = tv.DeviceCode,
+                                        MasterType = master.MasterType,
+                                        TelegramType = 13,
+                                        SubTelegramType = 1,
+                                        HallCode = hall.DeviceCode,
+                                        FromLctAddress = master.FromLctAddress,
+                                        ToLctAddress = master.ToLctAddress,
+                                        ICCardCode = master.ICCardCode,
+                                        Distance = master.Distance,
+                                        CarSize = master.CarSize,
+                                        CarWeight = master.CarWeight
+                                    };
+                                    manager_queue.Add(waitqueue);
+
+                                    //删除队列
+                                    resp = manager_queue.Delete(master.ID);
+
+                                    #endregion
+
+                                    #region 判断是否生成回挪作业
+                                    bool isBack = false;
+                                    Customer cust = new CWICCard().FindFixLocationByAddress(forwardLctn.Warehouse, forwardLctn.Address);
+                                    if (cust != null)
+                                    {
+                                        isBack = true;
+                                    }
+                                    if (isBack || transLctn.Type == EnmLocationType.Temporary)
+                                    {
+                                        WorkTask transback_queue = new WorkTask
+                                        {
+                                            IsMaster = 1,
+                                            Warehouse = forwardLctn.Warehouse,
+                                            DeviceCode = tv.DeviceCode,
+                                            MasterType = EnmTaskType.Transpose,
+                                            TelegramType = 13,
+                                            SubTelegramType = 1,
+                                            HallCode = 11,
+                                            FromLctAddress = transLctn.Address,
+                                            ToLctAddress = forwardLctn.Address,
+                                            ICCardCode = forwardLctn.ICCode,
+                                            Distance = forwardLctn.WheelBase,
+                                            CarSize = forwardLctn.CarSize,
+                                            CarWeight = forwardLctn.CarWeight
+                                        };
+                                        manager_queue.Add(transback_queue);
+                                    }
+                                    #endregion
+                                }
+                                else
+                                {
+                                    log.Info("提前装载时，生成执行作业，加入队列时异常，Message-" + resp.Message);
+                                }
+                                return resp;
+                                #endregion
+                            }
+                            else if (forwardLctn.Status == EnmLocationStatus.Entering ||
+                                forwardLctn.Status == EnmLocationStatus.Outing)
+                            {
+                                //前面的车位正在出入库，优先让其先完成,当前作业暂不执行
+                                #region 生成原来TV装载作业，加入队列，同时删除该队列
+
+                                WorkTask waitqueue = new WorkTask()
+                                {
+                                    IsMaster = 1,
+                                    Warehouse = tv.Warehouse,
+                                    DeviceCode = tv.DeviceCode,
+                                    MasterType = master.MasterType,
+                                    TelegramType = 13,
+                                    SubTelegramType = 1,
+                                    HallCode = hall.DeviceCode,
+                                    FromLctAddress = master.FromLctAddress,
+                                    ToLctAddress = master.ToLctAddress,
+                                    ICCardCode = master.ICCardCode,
+                                    Distance = master.Distance,
+                                    CarSize = master.CarSize,
+                                    CarWeight = master.CarWeight
+                                };
+                                manager_queue.Add(waitqueue);
+
+                                //删除队列
+                                resp = manager_queue.Delete(master.ID);
+                                #endregion
+
+                                return resp;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其车位");                       
+                    }
+                    #endregion
+
                     ImplementTask TvTask = new ImplementTask()
                     {
                         Warehouse = tv.Warehouse,
@@ -1495,25 +2143,25 @@ namespace Parking.Core
             {
                 WorkTask waitqueue = new WorkTask()
                 {
-                    IsMaster=1,
-                    Warehouse=tv.Warehouse,
-                    DeviceCode=tv.DeviceCode,
-                    MasterType=master.MasterType,
-                    TelegramType=13,
-                    SubTelegramType=1,
-                    HallCode=hall.DeviceCode,
-                    FromLctAddress=master.FromLctAddress,
-                    ToLctAddress=master.ToLctAddress,
-                    ICCardCode=master.ICCardCode,
-                    Distance=master.Distance,
-                    CarSize=master.CarSize,
-                    CarWeight=master.CarWeight
+                    IsMaster = 1,
+                    Warehouse = tv.Warehouse,
+                    DeviceCode = tv.DeviceCode,
+                    MasterType = master.MasterType,
+                    TelegramType = 13,
+                    SubTelegramType = 1,
+                    HallCode = hall.DeviceCode,
+                    FromLctAddress = master.FromLctAddress,
+                    ToLctAddress = master.ToLctAddress,
+                    ICCardCode = master.ICCardCode,
+                    Distance = master.Distance,
+                    CarSize = master.CarSize,
+                    CarWeight = master.CarWeight
                 };
                 manager_queue.Add(waitqueue);
             }
 
             //删除队列
-            resp= manager_queue.Delete(master.ID);
+            resp = manager_queue.Delete(master.ID);
 
             #endregion
             return resp;
@@ -1530,6 +2178,7 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("CWTask.AheadTvTelegramAndBuildHall");
             Response resp = new Response();
             CWDevice cwdevice = new CWDevice();
+            CWLocation cwlctn = new CWLocation();
             try
             {
                 Device tv = new AllocateTV().Allocate(hall, lct);
@@ -1549,31 +2198,168 @@ namespace Parking.Core
                 {
                     if (tv.TaskID == 0)
                     {
-                        ImplementTask TvTask = new ImplementTask()
+                        bool isCreateITask = true;
+                        //要判断是否生成倒库作业
+                        #region 生成挪移作业
+                        string toaddrs = master.ToLctAddress;
+                        int wh = master.Warehouse;
+                        Location tolctn = cwlctn.FindLocation(lc => lc.Address == toaddrs && lc.Warehouse == wh);
+                        if (tolctn != null)
                         {
-                            Warehouse = tv.Warehouse,
-                            DeviceCode = tv.DeviceCode,
-                            Type = master.MasterType,
-                            Status = EnmTaskStatus.TWaitforLoad,
-                            SendStatusDetail = EnmTaskStatusDetail.NoSend,
-                            SendDtime = DateTime.Now,
-                            HallCode = master.HallCode,
-                            FromLctAddress = master.FromLctAddress,
-                            ToLctAddress = master.ToLctAddress,
-                            ICCardCode = master.ICCardCode,
-                            Distance = master.Distance,
-                            CarSize = master.CarSize,
-                            CarWeight = master.CarWeight,
-                            IsComplete = 0
-                        };
-                        resp = manager.Add(TvTask);
-                        if (resp.Code == 1)
-                        {
-                            tv.TaskID = TvTask.ID;
-                            tv.SoonTaskID = 0;
-                            cwdevice.Update(tv);
-                        }
+                            if (tolctn.LocSide == 4)
+                            {
+                                string side = "";
+                                side = (tolctn.LocSide - 2).ToString();
+                                string forwardaddrs = side + tolctn.Address.Substring(1);
+                                Location forwardLctn = cwlctn.FindLocation(lc => lc.Address == forwardaddrs && lc.Warehouse == wh);
+                                if (forwardLctn == null)
+                                {
+                                    log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其前面车位，地址-" + forwardaddrs);
+                                    return resp;
+                                }
 
+                                if (forwardLctn.Status == EnmLocationStatus.Occupy)
+                                {
+                                    #region
+                                    //找出要挪移的车位
+                                    Location transLctn = new AllocateTV().AllocateTvNeedTransfer(tv, forwardLctn);
+                                    if (transLctn == null)
+                                    {
+                                        log.Error(string.Format("找不到{0}的挪移车位", forwardLctn));
+                                        return resp;
+                                    }
+                                    #region 更新车位
+                                    forwardLctn.Status = EnmLocationStatus.Outing;
+
+                                    transLctn.Status = EnmLocationStatus.Entering;
+                                    transLctn.ICCode = forwardLctn.ICCode;
+
+                                    cwlctn.UpdateLocation(forwardLctn);
+                                    cwlctn.UpdateLocation(transLctn);
+                                    #endregion
+                                    //生成挪移作业，绑定设备，生成当前TV装载作业，加入队列
+                                    ImplementTask transtask = new ImplementTask()
+                                    {
+                                        Warehouse = master.Warehouse,
+                                        DeviceCode = master.DeviceCode,
+                                        Type = EnmTaskType.Transpose,
+                                        Status = EnmTaskStatus.TWaitforLoad,
+                                        SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                        SendDtime = DateTime.Now,
+                                        HallCode = 11,
+                                        FromLctAddress = forwardLctn.Address,
+                                        ToLctAddress = transLctn.Address,
+                                        ICCardCode = forwardLctn.ICCode,
+                                        Distance = forwardLctn.WheelBase,
+                                        CarSize = forwardLctn.CarSize,
+                                        CarWeight = forwardLctn.CarWeight,
+                                        IsComplete = 0
+                                    };
+                                    resp = manager.Add(transtask);
+                                    if (resp.Code == 1)
+                                    {
+                                        tv.SoonTaskID = 0;
+                                        tv.TaskID = transtask.ID;
+                                        resp = new CWDevice().Update(tv);
+                                        log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
+
+                                        isCreateITask = false;
+                                        #region 生成原来TV装载作业，同时删除该队列
+                                        WorkTask waitqueue = new WorkTask()
+                                        {
+                                            IsMaster = 1,
+                                            Warehouse = tv.Warehouse,
+                                            DeviceCode = tv.DeviceCode,
+                                            MasterType = master.MasterType,
+                                            TelegramType = 13,
+                                            SubTelegramType = 1,
+                                            HallCode = hall.DeviceCode,
+                                            FromLctAddress = master.FromLctAddress,
+                                            ToLctAddress = master.ToLctAddress,
+                                            ICCardCode = master.ICCardCode,
+                                            Distance = master.Distance,
+                                            CarSize = master.CarSize,
+                                            CarWeight = master.CarWeight
+                                        };
+                                        manager_queue.Add(waitqueue);
+                                        #endregion
+
+                                        #region 判断是否生成回挪作业
+                                        bool isBack = false;
+                                        Customer cust = new CWICCard().FindFixLocationByAddress(forwardLctn.Warehouse, forwardLctn.Address);
+                                        if (cust != null)
+                                        {
+                                            isBack = true;
+                                        }
+                                        if (isBack || transLctn.Type == EnmLocationType.Temporary)
+                                        {
+                                            WorkTask transback_queue = new WorkTask
+                                            {
+                                                IsMaster = 1,
+                                                Warehouse = forwardLctn.Warehouse,
+                                                DeviceCode = tv.DeviceCode,
+                                                MasterType = EnmTaskType.Transpose,
+                                                TelegramType = 13,
+                                                SubTelegramType = 1,
+                                                HallCode = 11,
+                                                FromLctAddress = transLctn.Address,
+                                                ToLctAddress = forwardLctn.Address,
+                                                ICCardCode = forwardLctn.ICCode,
+                                                Distance = forwardLctn.WheelBase,
+                                                CarSize = forwardLctn.CarSize,
+                                                CarWeight = forwardLctn.CarWeight
+                                            };
+                                            manager_queue.Add(transback_queue);
+                                        }
+                                        #endregion
+                                    }
+                                    else
+                                    {
+                                        log.Info("提前装载时，生成执行作业，加入队列时异常，Message-" + resp.Message);
+                                    }                                   
+                                    #endregion
+                                }
+                                else if (forwardLctn.Status == EnmLocationStatus.Entering ||
+                                    forwardLctn.Status == EnmLocationStatus.Outing)
+                                {                                  
+                                    return resp;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            log.Error("系统错误，目标车位-" + toaddrs + ",库区- " + wh + ", 找不到其车位");
+                            return resp;
+                        }
+                        #endregion
+
+                        if (isCreateITask)
+                        {
+                            ImplementTask TvTask = new ImplementTask()
+                            {
+                                Warehouse = tv.Warehouse,
+                                DeviceCode = tv.DeviceCode,
+                                Type = master.MasterType,
+                                Status = EnmTaskStatus.TWaitforLoad,
+                                SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                SendDtime = DateTime.Now,
+                                HallCode = master.HallCode,
+                                FromLctAddress = master.FromLctAddress,
+                                ToLctAddress = master.ToLctAddress,
+                                ICCardCode = master.ICCardCode,
+                                Distance = master.Distance,
+                                CarSize = master.CarSize,
+                                CarWeight = master.CarWeight,
+                                IsComplete = 0
+                            };
+                            resp = manager.Add(TvTask);
+                            if (resp.Code == 1)
+                            {
+                                tv.TaskID = TvTask.ID;
+                                tv.SoonTaskID = 0;
+                                cwdevice.Update(tv);
+                            }
+                        }
                         //生成车厅作业，加入队列中
                         int ttype = 0;
                         int subtype = 0;
@@ -1621,6 +2407,90 @@ namespace Parking.Core
                 log.Error(ex.ToString());
                 throw ex;
             }
+        }
+
+        /// <summary>
+        /// 没有作业时，查询缓冲车位，如果是占用的，
+        /// 则强制生成回挪作业，释放缓存车位
+        /// </summary>
+        /// <param name="warehouse"></param>
+        public void DealTempLocOccupy(int warehouse)
+        {
+            List<Location> tempOccupyLst = new CWLocation().FindLocationList(loc =>
+                                            loc.Type == EnmLocationType.Temporary &&
+                                            loc.Status == EnmLocationStatus.Occupy);
+            if (tempOccupyLst.Count == 0)
+            {
+                return;
+            }
+            #region
+            Location frLctn = tempOccupyLst[0];
+            Location toLctn;
+            Device etv = new AllocateTV().AllocateTvOfTransport(frLctn, out toLctn);
+            if (etv == null)
+            {
+                return;
+            }
+            if (toLctn == null)
+            {
+                return;
+            }
+            if (etv.TaskID==0&&etv.IsAvailabe == 1)
+            {
+                //下发
+                ImplementTask TvTask = new ImplementTask()
+                {
+                    Warehouse = etv.Warehouse,
+                    DeviceCode = etv.DeviceCode,
+                    Type = EnmTaskType.Transpose,
+                    Status = EnmTaskStatus.TWaitforLoad,
+                    SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                    SendDtime = DateTime.Now,
+                    HallCode = 11,
+                    FromLctAddress = frLctn.Address,
+                    ToLctAddress = toLctn.Address,
+                    ICCardCode = frLctn.ICCode,
+                    Distance = frLctn.WheelBase,
+                    CarSize = frLctn.CarSize,
+                    CarWeight = frLctn.CarWeight,
+                    IsComplete = 0
+                };
+                Response resp = manager.Add(TvTask);
+                if (resp.Code == 1)
+                {
+                    etv.TaskID = TvTask.ID;
+                    etv.SoonTaskID = 0;
+                    new CWDevice().Update(etv);
+                }
+            }
+            else
+            {
+                //加入队列
+                WorkTask tvQueue = new WorkTask()
+                {
+                    IsMaster = 1,
+                    Warehouse = etv.Warehouse,
+                    DeviceCode = etv.DeviceCode,
+                    MasterType = EnmTaskType.Transpose,
+                    TelegramType = 13,
+                    SubTelegramType = 1,
+                    HallCode = 11,
+                    FromLctAddress = frLctn.Address,
+                    ToLctAddress = toLctn.Address,
+                    ICCardCode =frLctn.ICCode,
+                    Distance = frLctn.WheelBase,
+                    CarSize = frLctn.CarSize,
+                    CarWeight = frLctn.CarWeight
+                };
+                manager_queue.Add(tvQueue);
+            }
+            //修改车位状态
+            frLctn.Status = EnmLocationStatus.Outing;
+            toLctn.Status = EnmLocationStatus.Entering;
+            CWLocation cwlctn = new CWLocation();
+            cwlctn.UpdateLocation(frLctn);
+            cwlctn.UpdateLocation(toLctn);
+            #endregion
         }
 
 

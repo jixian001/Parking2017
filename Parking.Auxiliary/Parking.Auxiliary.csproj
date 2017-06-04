@@ -70,6 +70,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BasicClss.cs" />
     <Compile Include="Config\Configs.cs" />
     <Compile Include="DataTableExtensions.cs" />
     <Compile Include="FingerPrint\FiPrintMatch.cs" />

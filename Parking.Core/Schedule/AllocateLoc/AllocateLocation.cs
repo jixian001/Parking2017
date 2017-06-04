@@ -58,6 +58,22 @@ namespace Parking.Core
                         return null;
                     }
                 }
+                //如果是重列车位，判断前面车位是否是正常的
+                if (lct.NeedBackup == 1)
+                {
+                    string fwdaddrs = (lct.LocSide - 2).ToString() + lct.Address.Substring(1);
+                    Location forward = new CWLocation().FindLocation(l=>l.Address==fwdaddrs);
+                    if (forward != null)
+                    {
+                        if (forward.Type != EnmLocationType.Normal)
+                        {
+                            //前面车位已被禁用
+                            cwtask.AddNofication(warehouse, hallCode, "15.wav");
+                            return null;
+                        }
+                    }
+                }
+
                 //分配ETV
                 Device dev = PXDAllocateEtvOfFixLoc(hall, lct);
                 if (dev != null)
@@ -79,6 +95,7 @@ namespace Parking.Core
             CWLocation cwlctn = new CWLocation();
             CWDevice cwdevice = new CWDevice();
             CWTask cwtask = new CWTask();
+            CWICCard cwiccd = new CWICCard();
 
             List<Device> nEtvList = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
             WorkScope workscope = new WorkScope(nEtvList);
@@ -101,7 +118,12 @@ namespace Parking.Core
             List<Location> lctnLst = new List<Location>();
             #region 依距车厅的远近找出所有车位的集合          
             List<Location> allLocLst = cwlctn.FindLocList();
+            //排除固定车位
+            allLocLst = allLocLst.FindAll(lc => cwiccd.FindFixLocationByAddress(hall.Warehouse, lc.Address) == null);
             #region 车位尺寸一致
+            List<Location> sameLctnLst = new List<Location>();
+
+            #region
             #region 首先 分配与车厅同一个区域的，车位尺寸一致的， 4-2-1依次排列，
             var L42_locList_small = from loc in allLocLst
                                     where loc.Type == EnmLocationType.Normal &&
@@ -122,8 +144,8 @@ namespace Parking.Core
                                    orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                                    select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_small);
-            lctnLst.AddRange(L1_locList_small);
+            sameLctnLst.AddRange(L42_locList_small);
+            sameLctnLst.AddRange(L1_locList_small);
 
             #region 再次分配与车厅同一个区域，车位尺寸（仅宽度）偏大点的
             var L42_locList_width = from loc in allLocLst
@@ -145,8 +167,8 @@ namespace Parking.Core
                              orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                              select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_width);
-            lctnLst.AddRange(L1_locList_width);
+            sameLctnLst.AddRange(L42_locList_width);
+            sameLctnLst.AddRange(L1_locList_width);
 
             #region 再分配与车厅不是同一个区域的
             //4边2边
@@ -169,8 +191,8 @@ namespace Parking.Core
                                    orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                                    select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_small_dif);
-            lctnLst.AddRange(L1_locList_small_dif);
+            sameLctnLst.AddRange(L42_locList_small_dif);
+            sameLctnLst.AddRange(L1_locList_small_dif);
 
             #region 再次分配与车厅不同区域，车位尺寸（仅宽度）偏大点的
             var L42_locList_width_dif = from loc in allLocLst
@@ -192,11 +214,87 @@ namespace Parking.Core
                                    orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                                    select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_width_dif);
-            lctnLst.AddRange(L1_locList_width_dif);
+            sameLctnLst.AddRange(L42_locList_width_dif);
+            sameLctnLst.AddRange(L1_locList_width_dif);
             #endregion
 
-            #region 车位尺寸偏大的
+            #region 如果是重列车位，优先分配前面车位是空闲的，其次是占用的，最后才是执行中的
+            List<Location> spaceLctnLst = new List<Location>();
+            List<Location> occupyLctnLst = new List<Location>();
+            List<Location> otherLctnLst = new List<Location>();
+            foreach(Location loc in sameLctnLst)
+            {
+                if (loc.LocSide == 4)
+                {
+                    #region 判断前面车位状态
+                    string fwdAddrs = "2" + loc.Address.Substring(1);
+                    Location forward = cwlctn.FindLocation(l => l.Address == fwdAddrs);
+                    if (forward != null)
+                    {
+                        if (forward.Type == EnmLocationType.Normal)
+                        {
+                            if (forward.Status == EnmLocationStatus.Space)
+                            {
+                                spaceLctnLst.Add(loc);
+                            }
+                            else if (forward.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupyLctnLst.Add(loc);
+                            }
+                            else
+                            {
+                                otherLctnLst.Add(loc);
+                            }
+                        }
+                    }
+                    #endregion
+                }
+                else if (loc.LocSide == 2)
+                {
+                    #region 判断后面车位状态
+                    string bckAddrs = "4" + loc.Address.Substring(1);
+                    Location back = cwlctn.FindLocation(l => l.Address == bckAddrs);
+                    if (back != null)
+                    {
+                        if (back.Type == EnmLocationType.Normal)
+                        {
+                            if (back.Status == EnmLocationStatus.Space)
+                            {
+                                spaceLctnLst.Add(loc);
+                            }
+                            else if (back.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupyLctnLst.Add(loc);
+                            }
+                            else
+                            {
+                                otherLctnLst.Add(loc);
+                            }
+                        }
+                        else //禁用的
+                        {
+                            spaceLctnLst.Add(loc);
+                        }
+                    }
+
+                    #endregion
+                }
+                else
+                {
+                    spaceLctnLst.Add(loc);
+                }
+            }
+            lctnLst.AddRange(spaceLctnLst);
+            lctnLst.AddRange(occupyLctnLst);
+            lctnLst.AddRange(otherLctnLst);
+            #endregion
+
+            #endregion
+
+            #region 车位尺寸是大的
+            List<Location> bigLctnLst = new List<Location>();
+
+            #region
             #region 首先 分配与车厅同一个区域的，车位尺寸一致的， 4-2-1依次排列，
             var L42_locList_big = from loc in allLocLst
                                     where loc.Type == EnmLocationType.Normal &&
@@ -217,8 +315,8 @@ namespace Parking.Core
                                    orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                                    select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_big);
-            lctnLst.AddRange(L1_locList_big);
+            bigLctnLst.AddRange(L42_locList_big);
+            bigLctnLst.AddRange(L1_locList_big);
 
             #region 再分配与车厅不是同一个区域的
             var L42_locList_big_dif = from loc in allLocLst
@@ -240,8 +338,81 @@ namespace Parking.Core
                                  orderby Math.Abs(loc.LocColumn - hallColmn) ascending
                                  select loc;
             #endregion
-            lctnLst.AddRange(L42_locList_big_dif);
-            lctnLst.AddRange(L1_locList_big_dif);
+            bigLctnLst.AddRange(L42_locList_big_dif);
+            bigLctnLst.AddRange(L1_locList_big_dif);
+
+            #endregion
+
+            #region 如果是重列车位，优先分配前面车位是空闲的，其次是占用的，最后才是执行中的
+            List<Location> spaceLctnLst_big = new List<Location>();
+            List<Location> occupyLctnLst_big = new List<Location>();
+            List<Location> otherLctnLst_big = new List<Location>();
+            foreach (Location loc in bigLctnLst)
+            {
+                if (loc.LocSide == 4)
+                {
+                    #region 判断前面车位状态
+                    string fwdAddrs = "2" + loc.Address.Substring(1);
+                    Location forward = cwlctn.FindLocation(l => l.Address == fwdAddrs);
+                    if (forward != null)
+                    {
+                        if (forward.Type == EnmLocationType.Normal)
+                        {
+                            if (forward.Status == EnmLocationStatus.Space)
+                            {
+                                spaceLctnLst_big.Add(loc);
+                            }
+                            else if (forward.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupyLctnLst_big.Add(loc);
+                            }
+                            else
+                            {
+                                otherLctnLst_big.Add(loc);
+                            }
+                        }
+                    }
+                    #endregion
+                }
+                else if (loc.LocSide == 2)
+                {
+                    #region 判断后面车位状态
+                    string bckAddrs = "4" + loc.Address.Substring(1);
+                    Location back = cwlctn.FindLocation(l => l.Address == bckAddrs);
+                    if (back != null)
+                    {
+                        if (back.Type == EnmLocationType.Normal)
+                        {
+                            if (back.Status == EnmLocationStatus.Space)
+                            {
+                                spaceLctnLst_big.Add(loc);
+                            }
+                            else if (back.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupyLctnLst_big.Add(loc);
+                            }
+                            else
+                            {
+                                otherLctnLst_big.Add(loc);
+                            }
+                        }
+                        else //禁用的
+                        {
+                            spaceLctnLst_big.Add(loc);
+                        }
+                    }
+
+                    #endregion
+                }
+                else
+                {
+                    spaceLctnLst_big.Add(loc);
+                }
+            }
+            lctnLst.AddRange(spaceLctnLst_big);
+            lctnLst.AddRange(occupyLctnLst_big);
+            lctnLst.AddRange(otherLctnLst_big);
+            #endregion
 
             #endregion
             #endregion

@@ -67,6 +67,7 @@ namespace Parking.Application
                 List<WorkTask> queueList = cwtask.FindQueueList(mtsk => true);
                 if (queueList.Count == 0)
                 {
+                    cwtask.DealTempLocOccupy(warehouse);
                     return;
                 }
                 //优先发送是报文(子作业)的队列
@@ -99,6 +100,7 @@ namespace Parking.Application
                         else
                         {
                             //当前作业不为空，查询当前作业状态
+                            //处于等待卸载时，也允许下发避让
                             ImplementTask itask = cwtask.Find(dev.TaskID);
                             if (itask != null)
                             {
@@ -135,7 +137,7 @@ namespace Parking.Application
                         {
                             if (dev.TaskID == 0)
                             {
-                                cwtask.CreateDeviceTaskByQueue(queue,dev);
+                                cwtask.CreateDeviceTaskByQueue(queue,dev,false);
                             }
                         }
                         else if (dev.Type == EnmSMGType.ETV)
@@ -145,7 +147,7 @@ namespace Parking.Application
                                 //可以增加避让判断
                                 if (cwtask.DealAvoid(queue, dev))
                                 {
-                                    cwtask.CreateDeviceTaskByQueue(queue, dev);
+                                    cwtask.CreateDeviceTaskByQueue(queue, dev,false);
                                 }
                             }
                             else //处理卸载指令
@@ -161,7 +163,7 @@ namespace Parking.Application
                                         //可以增加避让判断
                                         if (cwtask.DealAvoid(queue, dev))
                                         {
-                                            Response resp = cwtask.CreateDeviceTaskByQueue(queue, dev);
+                                            Response resp = cwtask.CreateDeviceTaskByQueue(queue, dev,true);
                                             log.Info(resp.Message);
                                         }
                                     }
