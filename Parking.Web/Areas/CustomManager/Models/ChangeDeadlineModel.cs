@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.ComponentModel.DataAnnotations;
+using Parking.Data;
 
 namespace Parking.Web.Areas.CustomManager.Models
 {
@@ -11,9 +12,10 @@ namespace Parking.Web.Areas.CustomManager.Models
         public int ID { get; set; }
         [Required]
         [StringLength(8)]
-        [Display(Name ="用户卡号")]
-        public string ICCode { get; set; }
-        public int Type { get; set; }
+        [Display(Name ="顾客姓名")]
+        public string UserCode { get; set; }
+        [Display(Name = "用户类型")]
+        public EnmICCardType Type { get; set; }
         [Required]
         [DataType(DataType.DateTime)]
         [Display(Name ="原来期限")]

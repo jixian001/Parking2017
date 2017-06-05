@@ -33,6 +33,7 @@ namespace Parking.Core
             CWTask cwtask = new CWTask();
             if (cust == null)
             {
+                //没有绑定用户的，依临时卡算
                 lct = this.PXDAllocate(hall, checkCode,out smg);
             }
             else if (cust.Type == EnmICCardType.Temp || 

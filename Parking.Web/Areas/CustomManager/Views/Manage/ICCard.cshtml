@@ -58,16 +58,7 @@
                                     <input id="createtime" name="createtime" type="text" class="form-control" />
                                 </td>
                             </tr>
-                            <tr>
-                                <th class="formTitle">卡类型</th>
-                                <td class="formValue">
-                                    <input id="type" name="type" type="text" class="form-control" />
-                                </td>
-                                <th class="formTitle">挂失时间</th>
-                                <td class="formValue">
-                                    <input id="losstime" name="losstime" type="text" class="form-control"/>
-                                </td>
-                            </tr>
+                           
                             <tr>
                                 <th class="formTitle">卡状态</th>
                                 <td class="formValue">
@@ -77,26 +68,13 @@
                                 <td class="formValue">
                                     <input id="disposetime" name="disposetime" type="text" class="form-control" />
                                 </td>
-
-                            </tr>
+                            </tr>   
                             <tr>
-                                <th class="formTitle">绑定车位</th>
+                                <th class="formTitle">挂失时间</th>
                                 <td class="formValue">
-                                    <input id="locaddrs" name="locaddrs" type="text" class="form-control"/>
+                                    <input id="losstime" name="losstime" type="text" class="form-control" />
                                 </td>
-                                <th class="formTitle">库区</th>
-                                <td class="formValue">
-                                    <input id="warehouse" name="warehouse" type="text" class="form-control" />
-                                </td>
-                            </tr>  
-                            <tr>                               
-                                <th class="formTitle">使用期限</th>
-                                <td class="formValue">
-                                    <input id="deadline" name="deadline" type="text" class="form-control" />
-                                </td>
-                                <th class="formTitle"></th>
-                                <td class="formValue"></td>
-                            </tr>                             
+                            </tr>                        
                         </table>
                     </form>
                 </div>
@@ -110,10 +88,7 @@
                         </div>
                         <div class="col-md-2">
                             <button type="button" id="btnDispose" class="btn btn-default">&nbsp;&nbsp;注&nbsp;销&nbsp;&nbsp;&nbsp;</button>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="button" id="btnChangedt" class="btn btn-default" hidden>修改期限</button>
-                        </div>
+                        </div>                       
                     </div>
                 </div>
             </fieldset>
@@ -315,18 +290,10 @@
                         else
                         {
                             $("input[name='uiccd']").val(iccd.UserCode);
-                            $("input[name='createtime']").val(formatDate(iccd.CreateDate));
-
-                            $("input[name='type']").val(iccd.Type);
+                            $("input[name='createtime']").val(formatDate(iccd.CreateDate));                          
                             $("input[name='losstime']").val(formatDate(iccd.LossDate));
-
-                            $("input[name='status']").val(iccd.Status);
-                            $("input[name='disposetime']").val(formatDate(iccd.LogoutDate));
-
-                            $("input[name='locaddrs']").val(iccd.LocAddress);
-                            $("input[name='warehouse']").val(iccd.Warehouse);
-
-                            $("input[name='deadline']").val(formatDate(iccd.Deadline));
+                            $("input[name='status']").val(formatStatus(iccd.Status));
+                            $("input[name='disposetime']").val(formatDate(iccd.LogoutDate));                          
                         }
                     },
                     complete: function (XMLHttpRequest, textStatus) {
@@ -395,10 +362,9 @@
                         });
                         //改变显示状态
                         if (data.Code == 1) {
-                            var iccd = data.Data;                           
-                            $("input[name='type']").val(iccd.Type);
+                            var iccd = data.Data;
                             $("input[name='losstime']").val(formatDate(iccd.LossDate));
-                            $("input[name='status']").val(iccd.Status);
+                            $("input[name='status']").val(formatStatus(iccd.Status));
                             $("input[name='disposetime']").val(formatDate(iccd.LogoutDate));
                         }
                     },
@@ -411,7 +377,29 @@
 
                 });
             }
-          
+            
+            //格式化卡的状态
+            function formatStatus(state)
+            { 
+                var msg="";
+                switch (state)
+                {
+                    case 1:
+                        msg = "挂失";
+                        break;
+                    case 2:
+                        msg = "正常";
+                        break;
+                    case 3:
+                        msg = "注销";
+                        break;
+                    default:
+                        msg = state;
+                        break;
+                }
+                return msg;
+            }
+
             //格式化日期显示
             //Date(1391141532000)的字符串转换成javascript中的日期对象
             function formatDate(dt) {

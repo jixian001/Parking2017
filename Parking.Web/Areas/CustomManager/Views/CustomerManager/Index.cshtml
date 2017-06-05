@@ -28,7 +28,7 @@
                     </div>
                     <label class="col-md-2 control-label" for="content" style="text-align:right;margin-top:4px">查询数据</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" name="content" id="content" placeholder="输入查询内容" />
+                        <input type="text" class="form-control" name="content" id="content" placeholder="输入查询内容"/>
                     </div>
                     <div class="col-md-2 col-md-offset-1">
                         <button class="btn btn-primary" id="search">查询</button>
@@ -122,7 +122,8 @@
                         visible: true,
                         align: "center",
                         sortable:true,
-                        valign: "middle"
+                        valign: "middle",
+                        visible: false
                     },
                     {
                         title: "姓名",
@@ -130,51 +131,53 @@
                         align: "center",
                         valign: "middle"
                     },
+                     {
+                         title: "车牌",
+                         field: "PlateNum",
+                         align: "center",
+                         valign: "middle"
+                     },                   
                     {
-                        title: "卡号",
-                        field: "UserCode",
+                        title: "用户类型",
+                        field: "Type",
                         align: "center",
                         valign: "middle",
-                        sortable: true
-                    },
-                    {
-                        title: "卡类型",
-                        field: "Type",
-                        align: "left",
-                        valign: "middle",
-                        sortable: true
-                    },
-                    {
-                        title: "卡状态",
-                        field: "Status",
-                        align: "left",
-                        valign: "middle"
-                    },
+                        formatter: typeFormatter
+                    },                   
                     {
                         title: "库区",
                         field: "Warehouse",
                         align: "left",
-                        valign: "middle"
+                        valign: "middle",
+                        visible: false
                     },
                     {
-                        title: "车位",
+                        title: "绑定车位",
                         field: "LocAddress",
                         align: "center",
                         valign: "middle",
                         sortable: true
+                    },
+                     {
+                         title: "卡号",
+                         field: "UserCode",
+                         align: "center",
+                         valign: "middle",
+                         sortable: true
+                     },
+                    {
+                        title: "卡状态",
+                        field: "Status",
+                        align: "left",
+                        valign: "middle",
+                        formatter: statusFormatter
                     },
                     {
                         title: "手机",
                         field: "MobilePhone",
                         align: "center",
                         valign: "middle"
-                    },
-                    {
-                        title: "车牌",
-                        field: "PlateNum",
-                        align: "center",
-                        valign: "middle"
-                    },                   
+                    },                                   
                     {
                         title: "家庭住址",
                         field: "FamilyAddress",
@@ -185,8 +188,7 @@
                         title: "使用期限",
                         field: "Deadline",
                         align: "center",
-                        valign: "middle",
-                        visible: false
+                        valign: "middle"
                     },
                     {
                         title: "详情",
@@ -223,6 +225,50 @@
                 return '<a class="detail" href="javascript:void(0)" title="修改"><i class="glyphicon glyphicon-edit"></i></a>&nbsp;&nbsp;&nbsp;' +
                        '<a class="delete" href="javascript:void(0)" title="删除"><i class="glyphicon glyphicon-trash"></i></a>';
             }
+
+            function statusFormatter(value, row, index) {
+                var msg = "";
+                switch (value)
+                {
+                    case 1:
+                        msg = "挂失";
+                        break;
+                    case 2:
+                        msg = "正常";
+                        break;
+                    case 3:
+                        msg = "注销";
+                        break;
+                    default:
+                        msg = value;
+                        brea;
+                }
+                return msg;
+            }
+
+            function typeFormatter(value, row, index)
+            {
+                var msg = "";
+                switch (value) {
+                    case 1:
+                        msg = "临时";
+                        break;
+                    case 2:
+                        msg = "定期";
+                        break;
+                    case 3:
+                        msg = "固定";
+                        break;
+                    case 4:
+                        msg = "VIP";
+                        break;
+                    default:
+                        msg = value;
+                        brea;
+                }
+                return msg;
+            }
+
 
             $("#search").click(function () {
                 var $content = $("#content");

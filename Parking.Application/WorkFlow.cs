@@ -114,8 +114,7 @@ namespace Parking.Application
                             else
                             {
                                 log.Info("当前避让队列，对应的设备-"+dev.DeviceCode+"  TaskID-"+dev.TaskID+" 找不到对应的执行队列！");
-                            }
-                            
+                            }                            
                         }
                     }
                 }
@@ -171,7 +170,6 @@ namespace Parking.Application
                             }
                         }
                     }
-
                 }
                 #endregion
                 #region 处理取车队列

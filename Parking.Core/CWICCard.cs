@@ -65,7 +65,7 @@ namespace Parking.Core
                     ICCard iccd = new ICCard()
                     {
                         PhysicCode = physic,
-                        UserCode = usercode,                       
+                        UserCode = usercode,                                               
                         Status = EnmICCardStatus.Normal,
                         CreateDate = DateTime.Now,
                         LossDate = DateTime.Parse("2017-1-1"),

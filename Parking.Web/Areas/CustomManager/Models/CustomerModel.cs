@@ -15,6 +15,8 @@ namespace Parking.Web.Areas.CustomManager.Models
         [Display(Name ="顾客姓名")]    
         public string UserName { get; set; }
         [Required]
+        [Display(Name = "车牌号码")]
+        public string PlateNum { get; set; }
         [StringLength(10)]
         [Display(Name = "注册卡号")]
         public string UserCode { get; set; }
@@ -26,12 +28,10 @@ namespace Parking.Web.Areas.CustomManager.Models
         public int? Warehouse { get; set; }
         [Display(Name = "绑定车位")]
         public string LocAddress { get; set; }
-        [Display(Name = "截止日期")]
-        public DateTime? Deadline { get; set; }
+        [Display(Name = "使用期限")]
+        public string Deadline { get; set; }
         [Display(Name = "手机")]
-        public string MobilePhone { get; set; }
-        [Display(Name = "车牌号码")]
-        public string PlateNum { get; set; }
+        public string MobilePhone { get; set; }       
         [Display(Name = "家庭住址")]
         public string FamilyAddress { get; set; }
         public string FingerPrint1 { get; set; }

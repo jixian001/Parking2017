@@ -8,6 +8,7 @@ using Parking.Data;
 using Parking.Core;
 using Parking.Web.Areas.CustomManager.Models;
 using System.Threading.Tasks;
+using Parking.Web.Models;
 
 namespace Parking.Web.Areas.CustomManager.Controllers
 {   
@@ -31,6 +32,22 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             {
                 return View(model);
             }
+            CWICCard cwiccd = new CWICCard();
+            //顾客姓名保证唯一的
+            Customer other = cwiccd.FindCust(cu=>cu.UserName==model.UserName);
+            if (other != null)
+            {
+                ModelState.AddModelError("", "当前顾客名-  "+model.UserName+" 已被占用，其车牌号- "+other.PlateNum+" ，请输入唯一的用户名！");
+                return View(model);
+            }
+            //车牌号码保证唯一的
+            other = cwiccd.FindCust(cu => cu.PlateNum == model.PlateNum);
+            if (other != null)
+            {
+                ModelState.AddModelError("", "当前车牌号-  " + model.PlateNum + " 已被绑定，其顾客名- " + other.UserName + " ，请输入正确的车牌号！");
+                return View(model);
+            }
+
             #region
             if (model.Type==EnmICCardType.FixedLocation)
             {
@@ -44,35 +61,46 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 {
                     ModelState.AddModelError("", "绑定车位不存在，地址-" + model.LocAddress);
                     return View(model);
+                }                
+               else
+                {
+                    //固定车位时，当前车位没有存车
+                    if (lctn.Status != EnmLocationStatus.Space)
+                    {
+                        ModelState.AddModelError("", "当前车位：" + lctn.Address + " 已存车，卡号- "+lctn.ICCode+" ,请等待取车完成后再绑定！");
+                        return View(model);
+                    }
                 }
             }
-            CWICCard cwiccd = new CWICCard();
-            ICCard iccd = cwiccd.Find(ic=>ic.UserCode==model.UserCode);
-            if (iccd == null)
+           
+            ICCard iccd = null;
+            if (!string.IsNullOrEmpty(model.UserCode))
             {
-                ModelState.AddModelError("", "当前用户卡号没有注册，请确保该卡已完成制卡！");
-                return View(model);
-            }
-            if (iccd.Status != EnmICCardStatus.Normal)
-            {
-                ModelState.AddModelError("", "该卡已挂失或注销，无法完成操作！");
-                return View(model);
-            }
-            if (iccd.CustID != 0)
-            {
-                Customer cust = cwiccd.FindCust(iccd.CustID);
-                if (cust != null)
+                #region          
+                iccd = cwiccd.Find(ic => ic.UserCode == model.UserCode);
+                if (iccd == null)
                 {
-                    ModelState.AddModelError("", "该卡已被绑定，车主姓名："+cust.UserName);
+                    ModelState.AddModelError("", "当前用户卡号没有注册，请确保该卡已完成制卡！");
                     return View(model);
                 }
+                if (iccd.Status != EnmICCardStatus.Normal)
+                {
+                    ModelState.AddModelError("", "该卡已挂失或注销，无法完成操作！");
+                    return View(model);
+                }
+                if (iccd.CustID != 0)
+                {
+                    Customer cust = cwiccd.FindCust(iccd.CustID);
+                    if (cust != null)
+                    {
+                        ModelState.AddModelError("", "该卡已被绑定，车主姓名：" + cust.UserName);
+                        return View(model);
+                    }
+                }              
+                #endregion
             }
-            Location loc = new CWLocation().FindLocation(lc=>lc.ICCode==iccd.UserCode);
-            if (loc != null)
-            {
-                ModelState.AddModelError("", "该卡已存车，请等待出车完成后，再绑定！");
-                return View(model);
-            }
+
+            Customer addcust = new Customer();           
             if (model.Type == EnmICCardType.FixedLocation)
             {               
                Customer cust= cwiccd.FindCust(cc => cc.Warehouse == model.Warehouse && cc.LocAddress == model.LocAddress);
@@ -80,39 +108,31 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 {
                     ModelState.AddModelError("", "该车位已被其他卡绑定，无法使用该车位- "+model.LocAddress+" ,Warehouse- "+model.Warehouse);
                     return View(model);
-                }               
+                }
+                addcust.Warehouse = (int)model.Warehouse;
+                addcust.LocAddress = model.LocAddress;
             }
-            Customer addcust = new Customer();
+           
             addcust.UserName = model.UserName;
+            addcust.PlateNum = model.PlateNum;
             addcust.FamilyAddress = model.FamilyAddress;
             addcust.MobilePhone = model.MobilePhone;
-            addcust.PlateNum = model.PlateNum;
-           
+            addcust.Type = EnmICCardType.Temp;
+            if ((int)model.Type > 0)
+            {
+                addcust.Type = model.Type;              
+            }
+            addcust.StartDTime = DateTime.Parse("2017-1-1");
+            addcust.Deadline = DateTime.Parse("2017-1-1");           
+
             Response resp = cwiccd.Add(addcust);
             if (resp.Code == 1)
             {
-                if ((int)model.Type > 0)
+                //如果有卡号，则绑定顾客于卡号
+                if (iccd != null)
                 {
-                    addcust.Type = model.Type;
-                    if(model.Type == EnmICCardType.FixedLocation)
-                    {
-                        addcust.Warehouse = (int)model.Warehouse;
-                        addcust.LocAddress = model.LocAddress;
-                    }
-                }
-                else
-                {
-                    addcust.Type = EnmICCardType.Temp;
-                }
-                iccd.CustID = addcust.ID;
-                resp= cwiccd.Update(iccd);
-                if (resp.Code == 1)
-                {
-                    //记录
-                }
-                else
-                {
-                    //记录
+                    iccd.CustID = addcust.ID;
+                    resp = cwiccd.Update(iccd);
                 }
 
                 #region 绑定指纹，更新指纹信息
@@ -148,11 +168,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     }
                 }
                 #endregion
-            }
-            else
-            {
-                //记录
-            }
+            }          
             #endregion
             return RedirectToAction("Index");
         }
@@ -211,7 +227,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     Status=obj.Status,
                     Warehouse=obj.Warehouse,
                     LocAddress=obj.LocAddress,
-                    Deadline=obj.Deadline,
+                    Deadline=obj.Deadline.ToString(),
                     MobilePhone=obj.MobilePhone,
                     PlateNum=obj.PlateNum,
                     FamilyAddress=obj.FamilyAddress
@@ -385,8 +401,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             CustomerModel model = new CustomerModel();
             CWICCard cwiccd = new CWICCard();
             Customer cust = cwiccd.FindCust(ID);
-            ICCard iccd = cwiccd.Find(ic => ic.CustID == ID);
-
+            
             model.ID = cust.ID;
             model.UserName = cust.UserName;
             model.FamilyAddress = cust.FamilyAddress;
@@ -395,7 +410,9 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             model.Type = cust.Type;
             model.Warehouse = cust.Warehouse;
             model.LocAddress = cust.LocAddress;
-            model.Deadline = cust.Deadline;
+            model.Deadline = cust.Deadline.ToString();
+
+            ICCard iccd = cwiccd.Find(ic => ic.CustID == ID);
             if (iccd != null)
             {
                 model.UserCode = iccd.UserCode;               
@@ -438,94 +455,138 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             {
                 return View(model);
             }
-            #region
             CWICCard cwiccd = new CWICCard();
-            Customer cust = cwiccd.FindCust(model.ID);         
-            ICCard oriIccd = cwiccd.Find(ic=>ic.CustID==model.ID);
-            ICCard newIccd = cwiccd.Find(ic => ic.UserCode == model.UserCode);
-            if (newIccd == null)
+            #region 验证用户名、车牌号
+            //顾客姓名保证唯一的
+            Customer other = cwiccd.FindCust(cu => cu.UserName == model.UserName && cu.ID != model.ID);
+            if (other != null)
             {
-                ModelState.AddModelError("", "当前卡号没有注册！");
+                ModelState.AddModelError("", "当前顾客名-  " + model.UserName +
+                    " 已被占用，其车牌号- " + other.PlateNum + " ，请输入唯一的用户名！");
                 return View(model);
             }
-            if (oriIccd != null && newIccd != null)
+            //车牌号码保证唯一的
+            other = cwiccd.FindCust(cu => cu.PlateNum == model.PlateNum && cu.ID != model.ID);
+            if (other != null)
             {
-                //不是同一张卡
-                if (oriIccd.UserCode != newIccd.UserCode)
+                ModelState.AddModelError("", "当前车牌号-  " + model.PlateNum +
+                    " 已被绑定，其顾客名- " + other.UserName + " ，请输入正确的车牌号！");
+                return View(model);
+            }
+            #endregion
+            #region
+            Customer cust = cwiccd.FindCust(model.ID);
+            //是固定卡时
+            if (model.Type == EnmICCardType.FixedLocation)
+            {
+                #region
+                if (model.Warehouse == 0 || string.IsNullOrEmpty(model.LocAddress))
                 {
-                    #region                  
-                    if (newIccd.Status != EnmICCardStatus.Normal)
-                    {
-                        ModelState.AddModelError("","卡已挂失或注销，无法绑定用户！");
-                        return View(model);
-                    }
-                    if (newIccd.CustID != 0)
-                    {
-                        Customer oricust = cwiccd.FindCust(newIccd.CustID);
-                        if (oricust != null)
-                        {
-                            ModelState.AddModelError("", "该卡已被绑定，车主姓名：" + oricust.UserName);
-                            return View(model);
-                        }
-                    }
-                    #endregion
-                }
-                //是固定卡时
-                if (model.Type == EnmICCardType.FixedLocation)
-                {
-                    #region
-                    if (model.Warehouse == 0 || string.IsNullOrEmpty(model.LocAddress))
-                    {
-                        ModelState.AddModelError("", "固定卡，请指定绑定的库区及车位号！");
-                        return View(model);
-                    }
-                    Location lctn = new CWLocation().FindLocation(lc=>lc.Warehouse==model.Warehouse&&lc.Address==model.LocAddress);
-                    if (lctn == null)
-                    {
-                        ModelState.AddModelError("", "固定卡，请正确的库区及车位地址！");
-                        return View(model);
-                    }
-                    
-                    Customer custo = cwiccd.FindCust(cc=>cc.Warehouse==model.Warehouse&&cc.LocAddress==model.LocAddress);
-                    if (custo != null)
-                    {
-                        if (custo.ID!=cust.ID)
-                        {
-                            ModelState.AddModelError("", "当前车位已被别的用户绑定");
-                            return View(model);
-                        }
-                    }
-                    #endregion
-                }
-                Location loc = new CWLocation().FindLocation(lc=>lc.ICCode==newIccd.UserCode);
-                if (loc != null)
-                {
-                    ModelState.AddModelError("", "当前卡号已存车，车位："+loc.Address+",请等待取车完成后绑定！");
+                    ModelState.AddModelError("", "固定卡，请指定绑定的库区及车位号！");
                     return View(model);
                 }
-                if(oriIccd.UserCode != newIccd.UserCode)
+                Location lctn = new CWLocation().FindLocation(lc => lc.Warehouse == model.Warehouse && lc.Address == model.LocAddress);
+                if (lctn == null)
                 {
-                    //释放旧卡                  
-                    oriIccd.CustID = 0;                   
-                    cwiccd.Update(oriIccd);
-                    //绑定新卡                  
-                    newIccd.CustID = cust.ID;
-                    cwiccd.Update(newIccd);
+                    ModelState.AddModelError("", "固定卡，请正确的库区及车位地址！");
+                    return View(model);
                 }
                 else
-                {                    
+                {
+                    //固定车位时，当前车位没有存车
+                    if (lctn.Status != EnmLocationStatus.Space)
+                    {
+                        ModelState.AddModelError("", "当前车位：" + lctn.Address + " 已存车，卡号- " + lctn.ICCode + " ,请等待取车完成后再绑定！");
+                        return View(model);
+                    }
+                }
+
+                Customer custo = cwiccd.FindCust(cc => cc.Warehouse == model.Warehouse && cc.LocAddress == model.LocAddress);
+                if (custo != null)
+                {
+                    if (custo.ID != cust.ID)
+                    {
+                        ModelState.AddModelError("", "当前车位已被别的用户绑定");
+                        return View(model);
+                    }
+                }
+                cust.Warehouse = (int)model.Warehouse;
+                cust.LocAddress = model.LocAddress;
+                #endregion
+            }
+            else
+            {
+                cust.Warehouse = 0;
+                cust.LocAddress = "";
+                cust.StartDTime = DateTime.Parse("2017-1-1");
+                cust.Deadline = DateTime.Parse("2017-1-1");
+            }
+
+            ICCard oriIccd = cwiccd.Find(ic => ic.CustID == model.ID);
+            ICCard newIccd = null;
+            if (!string.IsNullOrEmpty(model.UserCode))
+            {
+                newIccd = cwiccd.Find(ic => ic.UserCode == model.UserCode);
+                if (newIccd == null)
+                {
+                    ModelState.AddModelError("", "当前卡号没有注册！");
+                    return View(model);
+                }
+            }
+            if (oriIccd == null)
+            {
+                //原先没有绑定的
+                if (newIccd != null)
+                {
                     newIccd.CustID = cust.ID;
                     cwiccd.Update(newIccd);
                 }
-            }            
+            }
+            else
+            {
+                if (newIccd == null)
+                {
+                    //释放原来卡号
+                    //释放旧卡                  
+                    oriIccd.CustID = 0;
+                    cwiccd.Update(oriIccd);
+                }
+                else //两卡都存在
+                {
+                    //不是同一张卡
+                    if (oriIccd.UserCode != newIccd.UserCode)
+                    {
+                        #region                  
+                        if (newIccd.Status != EnmICCardStatus.Normal)
+                        {
+                            ModelState.AddModelError("", "卡已挂失或注销，无法绑定用户！");
+                            return View(model);
+                        }
+                        if (newIccd.CustID != 0)
+                        {
+                            Customer oricust = cwiccd.FindCust(newIccd.CustID);
+                            if (oricust != null)
+                            {
+                                ModelState.AddModelError("", "该卡已被绑定，车主姓名：" + oricust.UserName);
+                                return View(model);
+                            }
+                        }
+                        #endregion
+                        //释放旧卡                  
+                        oriIccd.CustID = 0;
+                        cwiccd.Update(oriIccd);
+                        //绑定新卡                  
+                        newIccd.CustID = cust.ID;
+                        cwiccd.Update(newIccd);
+                    }
+                }
+            }   
+           
             //允许更新
             cust.PlateNum = model.PlateNum;
             cust.MobilePhone = model.MobilePhone;
             cust.UserName = model.UserName;
             cust.FamilyAddress = model.FamilyAddress;
-            cust.Warehouse = (int)model.Warehouse;
-            cust.LocAddress = model.LocAddress;            
-
             cwiccd.UpdateCust(cust);
             #endregion
             return RedirectToAction("Index");
@@ -537,20 +598,10 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             CWICCard cwiccd = new CWICCard();
             Customer cust = cwiccd.FindCust(ID);
             if (cust != null)
-            {
+            { 
                 ICCard iccd = cwiccd.Find(ic => ic.CustID == ID);
                 if (iccd != null)
-                {
-                    Location lct = new CWLocation().FindLocation(l=>l.ICCode==iccd.UserCode);
-                    if (lct != null)
-                    {
-                        var data = new
-                        {
-                            code = 1,
-                            message = "当前卡号已存车，请等待取车结算后，再删除该用户"
-                        };
-                        return Json(data,JsonRequestBehavior.AllowGet);
-                    }
+                {                   
                     iccd.CustID = 0;                   
                     Response _resp= cwiccd.Update(iccd);
                     if (_resp.Code == 0)
@@ -635,5 +686,52 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             return Json(resp,JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="custID"></param>
+        /// <returns></returns>
+        public ActionResult ChangeDeadline(int custID)
+        {
+            CWICCard cwiccd = new CWICCard();
+            Customer cust = cwiccd.FindCust(custID);
+            ChangeDeadlineModel deadline = new ChangeDeadlineModel
+            {
+                ID = cust.ID,
+                UserCode = cust.UserName,
+                Type = cust.Type,
+                OldDeadline = cust.Deadline,
+                NewDeadline = DateTime.Parse("2017-1-1")
+            };
+            return View(deadline);
+        }
+
+        [HttpPost]
+        public ActionResult ChangeDeadline(ChangeDeadlineModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "参数设置不正确");
+                return View(model);
+            }
+            if ((int)model.Type < 2)
+            {
+                ModelState.AddModelError("", "临时卡，无法设置使用期限");
+                return View(model);
+            }
+            CWICCard cwiccd = new CWICCard();
+            Customer cust = cwiccd.FindCust(model.ID);
+            if (cust != null)
+            {
+                cust.Deadline = model.NewDeadline;
+                Response resp = cwiccd.UpdateCust(cust);
+                if (resp.Code == 0)
+                {
+                    ModelState.AddModelError("", "更新数据库失败");
+                    return View(model);
+                }
+            }
+            return RedirectToAction("Index");
+        }
     }
 }
