@@ -122,7 +122,8 @@
                     {
                         title: "建立时间",
                         field: "CreateDate",
-                        visible: false,
+                        align: "left",
+                        valign: "middle",
                         formatter: sendDtimeFormatter
                     },
                     {
@@ -152,6 +153,7 @@
                 formatLoadingMessage: function () {
                     return "请稍等，正在加载中...";
                 },
+
                 formatNoMatches: function () {
                     return "无符合条件的记录";
                 }
@@ -159,8 +161,8 @@
 
             function queryParams(params) {               
                 return {
-                    pageSize: params.pageSize,  //一定包含
-                    pageIndex: params.pageNumber,  //一定包含
+                    pageSize: params.pageSize,    //一定包含
+                    pageIndex: params.pageNumber, //一定包含
                     sortOrder: params.sortOrder,
                     sortName: params.sortName
                 };

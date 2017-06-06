@@ -714,15 +714,16 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 ModelState.AddModelError("", "参数设置不正确");
                 return View(model);
             }
-            if ((int)model.Type < 2)
-            {
-                ModelState.AddModelError("", "临时卡，无法设置使用期限");
-                return View(model);
-            }
             CWICCard cwiccd = new CWICCard();
             Customer cust = cwiccd.FindCust(model.ID);
             if (cust != null)
             {
+                if ((int)cust.Type < 2)
+                {
+                    ModelState.AddModelError("", "临时卡，无法设置使用期限");
+                    return View(model);
+                }
+
                 cust.Deadline = model.NewDeadline;
                 Response resp = cwiccd.UpdateCust(cust);
                 if (resp.Code == 0)

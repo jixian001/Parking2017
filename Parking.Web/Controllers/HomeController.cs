@@ -9,6 +9,7 @@ using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
 using System.Threading.Tasks;
+using Parking.Web.Models;
 
 namespace Parking.Web.Controllers
 {   
@@ -23,6 +24,8 @@ namespace Parking.Web.Controllers
 
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
 
+            MainCallback<ImplementTask>.Instance().WatchEvent+= FileWatch_IMPTaskWatchEvent;
+            
             log = LogFactory.GetLogger("HomeController");
         }
 
@@ -38,11 +41,73 @@ namespace Parking.Web.Controllers
         /// 推送车位信息
         /// </summary>
         /// <param name="loc"></param>
-        private void FileWatch_LctnWatchEvent(Location loc)
+        private void FileWatch_LctnWatchEvent(Location loca)
         {
+            #region
+            int total = 0;
+            int occupy = 0;
+            int space = 0;
+            int fix = 0;
+            int bspace = 0;
+            int sspace = 0;
+            List<Location> locLst = new CWLocation().FindLocationList(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall);
+            total = locLst.Count;
+            CWICCard cwiccd = new CWICCard();
+            foreach (Location loc in locLst)
+            {
+                #region
+                if (loc.Type == EnmLocationType.Normal)
+                {
+                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
+                    {
+                        if (loc.Type == EnmLocationType.Normal)
+                        {
+                            if (loc.Status == EnmLocationStatus.Space)
+                            {
+                                space++;
+                                if (loc.LocSize.Length == 3)
+                                {
+                                    string last = loc.LocSize.Substring(2);
+                                    if (last == "1")
+                                    {
+                                        sspace++;
+                                    }
+                                    else if (last == "2")
+                                    {
+                                        bspace++;
+                                    }
+                                }
+                            }
+                            else if (loc.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupy++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        fix++;
+                    }
+                }
+                #endregion
+            }
+            StatisInfo info = new StatisInfo
+            {
+                Total = total,
+                Occupy = occupy,
+                Space = space,
+                SmallSpace = sspace,
+                BigSpace = bspace,
+                FixLoc = fix
+            };
+            #endregion
+
             Task.Factory.StartNew(()=> {
                 var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-                hubs.Clients.All.feedbackLocInfo(loc);
+                //推送车位信息变化
+                hubs.Clients.All.feedbackLocInfo(loca);
+                //推送统计信息
+                hubs.Clients.All.feedbackStatistInfo(info);
             });
         }
 
@@ -50,13 +115,39 @@ namespace Parking.Web.Controllers
         /// 推送设备信息
         /// </summary>
         /// <param name="entity"></param>
-        private void FileWatch_DeviceWatchEvent(Device entity)
+        private void FileWatch_DeviceWatchEvent(Device smg)
         {
             Task.Factory.StartNew(() => {
                 var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-                hubs.Clients.All.feedbackDevice(entity);
+                hubs.Clients.All.feedbackDevice(smg);
             });
         }
+
+        /// <summary>
+        /// 推送执行作业信息
+        /// </summary>
+        /// <param name="itask"></param>
+        private void FileWatch_IMPTaskWatchEvent(ImplementTask itask)
+        {
+            Task.Factory.StartNew(() => {
+                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+
+                string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
+                string type = PlusCvt.ConvertTaskType(itask.Type);
+                string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
+                DeviceTaskDetail detail = new DeviceTaskDetail
+                {
+                    DevDescp = desp,
+                    TaskType = type,
+                    Status = status,
+                    Proof = itask.ICCardCode
+                };
+
+                hubs.Clients.All.feedbackImpTask(detail);
+            });
+        }
+
+
         public ActionResult Index()
         {
             return View();
@@ -81,7 +172,36 @@ namespace Parking.Web.Controllers
             }
             return Json(devices, JsonRequestBehavior.AllowGet);
         }
-        
+
+        /// <summary>
+        /// 获取有作业的设备信息
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult GetDeviceTaskLst()
+        {
+            CWTask cwtask = new CWTask();
+            List<Device> hasTask = new CWDevice().FindList(smg => smg.TaskID != 0);
+            List<DeviceTaskDetail> detailLst = new List<DeviceTaskDetail>();
+            foreach(Device dev in hasTask)
+            {
+                ImplementTask itask = cwtask.Find(dev.TaskID);
+                if (itask != null)
+                {
+                    string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
+                    string type = PlusCvt.ConvertTaskType(itask.Type);
+                    string status = PlusCvt.ConvertTaskStatus(itask.Status,itask.SendStatusDetail);
+                    DeviceTaskDetail detail = new DeviceTaskDetail {
+                        DevDescp=desp,
+                        TaskType=type,
+                        Status=status,
+                        Proof=itask.ICCardCode
+                    };
+                    detailLst.Add(detail);
+                }
+            }
+            return Json(detailLst,JsonRequestBehavior.AllowGet);
+        }
+
         /// <summary>
         /// 查询车位
         /// </summary>
@@ -157,6 +277,72 @@ namespace Parking.Web.Controllers
             };
             return Json(nback, JsonRequestBehavior.AllowGet);
 
+        }
+
+        /// <summary>
+        /// 查询车位统计信息
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult GetLocStatInfo()
+        {
+            #region
+            int total = 0;
+            int occupy = 0;
+            int space = 0;
+            int fix = 0;
+            int bspace = 0;
+            int sspace = 0;
+            List<Location> locLst = new CWLocation().FindLocationList(lc=>lc.Type!=EnmLocationType.Invalid&&lc.Type!=EnmLocationType.Hall);
+            total = locLst.Count;
+            CWICCard cwiccd = new CWICCard();
+            foreach(Location loc in locLst)
+            {
+                #region
+                if (loc.Type == EnmLocationType.Normal)
+                {
+                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
+                    {
+                        if (loc.Type == EnmLocationType.Normal)
+                        {
+                            if (loc.Status == EnmLocationStatus.Space)
+                            {
+                                space++;
+                                if (loc.LocSize.Length == 3)
+                                {
+                                    string last = loc.LocSize.Substring(2);
+                                    if (last == "1")
+                                    {
+                                        sspace++;
+                                    }
+                                    else if (last == "2")
+                                    {
+                                        bspace++;
+                                    }
+                                }
+                            }
+                            else if (loc.Status == EnmLocationStatus.Occupy)
+                            {
+                                occupy++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        fix++;
+                    }
+                }
+                #endregion
+            }
+            StatisInfo info = new StatisInfo {
+                Total=total,
+                Occupy=occupy,
+                Space=space,
+                SmallSpace=sspace,
+                BigSpace=bspace,
+                FixLoc=fix
+            };
+            #endregion
+            return Json(info,JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult Error()

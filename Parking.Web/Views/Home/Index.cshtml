@@ -28,7 +28,6 @@
 <div class="row">
     <span class="text-primary">车位分布</span>
 </div>
-
 <div class="row">
     <div class="col-md-10 bger dheight">
         <div class="seat wrapper">
@@ -82,9 +81,7 @@
 <div class="row">
     <span class="text-primary">设备信息</span>
 </div>
-
-<div id="devices" class="row bger">
-</div>
+<div id="devices" class="row bger"></div>
 
 @section scripts{
     @Styles.Render("~/Content/loccharts")
@@ -329,17 +326,27 @@
                             info += '<td class="formValue"><input type="text" class="form-control" id="accept" value="' + formatAvaible(obj.IsAvailabe) + '" disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "自动步" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="step" value="' + obj.RunStep + '"  disabled/></td></tr>';
-                            if (obj.DeviceCode < 10) {
+                            if (obj.DeviceCode < 10)
+                            {
                                 info += '<tr><th class="formTitle">' + "装载步进" + '</th>';
                                 info += '<td class="formValue"><input type="text" class="form-control" id="instep" value="' + obj.InStep + '"  disabled/></td></tr>';
                                 info += '<tr><th class="formTitle">' + "卸载步进" + '</th>';
                                 info += '<td class="formValue"><input type="text" class="form-control" id="outstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
-                            } else {
+                            }
+                            else
+                            {
                                 info += '<tr><th class="formTitle">' + "存车步进" + '</th>';
                                 info += '<td class="formValue"><input type="text" class="form-control" id="instep" value="' + obj.InStep + '"  disabled/></td></tr>';
                                 info += '<tr><th class="formTitle">' + "取车步进" + '</th>';
                                 info += '<td class="formValue"><input type="text" class="form-control" id="outstep" value="' + obj.OutStep + '"  disabled/></td></tr>';
                             }
+
+                            info += '<tr><th class="formTitle">' + "作业类型" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="' +"type-"+ obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "作业卡号" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="' + "iccode-" + obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
+                            info += '<tr><th class="formTitle">' + "作业状态" + '</th>';
+                            info += '<td class="formValue"><input type="text" class="form-control" id="' + "status-" + obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
 
                             info += '</table>';
 
@@ -347,6 +354,7 @@
                             i++;
                         });
                         html += '</div>';
+
                         $devs.html(html);
                     },
                     complete: function (XMLHttpRequest, textStatus) {
@@ -401,7 +409,45 @@
                 var wd = $(".dheight").height();
                 $("#details").css("height", wd);
 
-            }, 600);
+            }, 500);
+
+            setTimeout(function () {
+                //更新设备作业状态
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetDeviceTaskLst")",
+                    dataType: "json",
+                    cache: false,
+                    success: function (dLst) {
+                        //迭代变量
+                        $.each(dLst, function (index, detail) {
+                            var code = detail.DevDescp;
+
+                            var ttype = "type-" + code;
+                            $("input[id='" + ttype + "']").val(detail.TaskType);
+
+                            var proof = "iccode-" + code;
+                            $("input[id='" + proof + "']").val(detail.Proof);
+
+                            var state = "status-" + code;
+                            $("input[id='" + state + "']").val(detail.Status);
+
+                        });
+
+                    }
+                });
+
+                //更新下车位信息
+                $.getJSON("@Url.Action("GetLocStatInfo")", function (json) {
+                    $("span[id='total']").text(json.Total);
+                    $("span[id='occupy']").text(json.Occupy);
+                    $("span[id='space']").text(json.Space);
+                    $("span[id='big']").text(json.BigSpace);
+                    $("span[id='small']").text(json.SmallSpace);
+                    $("span[id='fix']").text(json.FixLoc);
+                });
+
+            }, 1500);
 
             function setlocationcolor(type, status)
             {
@@ -473,6 +519,7 @@
                 var addrs = $("#lctn").val();
                 disloaction(addrs, false);
             });
+
             //禁用
             $("#btndisable").click(function () {
                 var addrs = $("#lctn").val();
@@ -495,6 +542,7 @@
                     }
                 });
             }
+
             //Date(1391141532000)的字符串转换成javascript中的日期对象
             function formatDate(dt)
             {
@@ -620,11 +668,10 @@
 
                 //Define a function to get 'location updated' events
                 //车位信息推送
-                feedbackLocInfo: function (lctn) {                    
-                    
+                feedbackLocInfo: function (lctn) {
+
                     var whs = lctn.Warehouse;
-                    if (whs == 1)
-                    {
+                    if (whs == 1) {
                         var ly = lctn.LocLayer;
                         var clmn = lctn.LocColumn;
                         var sd = lctn.LocSide;
@@ -640,9 +687,10 @@
                             l3_sc.get([mark]).status(color);
                         }
                     }
+
                     //更新车位显示区域
                     var adrs = lctn.Warehouse + '_' + sd + '_' + clmn + '_' + ly;
-                    if ($("#lctn").val() == adrs) {                       
+                    if ($("#lctn").val() == adrs) {
                         var $disp = $("#selected-seats");
 
                         var html = '<li>库区：' + lctn.Warehouse + '</li>';
@@ -666,23 +714,23 @@
                         html = '<li>入库时间：<br/>' + lctn.InDate + '</li>';
                         $disp.append(html);
                     }
-                    console.log("location addrs-"+adrs+" callback");
+                    console.log("location addrs-" + adrs + " callback");
                 },
 
                 //设备信息推送
                 feedbackDevice: function (smg) {
-                   
+
                     //先查询DIV是否已加载完成
                     var wh = smg.Warehouse;
                     var code = smg.DeviceCode;
-                    var name = wh + '-' + code;                   
+                    var name = wh + '-' + code;
                     var obj = $("table[id='" + name + "']");
                     if (obj.length == 0) {
                         console.log("feedback deviec info ,but device region no exist");
                         return;
                     }
-                    console.log(name+" object exist");
-                    $("table[id='" + name + "'] input[id='address']").val(smg.Address);                   
+                    console.log(name + " object exist");
+                    $("table[id='" + name + "'] input[id='address']").val(smg.Address);
                     $("table[id='" + name + "'] input[id='mode']").val(smg.Mode);
                     $("table[id='" + name + "'] input[id='able']").val(smg.IsAble);
                     $("table[id='" + name + "'] input[id='accept']").val(smg.IsAvailabe);
@@ -690,6 +738,44 @@
                     $("table[id='" + name + "'] input[id='instep']").val(smg.InStep);
                     $("table[id='" + name + "'] input[id='outstep']").val(smg.OutStep);
 
+                    if (smg.TaskID == 0)
+                    {
+                        var code = wh + "" + code;
+
+                        var ttype = "type-" + code;
+                        $("input[id='" + ttype + "']").val("");
+
+                        var proof = "iccode-" + code;
+                        $("input[id='" + proof + "']").val("");
+
+                        var state = "status-" + code;
+                        $("input[id='" + state + "']").val(detail.Status);
+                    }
+
+                },
+
+                //推送作业信息
+                feedbackImpTask: function (detail) {
+                    var code = detail.DevDescp;
+
+                    var ttype = "type-" + code;
+                    $("input[id='" + ttype + "']").val(detail.TaskType);
+
+                    var proof = "iccode-" + code;
+                    $("input[id='" + proof + "']").val(detail.Proof);
+
+                    var state = "status-" + code;
+                    $("input[id='" + state + "']").val(detail.Status);
+                },
+
+                //推送统计信息
+                feedbackStatistInfo: function (json) {
+                    $("span[id='total']").text(json.Total);
+                    $("span[id='occupy']").text(json.Occupy);
+                    $("span[id='space']").text(json.Space);
+                    $("span[id='big']").text(json.BigSpace);
+                    $("span[id='small']").text(json.SmallSpace);
+                    $("span[id='fix']").text(json.FixLoc);
                 }
 
             });

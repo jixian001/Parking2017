@@ -101,11 +101,19 @@
         @RenderBody()
         <hr />
         <footer class="text-center">
-            <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;深圳中集智能停车有限公司 &nbsp;&nbsp;&nbsp;版权所有</p>
+            <p>
+                总车位：<span id="total" style="color:red"></span>&nbsp;&nbsp;&nbsp;|
+                占用车位：<span id="occupy" style="color:red"></span>&nbsp;&nbsp;&nbsp;|
+                空闲车位：<span id="space" style="color:red"></span>&nbsp;
+                (&nbsp;大车位：<span id="big" style="color:red"></span>&nbsp;&brvbar;
+                 &nbsp;小车位：<span id="small" style="color:red"></span> &nbsp;)&nbsp;&nbsp;&nbsp;|
+                固定用户：<span id="fix" style="color:red"></span>
+            </p>
             <p>
                 @Html.ActionLink("关于我们", "About", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })&nbsp;&nbsp;&nbsp;&nbsp;
                 @Html.ActionLink("微信公众号", "WeChat", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })
-            </p>
+            </p> 
+            <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;深圳中集智能停车有限公司 &nbsp;&nbsp;&nbsp;版权所有</p>          
         </footer>
     </div>
 
@@ -122,5 +130,6 @@
     <script src="~/signalr/hubs"></script>
 
     @RenderSection("scripts", required: false)
+   
 </body>
 </html>
