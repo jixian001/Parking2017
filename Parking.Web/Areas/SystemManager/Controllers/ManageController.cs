@@ -7,6 +7,7 @@ using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
 using Parking.Web.Areas.SystemManager.Models;
+using Parking.Web.Models;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
 {  
@@ -55,22 +56,80 @@ namespace Parking.Web.Areas.SystemManager.Controllers
                 }
             }
             Page<ImplementTask> pageTask = new CWTask().FindPageList(page, orderParam);
+
+            List<DisplayITask> dispTaskLst = new List<DisplayITask>();
+           
+            foreach(ImplementTask itask in pageTask.ItemLists)
+            {
+                DisplayITask dtask = new DisplayITask {
+                    ID = itask.ID,
+                    Warehouse = itask.Warehouse,
+                    DeviceCode = itask.DeviceCode,
+                    Type = PlusCvt.ConvertTaskType(itask.Type),
+                    Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
+                    SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
+                    CreateDate=itask.CreateDate.ToString(),
+                    SendDtime=itask.SendDtime.ToString(),
+                    HallCode=itask.HallCode,
+                    FromLctAddress=itask.FromLctAddress,
+                    ToLctAddress=itask.ToLctAddress,
+                    ICCardCode=itask.ICCardCode,
+                    Distance=itask.Distance,
+                    CarSize=itask.CarSize,
+                    CarWeight=itask.CarWeight
+                };
+                dispTaskLst.Add(dtask);
+            }
+            int rcdNum = pageTask.TotalNumber;
             var data = new
             {
                 total = pageTask.TotalNumber,
-                rows = pageTask.ItemLists
+                rows = dispTaskLst
             };
             return Json(data);
         }
+
         /// <summary>
-        /// 点击详情，查看信息
+        /// 
         /// </summary>
-        /// <param name="tID"></param>
         /// <returns></returns>
         public ActionResult TaskDetail(int ID)
         {
-            ImplementTask task = new CWTask().Find(tsk => tsk.ID == ID);
-            return View(task);
+            ViewBag.ID = ID;
+            return View();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tID"></param>
+        /// <returns></returns>
+        public ActionResult GetTaskDetailByID(int ID)
+        {
+            ImplementTask itask = new CWTask().Find(tsk => tsk.ID == ID);
+            DisplayITask dtask = new DisplayITask();
+            if (itask != null)
+            {
+                dtask = new DisplayITask
+                {
+                    ID = itask.ID,
+                    Warehouse = itask.Warehouse,
+                    DeviceCode = itask.DeviceCode,
+                    Type = PlusCvt.ConvertTaskType(itask.Type),
+                    Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
+                    SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
+                    CreateDate = itask.CreateDate.ToString(),
+                    SendDtime = itask.SendDtime.ToString(),
+                    HallCode = itask.HallCode,
+                    FromLctAddress = itask.FromLctAddress,
+                    ToLctAddress = itask.ToLctAddress,
+                    ICCardCode = itask.ICCardCode,
+                    Distance = itask.Distance,
+                    CarSize = itask.CarSize,
+                    CarWeight = itask.CarWeight
+                };
+            }
+            return Json(dtask,JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>

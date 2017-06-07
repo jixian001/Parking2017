@@ -33,7 +33,7 @@
                 buttonsAligh: "right",
                 showRefresh: true,
                 showToggle: true,
-                //showColumns: true,       //是否显示所有的列
+                showColumns: true,       //是否显示所有的列
                 showFooter: false,
                 pagination: true,
                 striped: true,              //是否显示行间隔色
@@ -81,22 +81,19 @@
                         title: "任务类型",
                         field: "Type",
                         align: "left",
-                        valign: "middle",
-                        formatter: typeFormatter
+                        valign: "middle"
                     },
                     {
                         title: "任务状态",
                         field: "Status",
                         align: "left",
-                        valign: "middle",
-                        formatter: statusFormatter
+                        valign: "middle"
                     },
                     {
                         title: "发送状态",
                         field: "SendStatusDetail",
                         align: "left",
-                        valign: "middle",
-                        formatter: sendDetailFormatter
+                        valign: "middle"
                     },
                      {
                          title: "涉及车厅",
@@ -116,29 +113,25 @@
                         field: "SendDtime",
                         align: "left",
                         valign: "middle",
-                        visible: false,
-                        formatter: sendDtimeFormatter
+                        visible: false
                     },
                     {
                         title: "建立时间",
                         field: "CreateDate",
                         align: "left",
-                        valign: "middle",
-                        formatter: sendDtimeFormatter
+                        valign: "middle"
                     },
                     {
                         title: "源地址",
                         field: "FromLctAddress",
                         align: "center",
-                        valign: "middle",
-                        visible: false
+                        valign: "middle"
                     },
                     {
                         title: "目的地址",
                         field: "ToLctAddress",
                         align: "center",
-                        valign: "middle",
-                        visible: false
+                        valign: "middle"
                     },
                     {
                         title: "详情",
@@ -174,34 +167,16 @@
             }
 
             //设备号
-            function deviceFormatter(value, row, index) {
-                if(value>10){
+            function deviceFormatter(value, row, index)
+            {
+                if (value > 10)
+                {
                     return (value-10)+"#车厅";
-                }else{
-                    return value+"#TV"
                 }
-            }
-
-            function typeFormatter(value, row, index) {
-
-                return value;
-            }
-
-            function statusFormatter(value, row, index) {
-
-                return value;
-            }
-
-            function sendDetailFormatter(value, row, index) {
-
-                return value;
-            }
-
-            function sendDtimeFormatter(value, row, index) {
-                if (value != null) {
-
+                else
+                {
+                    return value+"#ETV"
                 }
-                return "";
             }
 
             function operateFormatter(value, row, index) {
@@ -277,7 +252,7 @@
 
         window.actionEvents = {
             'click .detail': function (e, value, row, index) {
-                window.location.href = "/SystemManager/Manage/TaskDetail?ID=" + row.ID;
+                window.location.href = "/SystemManager/Manage/TaskDetail?ID="+row.ID;
             }
         };
 

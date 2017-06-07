@@ -193,6 +193,7 @@
     <Compile Include="Areas\SystemManager\Controllers\ManualOprtController.cs" />
     <Compile Include="Areas\SystemManager\Controllers\MSConfigController.cs" />
     <Compile Include="Areas\CustomManager\Models\ChangeDeadlineModel.cs" />
+    <Compile Include="Areas\SystemManager\Models\DisplayITask.cs" />
     <Compile Include="Areas\SystemManager\Models\ReturnModel.cs" />
     <Compile Include="Areas\SystemManager\Models\SelectItem.cs" />
     <Compile Include="Areas\SystemManager\SystemManagerAreaRegistration.cs" />
@@ -252,6 +253,7 @@
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Image\add.jpg" />
+    <Content Include="Image\loading.gif" />
     <Content Include="Image\scan.gif" />
     <Content Include="Image\fingerprint.jpg" />
     <Content Include="Image\first.jpg" />

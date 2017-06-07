@@ -130,13 +130,15 @@
                         title: "作业设备",
                         field: "DeviceCode",
                         align: "center",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter: deviceFormatter
                     },
                     {
                         title: "任务类型",
                         field: "MasterType",
-                        align: "left",
-                        valign: "middle"
+                        align: "center",
+                        valign: "middle",
+                        formatter: typeFormatter
                     },
                     {
                         title: "报文类型",
@@ -195,6 +197,43 @@
                     warehouse: $("input[name='search_wh']").val(),
                     code: $("input[name='search_code']").val()
                 };
+            }
+
+            //设备号
+            function deviceFormatter(value, row, index)
+            {
+                if (value > 10)
+                {
+                    return (value - 10) + "#车厅";
+                }
+                else
+                {
+                    return value + "#ETV"
+                }
+            }
+
+            //作业类型
+            function typeFormatter(value, row, index) {
+                var msg = value;
+                if (value == 1) {
+                    msg = "存车";
+                }
+                else if (value == 2) {
+                    msg = "取车";
+                }
+                else if (value == 3) {
+                    msg = "挪移";
+                }
+                else if (value == 4) {
+                    msg = "移动";
+                }
+                else if (value == 5) {
+                    msg = "取物";
+                }
+                else if (value == 6) {
+                    msg = "避让";
+                }
+                return msg;
             }
 
             function operateFormatter(value, row, index) {

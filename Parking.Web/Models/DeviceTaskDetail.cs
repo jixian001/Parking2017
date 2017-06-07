@@ -175,5 +175,31 @@ namespace Parking.Web.Models
             #endregion
             return msg;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="detail"></param>
+        /// <returns></returns>
+        public static string ConvertSendStateDetail(EnmTaskStatusDetail detail)
+        {
+            string msg = "";
+            switch (detail)
+            {
+                case EnmTaskStatusDetail.NoSend:
+                    msg = "等待发送";
+                    break;
+                case EnmTaskStatusDetail.SendWaitAsk:
+                    msg = "等待ACK";
+                    break;
+                case EnmTaskStatusDetail.Asked:
+                    msg = "交互成功";
+                    break;
+                default:
+                    msg = detail.ToString();
+                    break;
+            }
+            return msg;
+        }
     }
 }

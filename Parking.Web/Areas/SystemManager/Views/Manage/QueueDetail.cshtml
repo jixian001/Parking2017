@@ -22,69 +22,69 @@
                     <tr>
                         <th class="formTitle">库区</th>
                         <td class="formValue">
-                            <input id="wh" name="wh" type="text" class="form-control" placeholder="@Model.Warehouse" />
+                            <input id="wh" name="wh" type="text" class="form-control" value="@Model.Warehouse" />
                         </td>
                         <th class="formTitle">设备号</th>
                         <td class="formValue">
-                            <input id="code" name="code" type="text" class="form-control" placeholder="@Model.DeviceCode" />
+                            <input id="code" name="code" type="text" class="form-control" value="@Model.DeviceCode" />
                         </td>
                     </tr>
                     <tr>
-                        <th class="formTitle">是否是队列</th>
+                        <th class="formTitle">主作业否</th>
                         <td class="formValue">
-                            <input id="type" name="type" type="text" class="form-control" placeholder="@Model.IsMaster" />
+                            <input id="type" name="type" type="text" class="form-control" value="@Model.IsMaster" />
                         </td>
                         <th class="formTitle">队列类型</th>
                         <td class="formValue">
-                            <input id="status" name="status" type="text" class="form-control" placeholder="@Model.MasterType" />
+                            <input id="status" name="status" type="text" class="form-control" value="@Model.MasterType" />
                         </td>
                     </tr>
                     <tr>
                         <th class="formTitle">报文类型</th>
                         <td class="formValue">
-                            <input id="sendDtime" name="sendDtime" type="text" class="form-control" placeholder="@Model.TelegramType" />
+                            <input id="sendDtime" name="sendDtime" type="text" class="form-control" value="@Model.TelegramType" />
                         </td>
                         <th class="formTitle">报文子类型</th>
                         <td class="formValue">
-                            <input id="createDate" name="createDate" type="text" class="form-control" placeholder="@Model.SubTelegramType" />
+                            <input id="createDate" name="createDate" type="text" class="form-control" value="@Model.SubTelegramType" />
                         </td>
                     </tr>
                     <tr>                       
                         <th class="formTitle">用户卡号</th>
                         <td class="formValue">
-                            <input id="iccode" name="iccode" type="text" class="form-control" placeholder="@Model.ICCardCode" />
+                            <input id="iccode" name="iccode" type="text" class="form-control" value="@Model.ICCardCode" />
                         </td>
                         <th class="formTitle">车重</th>
                         <td class="formValue">
-                            <input id="hallCode" name="hallCode" type="text" class="form-control" placeholder="@Model.CarWeight" />
+                            <input id="hallCode" name="hallCode" type="text" class="form-control" value="@Model.CarWeight" />
                         </td>
                     </tr>
                     <tr>
                         <th class="formTitle">起始地址</th>
                         <td class="formValue">
-                            <input id="fromLctAddress" name="fromLctAddress" type="text" class="form-control" placeholder="@Model.FromLctAddress" />
+                            <input id="fromLctAddress" name="fromLctAddress" type="text" class="form-control" value="@Model.FromLctAddress" />
                         </td>
                         <th class="formTitle">目的地址</th>
                         <td class="formValue">
-                            <input id="toLctAddress" name="toLctAddress" type="text" class="form-control" placeholder="@Model.ToLctAddress" />
+                            <input id="toLctAddress" name="toLctAddress" type="text" class="form-control" value="@Model.ToLctAddress" />
                         </td>
                     </tr>
                     <tr>
                         <th class="formTitle">车辆辆距</th>
                         <td class="formValue">
-                            <input id="distance" name="distance" type="text" class="form-control" placeholder="@Model.Distance" />
+                            <input id="distance" name="distance" type="text" class="form-control" value="@Model.Distance" />
                         </td>
                         <th class="formTitle">车辆外形</th>
                         <td class="formValue">
-                            <input id="carsize" name="carsize" type="text" class="form-control" placeholder="@Model.CarSize" />
+                            <input id="carsize" name="carsize" type="text" class="form-control" value="@Model.CarSize" />
                         </td>
-                    </tr>                   
+                    </tr>                                  
                 </table>
             </form>
         </div>
         <div>@Html.HiddenFor(model => model.ID)</div>
         <div>            
-            <button class="btn btn-primary" id="btnDel" style="margin-left:200px">删 除</button>
+            <button class="btn btn-primary" id="btnDel" style="margin-left:120px">删 除</button>
         </div>
     </div>
 </div>
@@ -93,6 +93,22 @@
     @Styles.Render("~/Content/defform")
     <script>
         $(function () {
+
+            setTimeout(function ()
+            {
+                var $type = $("#type");
+                var vtype = $type.val();
+                if (vtype == 1)
+                {
+                    $type.val("子作业");
+                }
+                else if (vtype == 2)
+                {
+                    $type.val("主作业");
+                }
+
+            }, 500);
+           
                     
             $("#btnDel").click(function () {
                 var mId = $("#ID").val();
