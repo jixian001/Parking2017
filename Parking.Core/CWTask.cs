@@ -782,7 +782,8 @@ namespace Parking.Core
                 else
                 {
                     //如果当前是避让作业，设备的即将要执行的标志有的话，让其处于执行状态
-                    if (tsk.Type == EnmTaskType.Avoid && smg.SoonTaskID != 0)
+                    if ((tsk.Type == EnmTaskType.Avoid || tsk.Type == EnmTaskType.Move) && 
+                         smg.SoonTaskID != 0)
                     {
                         smg.TaskID = smg.SoonTaskID;
                         smg.SoonTaskID = 0;
@@ -931,10 +932,8 @@ namespace Parking.Core
         {
             Log log = LogFactory.GetLogger("CWTask.ManualGetCar");
             Response resp = new Response();
-            resp.Code = 0;
-            //这里判断是否有可用的TV
-            //这里先以平面移动库来做
-            Device smg = new CWDevice().Find(dev => dev.Region == lct.LocLayer && dev.Warehouse == lct.Warehouse);
+            resp.Code = 0;            
+            Device smg = new AllocateTV().Allocate(mohall, lct);
             if (smg == null)
             {
                 //系统故障
@@ -992,7 +991,7 @@ namespace Parking.Core
             resp.Code = 0;
             //这里判断是否有可用的TV
             //这里先以平面移动库来做
-            Device smg = new CWDevice().Find(dev => dev.Region == lct.LocLayer && dev.Warehouse == lct.Warehouse);
+            Device smg = new AllocateTV().Allocate(mohall, lct);
             if (smg == null)
             {
                 //系统故障
@@ -1120,28 +1119,61 @@ namespace Parking.Core
                 resp.Message = "目的车位状态不为占用状态";
                 return resp;
             }
-
             if (string.Compare(frlct.LocSize, tolct.LocSize) > 0)
             {
                 resp.Message = "目标车位的车位尺寸小于源车位尺寸，不允许挪移！";
                 return resp;
             }
-            if (frlct.LocLayer != tolct.LocLayer)
+            Customer cust = new CWICCard().FindFixLocationByAddress(tolct.Warehouse, tolct.Address);
+            if (cust != null)
             {
-                resp.Message = "目标车位与源车位不在同一层，不允许挪移！";
+                resp.Message = "目标车位是固定车位，不允许挪移！";
                 return resp;
             }
-           
-            Device smg = new CWDevice().Find(dev => dev.Region == frlct.LocLayer && dev.Warehouse == warehouse);
+            //是后面车位，则前面保证前面的车位是空闲的
+            if (frlct.LocSide == 4)
+            {
+                string forward = "2" + frlct.Address.Substring(1);
+                Location loc = cwloctation.FindLocation(l => l.Warehouse == warehouse && l.Address == forward);
+                if (loc != null)
+                {
+                    if (loc.Status != EnmLocationStatus.Space)
+                    {
+                        resp.Message = "源车位是重列位，其前面的车位-"+forward+" 不是空闲的，不允许挪移！";
+                        return resp;
+                    }
+                }
+            }
+            if (tolct.LocSide == 4)
+            {
+                string forward = "2" + frlct.Address.Substring(1);
+                Location loc = cwloctation.FindLocation(l => l.Warehouse == warehouse && l.Address == forward);
+                if (loc != null)
+                {
+                    if (loc.Status != EnmLocationStatus.Space)
+                    {
+                        resp.Message = "目的车位是重列位，其前面的车位-" + forward + " 不是空闲的，不允许挪移！";
+                        return resp;
+                    }
+                }
+            }
+
+            Device smg = new AllocateTV().TransportToAllocateTV(frlct, tolct);
             if (smg == null)
             {
                 //系统故障
                 resp.Message = "系统故障，挪移时找不移动设备。locLayer-" + frlct.LocLayer + " warehouse-" + frlct.Warehouse;
                 return resp;
             }
+            
             if (smg.Mode != EnmModel.Automatic)
             {
                 resp.Message = "挪移，TV-" + smg.DeviceCode + " 不是全自动状态！";
+                return resp;
+            }
+            if (smg.TaskID != 0)
+            {
+                resp.Message = "挪移，TV-" + smg.DeviceCode + " 正在作业，请等待TV空闲后再进行挪移！";
                 return resp;
             }
             #endregion
@@ -1199,11 +1231,7 @@ namespace Parking.Core
                 resp.Message = "请输入正确的车位地址！";
                 return resp;
             }
-            if (smg.Layer != lct.LocLayer)
-            {
-                resp.Message = "TV与车位不同层，无法移动！";
-                return resp;
-            }
+           
             if (smg.Mode != EnmModel.Automatic)
             {
                 resp.Message = "TV不是全自动！";
@@ -1221,8 +1249,20 @@ namespace Parking.Core
             }
             if (smg.TaskID != 0)
             {
-                resp.Message = "请等待TV完成作业，再执行移动！";
-                return resp;
+                ImplementTask itask = new CWTask().Find(smg.TaskID);
+                if (itask != null)
+                {
+                    if (itask.Status != EnmTaskStatus.WillWaitForUnload)
+                    {
+                        resp.Message = "请等待TV完成作业，再执行移动！";
+                        return resp;
+                    }
+                }
+                else
+                {
+                    resp.Message = "请等待TV完成作业，再执行移动！";
+                    return resp;
+                }
             }
             #endregion
             #region
@@ -1246,7 +1286,8 @@ namespace Parking.Core
             resp= manager.Add(task);
             if (resp.Code == 1)
             {
-                smg.TaskID = task.ID;
+                smg.SoonTaskID = smg.TaskID;
+                smg.TaskID = task.ID;                
                 new CWDevice().Update(smg);
                 resp.Message = "正在移动，请等待！";
             }

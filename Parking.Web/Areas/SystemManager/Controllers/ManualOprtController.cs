@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using Parking.Web.Areas.SystemManager.Models;
 using Parking.Auxiliary;
+using Parking.Data;
 using Parking.Core;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
@@ -18,6 +19,25 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         public ActionResult Index()
         {
             return View();
+        }
+
+        public JsonResult GetOutHallName()
+        {
+            List<SelectItem> itemsLst = new List<SelectItem>();
+            #region
+            List<Device> hallsLst = new CWDevice().FindList(dv => dv.Type == EnmSMGType.Hall && 
+                                                           (dv.HallType == EnmHallType.EnterOrExit || dv.HallType == EnmHallType.Exit));
+            foreach(Device dev in hallsLst)
+            {
+                SelectItem item = new SelectItem
+                {
+                    OptionValue=dev.DeviceCode.ToString(),
+                    OptionText=(dev.DeviceCode-10).ToString()+" #车厅"
+                };
+                itemsLst.Add(item);
+            }
+            #endregion
+            return Json(itemsLst, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
@@ -48,6 +68,28 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         public ActionResult Move()
         {
             return View();
+        }
+
+        /// <summary>
+        /// 获取移动设备清单
+        /// </summary>
+        /// <returns></returns>
+        public JsonResult GetEtvsName()
+        {
+            List<SelectItem> itemsLst = new List<SelectItem>();
+            #region
+            List<Device> hallsLst = new CWDevice().FindList(dv => dv.Type == EnmSMGType.ETV);
+            foreach (Device dev in hallsLst)
+            {
+                SelectItem item = new SelectItem
+                {
+                    OptionValue = dev.DeviceCode.ToString(),
+                    OptionText =  dev.DeviceCode.ToString() + " #ETV"
+                };
+                itemsLst.Add(item);
+            }
+            #endregion
+            return Json(itemsLst, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]

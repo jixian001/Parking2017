@@ -14,7 +14,7 @@ namespace Parking.Core
     public class AllocateTV
     {      
         /// <summary>
-        /// 
+        /// 取车、取物分配
         /// </summary>
         /// <param name="hall"></param>
         /// <param name="lctn"></param>
@@ -289,6 +289,35 @@ namespace Parking.Core
                 if (scope.LeftCol <= loc.LocColumn && loc.LocColumn <= scope.RightCol)
                 {
                     return loc;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 挪移时车位选择
+        /// </summary>
+        /// <param name="frlct"></param>
+        /// <param name="tolct"></param>
+        /// <returns></returns>
+        public Device TransportToAllocateTV(Location frlct,Location tolct)
+        {
+            CWDevice cwdevice = new CWDevice();
+            List<Device> nEtvList = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
+            WorkScope workscope = new WorkScope(nEtvList);
+            if (nEtvList.Count > 0)
+            {
+                List<Device> orderbyLst = nEtvList.OrderBy(d => Math.Abs(d.Region - frlct.Region)).ToList();
+                foreach(Device dev in orderbyLst)
+                {
+                    CScope scope = workscope.GetEtvScope(dev);
+                    if (scope.LeftCol <= frlct.LocColumn && frlct.LocColumn <= frlct.LocColumn)
+                    {
+                        if (scope.LeftCol <= tolct.LocColumn && frlct.LocColumn <= tolct.LocColumn)
+                        {
+                            return dev;
+                        }
+                    }
                 }
             }
             return null;

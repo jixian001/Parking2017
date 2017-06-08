@@ -21,7 +21,7 @@
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">
-                    <label for="iccode" class="col-md-2 control-label">用户卡号</label>
+                    <label for="iccode" class="col-md-2 control-label">用户凭证</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control" id="iccode" name="iccode" placeholder="请输入用户卡号" />
                     </div>
@@ -41,7 +41,9 @@
                 <div class="form-group">
                     <label for="hallID" class="col-md-2 control-label">出库车厅</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="hallID" name="hallID"/>
+                        <select id="hallID" name="hallID" class="form-control">
+                            <option value="0">请选择</option>
+                        </select>                        
                     </div>
                 </div>
                 <div class="form-group">
@@ -60,12 +62,31 @@
 @section scripts{
     <script>
         $(function () {
+
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOutHallName")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+
+                    },
+                    success: function (data) {
+                        var html = '<option value="0">请选择</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $("#hallID").empty();
+                        $("#hallID").append(html);
+                    }
+                });
+            }, 500);
+
             $("#btnFind").click(function () {
-                var $wh = $('input[name="warehouse"]');
-                var $hall = $('input[name="hallID"]');
+                var $wh = $('input[name="warehouse"]');                
                 var $addrs = $('input[name="address"]');
-                $wh.val("");
-                $hall.val("");
+                $wh.val("");               
                 $addrs.val("");
 
                 var $iccd = $("#iccode").val().trim();
@@ -95,7 +116,7 @@
                         if (cd == 1)
                         {                          
                             $wh.val(data.warehouse);
-                            $hall.val(data.hallID);
+                            $("#hallID").val(data.hallID);
                             $addrs.val(data.locaddrs);
                             var mytime = new Date();
                             var time = mytime.toLocaleTimeString();
@@ -113,8 +134,7 @@
 
             $("#btnConfig").click(function () {
                 var $wh = $('input[name="warehouse"]');
-                var $hall = $('input[name="hallID"]');               
-
+              
                 var $iccd = $("#iccode");
                 if ($iccd.val() == "") {
                     BootstrapDialog.show({
@@ -130,7 +150,8 @@
                     });
                     return;
                 }
-                if ($hall.val() == "") {
+                var hall = $("#hallID option:selected").val();
+                if (hall.val() == "0") {
                     BootstrapDialog.show({
                         title: "温馨提示",
                         message: "请输入出库车厅"
@@ -141,7 +162,7 @@
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("TempGet")",
-                    data: { iccode: $iccd.val(), warehouse: $wh.val(), hallID:$hall.val()},
+                    data: { iccode: $iccd.val(), warehouse: $wh.val(), hallID:hall},
                     dataType: "json",
                     cache: false,
                     beforeSend: function (XMLHttpRequest) {

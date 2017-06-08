@@ -15,60 +15,60 @@
         </ol>
         <hr />
         <div style="margin:10px 20px 20px 20px">
-            <form id="form1">
+            <form id="form1" style="display:none">
                 <table class="form">
                     <tr>
                         <th class="formTitle">库区</th>
                         <td class="formValue">
-                            <input id="wh" name="wh" type="text" class="form-control" placeholder="@Model.Warehouse" />
+                            <input id="wh" name="wh" type="text" class="form-control" value="@Model.Warehouse" />
                         </td>
                         <th class="formTitle">设备号</th>
                         <td class="formValue">
-                            <input id="code" name="code" type="text" class="form-control" placeholder="@Model.DeviceCode" />
+                            <input id="code" name="code" type="text" class="form-control" value="@Model.DeviceCode" />
                         </td>
                     </tr>
                     <tr>
                         <th class="formTitle">设备类型</th>
                         <td class="formValue">
-                            <input id="type" name="type" type="text" class="form-control" placeholder="@Model.Type" />
+                            <input id="type" name="type" type="text" class="form-control" value="@Model.Type" />
                         </td>
                         <th class="formTitle">车厅类型</th>
                         <td class="formValue">
-                            <input id="halltype" name="halltype" type="text" class="form-control" placeholder="@Model.HallType" />
+                            <input id="halltype" name="halltype" type="text" class="form-control" value="@Model.HallType" />
                         </td>
                     </tr>
                     <tr>
                         <th class="formTitle">设备地址</th>
                         <td class="formValue">
-                            <input id="address" name="address" type="text" class="form-control" placeholder="@Model.Address" />
+                            <input id="address" name="address" type="text" class="form-control" value="@Model.Address" />
                         </td>
                         <th class="formTitle">模式</th>
                         <td class="formValue">
-                            <input id="mode" name="mode" type="text" class="form-control" placeholder="@Model.Mode" />
+                            <input id="mode" name="mode" type="text" class="form-control" value="@Model.Mode" />
                         </td>
                        
                     </tr>
                     <tr>
                         <th class="formTitle">层</th>
                         <td class="formValue">
-                            <input id="layer" name="layer" type="text" class="form-control" placeholder="@Model.Layer" />
+                            <input id="layer" name="layer" type="text" class="form-control" value="@Model.Layer" />
                         </td>
                         <th class="formTitle">区域</th>
                         <td class="formValue">
-                            <input id="region" name="region" type="text" class="form-control" placeholder="@Model.Region" />
+                            <input id="region" name="region" type="text" class="form-control" value="@Model.Region" />
                         </td>                        
                     </tr>
                     <tr>
                         <th class="formTitle">是否可用</th>
                         <td class="formValue">
-                            <input id="isable" name="isable" type="text" class="form-control" placeholder="@Model.IsAble" />
+                            <input id="isable" name="isable" type="text" class="form-control" value="@Model.IsAble" />
                         </td>
                         <th class="formTitle">接收新指令</th>
                         <td class="formValue">
-                            <input id="isavailable" name="isavailable" type="text" class="form-control" placeholder="@Model.IsAvailabe" />
+                            <input id="isavailable" name="isavailable" type="text" class="form-control" value="@Model.IsAvailabe" />
                         </td>
                     </tr>
-                    <tr>
+                    @*<tr>
                         <th class="formTitle">自动步</th>
                         <td class="formValue">
                             <input id="runstep" name="runstep" type="text" class="form-control" placeholder="@Model.RunStep" />
@@ -87,7 +87,7 @@
                         <td class="formValue">
                             <input id="taskid" name="taskid" type="text" class="form-control" placeholder="@Model.TaskID" />
                         </td>
-                    </tr>
+                    </tr>*@
                 </table>
             </form>
         </div> 
@@ -103,6 +103,72 @@
     <script>
         $(function () {
 
+            setTimeout(function () {
+
+                $("#form1").css("display", "block");
+               
+                var $tp = $("#type");
+                var tp = $tp.val();
+                if (tp == "Hall")
+                {
+                    $tp.val("车厅");
+                }
+                else
+                {
+                    $tp.val("ETV");
+                }
+
+                var $ht = $("#halltype");
+                var ht = $ht.val();
+                if (ht == "Entrance")
+                {
+                    $ht.val("进车厅");
+                }
+                else if (ht == "Exit")
+                {
+                    $ht.val("出车厅");
+                }
+                else if (ht == "EnterOrExit")
+                {
+                    $ht.val("进出车厅");
+                }
+
+                var $mode = $("#mode");
+                var md = $mode.val();
+                if (md == "Maintance") {
+                    $mode.val("维修");
+                }
+                else if (md == "Manual") {
+                    $mode.val("手动");
+                }
+                else if (md == "StandAlone") {
+                    $mode.val("单机自动");
+                }
+                else if (md == "Automatic") {
+                    $mode.val("全自动");
+                }
+
+                var $isable = $("#isable");
+                var sb = $isable.val();
+                if (sb == 1)
+                {
+                    $isable.val("可用");
+                }
+                else
+                {
+                    $isable.val("不可用");
+                }
+
+                var $avail = $("#isavailable");
+                var av = $avail.val();
+                if (av == 1) {
+                    $avail.val("可接收指令");
+                }
+                else {
+                    $avail.val("不可接收指令");
+                }
+
+            }, 500);
 
         });
         </script>

@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewBag.Title = "手动出库";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -22,19 +21,21 @@
                 <div class="form-group">
                     <label for="warehouse" class="control-label col-md-2">库区</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="warehouse" name="warehouse" placeholder="输入库区号，例：1、2等"/>
+                        <input type="text" class="form-control" id="warehouse" name="warehouse" value="1" placeholder="输入库区号, 例：1、2等"/>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="address" class="col-md-2 control-label">取车车位</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="address" name="address" placeholder="取车位地址" />
+                        <input type="text" class="form-control" id="address" name="address" placeholder="车位地址, 例:x xx xx" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="hallID" class="col-md-2 control-label">出库车厅</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="hallID" name="hallID" placeholder="车厅号，例：11、12、13等" />
+                        <select id="hallID" name="hallID" class="form-control">
+                            <option value="0">请选择</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
@@ -52,7 +53,29 @@
 @section scripts{
     <script>
         $(function () {
-            $("#btnConfig").click(function () {
+
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOutHallName")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+
+                    },
+                    success: function (data) {                       
+                        var html = '<option value="0">请选择</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $("#hallID").empty();
+                        $("#hallID").append(html);
+                    }
+                });
+            }, 500);
+
+            $("#btnConfig").click(function ()
+            {
                 var $wh = $("#warehouse").val().trim();
                 if ($wh == "") {
                     BootstrapDialog.show({
@@ -69,11 +92,11 @@
                     });
                     return;
                 }
-                var $hall = $("#hallID").val().trim();
-                if ($hall == "") {
+                var $hall = $("#hallID option:selected").val();
+                if ($hall =="0") {
                     BootstrapDialog.show({
                         title: "温馨提示",
-                        message: "请输入出库车厅！"
+                        message: "请选择出库车厅！"
                     });
                     return;
                 }

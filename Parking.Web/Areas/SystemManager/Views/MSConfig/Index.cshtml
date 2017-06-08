@@ -87,6 +87,7 @@
                 showRefresh: true,  
                 showToggle: true,
                 showFooter: false,
+                showColumns: true,    //显示所有列
                 pagination: true,
                 striped: true,              //是否显示行间隔色
                 sidePagination: "server",
@@ -113,7 +114,8 @@
                         visible: true,
                         align: "center",
                         valign: "middle",
-                        sortable: true
+                        sortable: true,
+                        visible: false
                     },
                     {
                         title: "库区",
@@ -126,37 +128,44 @@
                         field: "DeviceCode",
                         align: "center",
                         valign: "middle",
-                        sortable: true
+                        sortable: true,
+                        formatter: deviceFormatter
                     },
                     {
                         title: "设备类型",
                         field: "Type",
-                        align: "left",
-                        valign: "middle"
+                        align: "center",
+                        valign: "middle",
+                        formatter: typeFormatter
                     },
                     {
                         title: "车厅类型",
                         field: "HallType",
-                        align: "left",
-                        valign: "middle"
+                        align: "center",
+                        valign: "middle",
+                        formatter: halltypeFormatter
                     },
                     {
                         title: "模式",
                         field: "Mode",
-                        align: "left",
-                        valign: "middle"
+                        align: "center",
+                        valign: "middle",
+                        formatter: modeFormatter
                     },
                     {
                         title: "可用性",
                         field: "IsAble",
                         align: "center",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter: ableFormatter
                     },
                     {
                         title: "可接收指令",
                         field: "IsAvailabe",
                         align: "center",
-                        valign: "middle",                        
+                        valign: "middle",
+                        visible: false,
+                        formatter: ableFormatter
                     },
                     {
                         title: "地址",
@@ -175,8 +184,8 @@
                         title: "作业ID",
                         field: "TaskID",
                         align: "center",
-                        valign: "middle",
-                        sortable: true
+                        valign: "middle",                        
+                        visible: false
                     },
                     {
                         title: "操作",
@@ -205,6 +214,85 @@
                     warehouse: $("#warehouse option:selected").val(),
                     code: $("#code option:selected").val()
                 };
+            }
+
+            //设备
+            function deviceFormatter(value, row, index)
+            {
+                var msg = "";
+                if (value > 10)
+                {
+                    msg = (value - 10).toString() + " #车厅";
+                }
+                else
+                {
+                    msg = value.toString() + " #ETV";
+                }
+                return msg;
+            }
+
+            //类型
+            function typeFormatter(value, row, index)
+            {
+                var msg = "";
+                if (value == 1)
+                {
+                    msg = "车厅";
+                }
+                else if(value==2)
+                {
+                    msg = "ETV";
+                }
+                return msg;
+            }
+
+            //车厅类型
+            function halltypeFormatter(value, row, index)
+            {
+                var msg = "";
+                if (value == 1) {
+                    msg = "进车厅";
+                }
+                else if (value == 2) {
+                    msg = "出车厅";
+                }
+                else if (value == 3) {
+                    msg = "进出车厅";
+                }
+                return msg;
+            }
+
+            //模式
+            function modeFormatter(value, row, index)
+            {
+                var msg = "";
+                if (value == 1) {
+                    msg = "维修";
+                }
+                else if (value == 2) {
+                    msg = "手动";
+                }
+                else if (value == 3) {
+                    msg = "单机自动";
+                }
+                else if (value == 4) {
+                    msg = "全自动";
+                }
+                return msg;
+            }
+
+            //是否
+            function ableFormatter(value)
+            {
+                var msg = "";
+                if (value ==1) {
+                    msg = "是";
+                }
+                else
+                {
+                    msg = "否";
+                }
+                return msg;
             }
 
             function operateFormatter(value, row, index) {
