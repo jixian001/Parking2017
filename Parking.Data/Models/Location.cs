@@ -77,7 +77,8 @@ namespace Parking.Data
         Occupy,    //占用-2
         Entering,  //正在入库-3
         Outing,    //正在出库-4
-        TempGet,   //临时取物车位 
-        Idleness   //无效车位-6
+        TempGet,   //临时取物车位  -5
+        Idleness,   //无效车位-6
+        WillBack   //待回挪 -7
     }
 }

@@ -10,6 +10,11 @@ namespace Parking.Data
 {
     public class WorkTaskManager:BaseManager<WorkTask>
     {
+        public WorkTask Find(int ID)
+        {
+            return _repository.Find(ID);
+        }
+
         public WorkTask Find(Expression<Func<WorkTask, bool>> where)
         {
             return _repository.Find(where);
