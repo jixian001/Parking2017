@@ -316,6 +316,7 @@
     <Content Include="Areas\ChargeManager\Views\ChargingRule\FixRule.cshtml" />
     <Content Include="Areas\ExternalManager\Views\web.config" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\ChangeDeadline.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\Manage\_PartialSideNav.cshtml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />

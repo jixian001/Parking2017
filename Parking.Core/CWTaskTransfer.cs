@@ -500,7 +500,7 @@ namespace Parking.Core
         /// <summary>
         /// 临时取物
         /// </summary>
-        /// <param name="iccode"></param>
+        /// <param name="iccode">用户凭证，可能是卡号，可能是指纹编号</param>
         /// <returns></returns>
         public Response TempGetCar(string iccode)
         {
@@ -523,17 +523,26 @@ namespace Parking.Core
                     _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
                     return _resp;
                 }
-                ICCard iccd = new CWICCard().Find(ic => ic.UserCode == iccode);
-                if (iccd == null)
+                if (Convert.ToInt32(iccode) < 10000) //是卡号，则判断下，是指纹，就不用判断了
                 {
-                    _resp.Message = "找不到当前卡信息！ICCode-" + iccode;
-                    return _resp;
+                    #region 判断卡的有效性
+                    ICCard iccd = new CWICCard().Find(ic => ic.UserCode == iccode);
+                    if (iccd == null)
+                    {
+                        _resp.Message = "找不到当前卡信息！ICCode-" + iccode;
+                        return _resp;
+                    }
+                    if (iccd.Status == EnmICCardStatus.Disposed ||
+                        iccd.Status == EnmICCardStatus.Lost)
+                    {
+                        _resp.Message = "卡已挂失或注销！status-" + iccd.Status.ToString();
+                        return _resp;
+                    }
+                    #endregion
                 }
-                if (iccd.Status == EnmICCardStatus.Disposed ||
-                    iccd.Status == EnmICCardStatus.Lost)
+                else
                 {
-                    _resp.Message = "卡已挂失或注销！status-" + iccd.Status.ToString();
-                    return _resp;
+                    _resp.Message = "车辆是刷指纹存车的！";
                 }
                 Location lct = new CWLocation().FindLocation(l => l.ICCode == iccode);
                 if (lct == null)

@@ -26,7 +26,7 @@ namespace Parking.Data
             {
                 _repository.Update(ar, false);
             }
-            int count= _repository.Save();
+            int count= _repository.SaveChanges();
             Response resp = new Response() {
                 Code=1,
                 Message="批量更新成功！Count-"+count

@@ -231,7 +231,15 @@
                     });
                     return;
                 }
-               
+                if ($iccd.val().length != 4)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入四位有效的用户卡号，如果不足四位的，请在前面补 0 "
+                    });
+                    return;
+                }
+
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("MakeCard")",

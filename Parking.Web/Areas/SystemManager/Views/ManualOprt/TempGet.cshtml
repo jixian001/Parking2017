@@ -21,9 +21,19 @@
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">
-                    <label for="iccode" class="col-md-2 control-label">用户凭证</label>
+                    <label for="txtIccd" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="iccode" name="iccode" placeholder="请输入用户卡号" />
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="chkplate" name="chkplate" />&nbsp;是否以<b>车牌号</b>取物
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="iccode" class="col-md-2 control-label" id="proof">用户卡号</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="iccode" name="iccode" placeholder="用户卡号" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -48,7 +58,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-md-10 col-md-offset-2">
-                        <button type="button" id="btnFind" class="btn btn-default">查询</button>
+                        <button type="button" id="btnFind" class="btn btn-default">查询</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         <button type="button" id="btnConfig" class="btn btn-default">确认取物</button>
                     </div>
                 </div>
@@ -84,24 +94,24 @@
             }, 500);
 
             $("#btnFind").click(function () {
-                var $wh = $('input[name="warehouse"]');                
+                var $wh = $('input[name="warehouse"]');
                 var $addrs = $('input[name="address"]');
-                $wh.val("");               
+                $wh.val("");
                 $addrs.val("");
 
                 var $iccd = $("#iccode").val().trim();
                 if ($iccd == "") {
                     BootstrapDialog.show({
                         title: "温馨提示",
-                        message: "请输入用户卡号！"
+                        message: "请输入取车凭证！"
                     });
                     return;
                 }
-                
+                var chk = $('#chkplate').is(':checked');
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("TempFind")",
-                    data: {iccode:$iccd},
+                    data: { iccode: $iccd,isplate:chk },
                     dataType: "json",
                     cache: false,
                     beforeSend: function (XMLHttpRequest) {
@@ -113,15 +123,14 @@
                             message: data.message
                         });
                         var cd = data.code;
-                        if (cd == 1)
-                        {                          
+                        if (cd == 1) {
                             $wh.val(data.warehouse);
                             $("#hallID").val(data.hallID);
                             $addrs.val(data.locaddrs);
                             var mytime = new Date();
                             var time = mytime.toLocaleTimeString();
                             $("#disp").append('<p class="text-info">' + time + '&nbsp;&nbsp;&nbsp;查找成功-<i>车位</i>：' + data.locaddrs + ' &nbsp;&nbsp;<i>出车车厅</i>：' + data.hallID + '&nbsp;&nbsp;<i>库区</i>：' + data.warehouse + '</p>');
-                        }                        
+                        }
                     },
                     complete: function (XMLHttpRequest, textStatus) {
                         $("#btnFind").text("查找");
@@ -134,7 +143,7 @@
 
             $("#btnConfig").click(function () {
                 var $wh = $('input[name="warehouse"]');
-              
+
                 var $iccd = $("#iccode");
                 if ($iccd.val() == "") {
                     BootstrapDialog.show({
@@ -143,26 +152,22 @@
                     });
                     return;
                 }
-                if ($wh.val() == "") {
-                    BootstrapDialog.show({
-                        title: "温馨提示",
-                        message: "请点击<查找>按钮，再进行取物确认！"
-                    });
-                    return;
-                }
+                
                 var hall = $("#hallID option:selected").val();
-                if (hall.val() == "0") {
+                if (hall== "0") {
                     BootstrapDialog.show({
                         title: "温馨提示",
                         message: "请输入出库车厅"
                     });
                     return;
                 }
-                
+
+                var chk = $('#chkplate').is(':checked');
+
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("TempGet")",
-                    data: { iccode: $iccd.val(), warehouse: $wh.val(), hallID:hall},
+                    data: { iccode: $iccd.val(), hallID: hall,isplate:chk },
                     dataType: "json",
                     cache: false,
                     beforeSend: function (XMLHttpRequest) {
@@ -175,7 +180,7 @@
                         });
                         var cd = data.code;
                         if (cd == 1) {
-                            $wh.val("");                            
+                            $wh.val("");
                             var mytime = new Date();
                             var ctime = mytime.toLocaleTimeString();
                             $("#disp").append('<p class="text-info">' + ctime + '&nbsp;&nbsp;&nbsp;取物操作成功-<i>卡号</i>：' + $iccd.val() + '</p>');
@@ -188,7 +193,26 @@
 
                     }
                 });
-        });
+            });
+
+            $("#chkplate")[0].checked = false;
+
+            $("input[name='chkplate']").click(function () {
+                checkboxClick();
+            });
+
+            function checkboxClick() {
+                $("#iccode").val("");
+                var chk = $('#chkplate').is(':checked');
+                if (chk) {
+                    $("#proof").html("车牌号码");
+                    $("#iccode").attr("placeholder", "登记车牌号码");
+                }
+                else {
+                    $("#proof").html("用户卡号");
+                    $("#iccode").attr("placeholder", "用户卡号");
+                }
+            }
 
         });
       

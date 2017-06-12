@@ -247,18 +247,34 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// <returns></returns>
         public ActionResult FindLocByICCard()
         {
+            Response resp = new Response();
             string iccd = Request.QueryString["txtIccd"];
-            Location loc = new CWLocation().FindLocation(lc => lc.ICCode == iccd);
-            if (loc != null)
+            string isPlate = Request.QueryString["isplate"];
+            bool frplate = false;
+            if (!string.IsNullOrEmpty(isPlate))
             {
-                var data = new
-                {
-                    Warehouse = loc.Warehouse,
-                    LocAddress = loc.Address
-                };
-                return Json(data, JsonRequestBehavior.AllowGet);
+                frplate = Convert.ToBoolean(isPlate);
             }
-            return Json(new { Warehouse = "", LocAddress = "" }, JsonRequestBehavior.AllowGet);
+            if (!frplate)
+            {
+                Location loc = new CWLocation().FindLocation(lc => lc.ICCode == iccd);
+                if (loc != null && loc.Status != EnmLocationStatus.Space)
+                {
+                    resp.Code = 1;
+                    resp.Data = loc;
+                }
+            }
+            else
+            {
+                //依车牌号查询存车位
+                Location loc = new CWLocation().FindLocation(lc=>lc.PlateNum==iccd);
+                if (loc != null && loc.Status != EnmLocationStatus.Space)
+                {
+                    resp.Code = 1;
+                    resp.Data = loc;
+                }
+            }
+            return Json(resp, JsonRequestBehavior.AllowGet);
         }
         /// <summary>
         /// 数据挪移

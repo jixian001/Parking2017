@@ -78,6 +78,7 @@
     <Compile Include="FingerPrint\FPrint.cs" />
     <Compile Include="Log\Log.cs" />
     <Compile Include="Log\LogFactory.cs" />
+    <Compile Include="Model\TempUserInfo.cs" />
     <Compile Include="OrderParam.cs" />
     <Compile Include="Page.cs" />
     <Compile Include="PLC\Define-PLC\IPLC.cs" />

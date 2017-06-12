@@ -234,7 +234,7 @@ namespace Parking.Data
 
         #endregion
 
-        public int Save()
+        public int SaveChanges()
         {
             return _dbContext.SaveChanges();
         }

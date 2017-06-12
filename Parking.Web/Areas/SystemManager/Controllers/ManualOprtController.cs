@@ -113,10 +113,31 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// <param name="hallID"></param>
         /// <returns></returns>
         [HttpPost]
-        public ActionResult TempGet(string iccode,int warehouse,int hallID)
+        public ActionResult TempGet(string iccode,int hallID, bool isplate)
         {
-            Response resp = new CWTaskTransfer(hallID, warehouse).TempGetCar(iccode);
-            return Json(new ReturnModel() { code=resp.Code,message=resp.Message});
+           
+            Response resp = new Response();
+            //先查找车位，后获取库区号          
+            Location lct = null;
+            if (isplate)
+            {
+                lct = new CWLocation().FindLocation(l => l.PlateNum == iccode);
+            }
+            else
+            {
+                lct = new CWLocation().FindLocation(l => l.ICCode == iccode);
+            }
+            if (lct != null)
+            {
+                int warehouse = lct.Warehouse;
+                resp = new CWTaskTransfer(hallID, warehouse).TempGetCar(lct.ICCode);
+            }
+            else
+            {
+                resp.Code = 0;
+                resp.Message = "找不到取车车位";
+            }
+            return Json(new ReturnModel() { code = resp.Code, message = resp.Message });
         }
         /// <summary>
         /// 临时取物，查询
@@ -124,12 +145,13 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// <param name="iccode"></param>
         /// <returns></returns>
         [HttpPost]
-        public ActionResult TempFind(string iccode)
+        public ActionResult TempFind(string iccode,bool isplate)
         {
             int warehouse = 0;
             int hallID = 0;
             string address = "";
-            Response resp = new CWTask().TempFindInfo(iccode, out warehouse, out hallID, out address);
+            Response resp = new Response();            
+            resp = new CWTask().TempFindInfo(isplate, iccode, out warehouse, out hallID, out address);
             return Json(new ReturnModel() { code = resp.Code, message = resp.Message, warehouse = warehouse, hallID =hallID, locaddrs = address, iccode = iccode });
         }
     }

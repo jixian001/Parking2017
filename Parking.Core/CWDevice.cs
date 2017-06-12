@@ -36,6 +36,11 @@ namespace Parking.Core
             return manager.Update(smg);
         }
 
+        public Response Update(Device smg,bool isSave)
+        {
+            return manager.Update(smg,isSave);
+        }
+
         public void UpdateSMGStatus(Device smg,int state)
         {
             smg.IsAble = state;
@@ -171,6 +176,14 @@ namespace Parking.Core
         public Response UpdatePlateInfo(PlateMappingDev dev)
         {
             return plateManager.Update(dev);
+        }
+
+        /// <summary>
+        /// 更新对应的车厅车牌信息       
+        /// </summary>
+        public Response UpdatePlateInfo(PlateMappingDev dev,bool isSave)
+        {
+            return plateManager.Update(dev,isSave);
         }
         #endregion
 

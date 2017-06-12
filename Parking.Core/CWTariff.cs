@@ -397,5 +397,17 @@ namespace Parking.Core
             return page;
         }
         #endregion
+
+        /// <summary>
+        /// 查询临时用户费用
+        /// </summary>
+        public Response GetTempUserInfo(string iccode,bool isPlate)
+        {
+            Response resp = new Response();
+
+            TempUserInfo info = new TempUserInfo();
+
+            return resp;
+        }
     }
 }

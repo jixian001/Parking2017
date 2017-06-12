@@ -30,7 +30,17 @@
                         <fieldset>
                             <legend>车位查询</legend>
                             <div class="form-group">
-                                <label for="txtIccd" class="col-md-2 control-label">用户卡号</label>
+                                <label for="txtIccd" class="col-md-2 control-label"></label>
+                                <div class="col-md-10">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" id="chkplate" name="chkplate"/>&nbsp;是否以<b>车牌号</b>查询
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtIccd" class="col-md-2 control-label" id="proof">用户卡号</label>
                                 <div class="col-md-10">
                                     <input type="text" class="form-control" id="txtIccd" name="txtIccd" placeholder="用户卡号" />
                                 </div>
@@ -38,13 +48,13 @@
                             <div class="form-group">
                                 <label for="txtFindWh" class="col-md-2 control-label">库区</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtFindWh" name="txtFindWh" />
+                                    <input type="text" class="form-control" id="txtFindWh" name="txtFindWh" disabled/>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="txtloc" class="col-md-2 control-label">存车车位</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtFindloc" name="txtFindloc" />
+                                    <input type="text" class="form-control" id="txtFindloc" name="txtFindloc" disabled/>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -196,6 +206,7 @@
 @section scripts{
     <script>
         $(function () {
+
             $('.form_datetime').datetimepicker({
                 language: 'zh-CN',
                 weekStart: 1,
@@ -208,29 +219,43 @@
             });
 
             $("#btnFind").click(function () {
-                var $iccode=$("#txtIccd").val().trim();
-                if($iccode==""){
+                $("#txtFindWh").val("");
+                $("#txtFindloc").val("");
+
+                var iccode = $("#txtIccd").val().trim();
+                if (iccode == "") {
                     BootstrapDialog.show({
-                        title:"温馨提示",
-                        message:"请输入用户卡号！"});
+                        title: "温馨提示",
+                        message: "请输入用户凭证！"
+                    });
                     return;
-                }               
-                var params = $("form[name='frmFind']").serialize();
-                $.get("@Url.Action("FindLocByICCard")?"+params,{}, function (data, status) {
-                    if (status == "success") {
-                        if (data.LocAddress.trim() == "")
-                        {
-                            BootstrapDialog.warning("没有找到存车车位！");
-                        }
-                        else
-                        {
+                }
+                var chk = $('#chkplate').is(':checked');
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("FindLocByICCard")",
+                    data: { "txtIccd": iccode, "isplate": chk },
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFind").text("查询中");
+                    },
+                    success: function (resp) {
+                        if (resp.Code == 1) {
+                            var data = resp.Data;
                             $("#txtFindWh").val(data.Warehouse);
                             $("#txtFindloc").val(data.LocAddress);
                         }
-                    } else {
-                        alert("查询异常，请联系管理员！");
+                        else {
+                            BootstrapDialog.warning("没有找到存车车位！");
+                        }
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFind").text("查 询");
                     }
                 });
+
             });
 
             $("#btnTrans").click(function () {
@@ -323,7 +348,7 @@
                     });
                     return;
                 }
-                
+
                 var $carsize = $("#txtInSize");
                 if ($carsize.val().trim() == "") {
                     BootstrapDialog.show({
@@ -396,6 +421,26 @@
                 });
 
             });
+
+            $("#chkplate")[0].checked = false;
+
+            $("input[name='chkplate']").click(function () {
+                checkboxClick();
+            });
+
+            function checkboxClick()
+            {
+                $("#txtIccd").val("");
+                var chk = $('#chkplate').is(':checked');
+                if (chk) {
+                    $("#proof").html("车牌号码");
+                    $("#txtIccd").attr("placeholder", "登记车牌号码");
+                }
+                else {
+                    $("#proof").html("用户卡号");
+                    $("#txtIccd").attr("placeholder", "用户卡号");
+                }
+            }
 
         });
 

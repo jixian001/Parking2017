@@ -1,8 +1,21 @@
 ﻿
 @{
-    ViewBag.Title = "固定类缴费";
+    ViewBag.Title = "固定用户缴费";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li class="active">固定、定期用户缴费</li>
+        </ol>
 
+        <div>
+
+        </div>
+    </div>
+</div>
 

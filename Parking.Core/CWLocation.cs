@@ -100,5 +100,10 @@ namespace Parking.Core
             return resp;
         }
 
+        public Response UpdateLocation(Location loc,bool isSave)
+        {
+            Response resp = manager.Update(loc,isSave);
+            return resp;
+        }
     }
 }
