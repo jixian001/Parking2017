@@ -88,7 +88,7 @@ namespace Parking.Core
         /// 分配车厅
         /// </summary>
         /// <param name="lct"></param>
-        /// <param name="isTemp"></param>
+        /// <param name="isTemp">是否是临时取物</param>
         /// <returns></returns>
         public int AllocateHall(Location lct,bool isTemp)
         {            

@@ -1115,5 +1115,44 @@ namespace Parking.Core
             return resp;
         }
 
+        /// <summary>
+        /// 界面临时用户缴费出车
+        /// </summary>
+        /// <returns></returns>
+        public Response OCreateTempUserOfOutCar(Location loc)
+        {
+            Log log = LogFactory.GetLogger("CWTaskTransfer.OCreateTempUserOfOutCar");
+            Response resp = new Response();
+            try
+            {
+                #region
+                //判断车厅
+                if (moHall.HallType == EnmHallType.Entrance)
+                {
+                    resp.Message = "当前车厅是进车厅！";
+                    return resp;
+                }
+                //判断车位
+                if (loc.Type != EnmLocationType.Normal)
+                {
+                    resp.Message = "取车车位已被禁用";
+                    return resp;
+                }
+                if (loc.Status != EnmLocationStatus.Occupy)
+                {
+                    resp.Message = "取车车位不是占用状态";
+                    return resp;
+                }
+                resp= motsk.DealOSwipedCard(moHall, loc);               
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return resp;
+        }
+
+
     }
 }

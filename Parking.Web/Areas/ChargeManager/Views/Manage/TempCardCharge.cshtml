@@ -36,32 +36,37 @@
                             <td class="formValue">
                                 <input id="indate" name="indate" type="text" class="form-control" disabled/>
                             </td>
-                            <th class="formTitle">停车时长</th>
+                            <th class="formTitle">出库时间</th>
                             <td class="formValue">
-                                <input id="spandtime" name="spandtime" type="text" class="form-control" disabled/>
+                                <input id="outdate" name="outdate" type="text" class="form-control text-danger" disabled/>
                             </td>
                         </tr>
                         <tr>
+                            <th class="formTitle">停车时长</th>
+                            <td class="formValue">
+                                <input id="spandtime" name="spandtime" type="text" class="form-control" disabled />
+                            </td>
                             <th class="formTitle"><b>应缴费用</b></th>
                             <td class="formValue">
                                 <input id="needfee" name="needfee" type="text" class="form-control text-center" disabled/>
                             </td>
-                            <th class="formTitle"><b>实收金额</b></th>
-                            <td class="formValue">
-                                <input id="actualfee" name="actualfee" type="number" step="0.1" class="form-control  text-center"/>
-                            </td>
+                          
                         </tr>
                         <tr>
-                            <th class="formTitle">库区</th>
+                            <th class="formTitle"><b>实收金额</b></th>
                             <td class="formValue">
-                                <input id="wh" name="wh" type="text" class="form-control  text-center" value="1" disabled/>
-                            </td>  
+                                <input id="actualfee" name="actualfee" type="number" step="0.1" class="form-control  text-center" />
+                            </td>
                             <th class="formTitle"><b>找零</b></th>
                             <td class="formValue">
                                 <input id="coinfee" name="coinfee" type="number" step="0.1" class="form-control  text-center" />
                             </td>                         
                         </tr> 
                         <tr>
+                            <th class="formTitle">库区</th>
+                            <td class="formValue">
+                                <input id="wh" name="wh" type="text" class="form-control  text-center" value="1" disabled />
+                            </td>  
                             <th class="formTitle">出库车厅</th>
                             <td class="formValue">
                                 <select id="hallID" name="hallID" class="form-control">
@@ -141,11 +146,12 @@
 
             $("#btnFind").click(function () {
                 $("input[name='indate']").val("");
+                $("input[name='outdate']").val("");
                 $("input[name='spandtime']").val("");
                 $("input[name='needfee']").val("");
                 $("input[name='actualfee']").val(0);
                 $("input[name='coinfee']").val(0);
-
+          
                 var value = $("#uiccd").val();
                 if (value == "")
                 {
@@ -173,6 +179,7 @@
                         if (resp.Code == 1) {
                             var obj = resp.Data;
                             $("input[name='indate']").val(obj.InDate);
+                            $("input[name='outdate']").val(obj.OutDate);
                             $("input[name='spandtime']").val(obj.SpanTime);
                             $("input[name='needfee']").val(obj.NeedFee);
                             $("#wh").val(obj.Warehouse);

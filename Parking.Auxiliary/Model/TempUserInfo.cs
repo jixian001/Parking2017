@@ -14,6 +14,10 @@ namespace Parking.Auxiliary
         /// </summary>
         public string InDate { get; set; }
         /// <summary>
+        /// 出库时间
+        /// </summary>
+        public string OutDate { get; set; }
+        /// <summary>
         /// 停车时长
         /// </summary>
         public string SpanTime { get; set; }

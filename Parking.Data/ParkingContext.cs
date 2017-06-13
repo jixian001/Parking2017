@@ -34,6 +34,7 @@ namespace Parking.Data
         public DbSet<HourChargeDetail> HourChargeDetails { get; set; }
         public DbSet<HourSectionInfo> HourSectionInfoes { get; set; }
         public DbSet<FingerPrint> FingerPrints { get; set; }
+        public DbSet<TempUserChargeLog> TempUserChargeLogs { get; set; }
 
     }
 }

@@ -1234,28 +1234,32 @@ namespace Parking.Core
         /// </summary>
         /// <param name="task"></param>
         /// <param name="lct"></param>
-        public void DealOSwipedCard(Device mohall,Location lct)
+        public Response DealOSwipedCard(Device mohall,Location lct)
         {
             Log log = LogFactory.GetLogger("CWTask.DealOSwipedCard");
-            //这里判断是否有可用的TV
-            //这里先以平面移动库来做
-            Device smg = new CWDevice().Find(dev=>dev.Region==lct.LocLayer&&dev.Warehouse==lct.Warehouse);
-            if (smg == null)
-            {
-                //系统故障
-                this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "20.wav");
-                return;
-            }
-            if (smg.Mode != EnmModel.Automatic)
-            {
-                this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "42.wav");
-                return;
-            }
+            Response resp = new Response();
             try
             {
+                Device smg = new AllocateTV().Allocate(mohall, lct);
+                if (smg == null)
+                {
+                    //系统故障
+                    this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "20.wav");
+
+                    resp.Message = "找不到可用的TV";
+                    return resp;
+                }
+                if (smg.Mode != EnmModel.Automatic)
+                {
+                    this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "42.wav");
+
+                    resp.Message = "TV的模式不是全自动";
+                    return resp;
+                }
+
                 lct.Status = EnmLocationStatus.Outing;
-                Response resp = new CWLocation().UpdateLocation(lct,false);
-                if (resp.Code == 1)
+                Response respo = new CWLocation().UpdateLocation(lct, false);
+                if (respo.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 取车更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
                 }
@@ -1276,18 +1280,22 @@ namespace Parking.Core
                     CarSize = lct.CarSize,
                     CarWeight = lct.CarWeight
                 };
-                resp = manager_queue.Add(queue,false);
-                if (resp.Code == 1)
+                respo = manager_queue.Add(queue, false);
+                if (respo.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  刷卡取车，添加取车队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
+
+                    resp.Code = 1;
+                    resp.Message = "正在为你取车，请稍后";
                 }
 
-                manager_queue.SaveChanges();
-
-            }catch(Exception ex)
+                manager_queue.SaveChanges();              
+            }
+            catch (Exception ex)
             {
                 log.Error(ex.ToString());
             }
+            return resp;
         }
 
         /// <summary>

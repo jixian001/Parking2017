@@ -3,7 +3,7 @@ namespace Parking.Web.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class init : DbMigration
+    public partial class initial : DbMigration
     {
         public override void Up()
         {
@@ -274,6 +274,26 @@ namespace Parking.Web.Migrations
                 .PrimaryKey(t => t.ID);
             
             CreateTable(
+                "dbo.TempUserChargeLogs",
+                c => new
+                    {
+                        ID = c.Int(nullable: false, identity: true),
+                        Proof = c.String(),
+                        Plate = c.String(),
+                        Warehouse = c.Int(nullable: false),
+                        Address = c.String(),
+                        InDate = c.String(),
+                        OutDate = c.String(),
+                        SpanTime = c.String(),
+                        NeedFee = c.String(),
+                        ActualFee = c.String(),
+                        CoinChange = c.String(),
+                        OprtCode = c.String(),
+                        RecordDTime = c.String(),
+                    })
+                .PrimaryKey(t => t.ID);
+            
+            CreateTable(
                 "dbo.WorkTasks",
                 c => new
                     {
@@ -299,6 +319,7 @@ namespace Parking.Web.Migrations
         public override void Down()
         {
             DropTable("dbo.WorkTasks");
+            DropTable("dbo.TempUserChargeLogs");
             DropTable("dbo.TempChargingRules");
             DropTable("dbo.TelegramLogs");
             DropTable("dbo.PreChargings");

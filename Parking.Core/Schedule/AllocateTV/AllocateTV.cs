@@ -323,6 +323,11 @@ namespace Parking.Core
             return null;
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>       
         private int compareSize(string size, string carSize)
         {
             int CarLong = Convert.ToInt32(carSize.Substring(0, 1));
