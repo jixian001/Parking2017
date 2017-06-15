@@ -583,6 +583,65 @@ namespace Parking.Core
         }
 
         /// <summary>
+        /// 固定收费界面，确认出车
+        /// </summary>
+        /// <param name="lct"></param>
+        /// <returns></returns>
+        public Response FixGUIGetCar(Location lct)
+        {
+            Response _resp = new Response();
+            Log log = LogFactory.GetLogger("CWTaskTransfer.FixGUIGetCar");
+            try
+            {
+                if (moHall == null || moHall.Type != EnmSMGType.Hall)
+                {
+                    _resp.Message = "找不到车厅设备，请输入正确的库区及车厅！";
+                    return _resp;
+                }
+                if (moHall.HallType != EnmHallType.EnterOrExit)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",不是进出车厅！";
+                    return _resp;
+                }
+                if (moHall.Mode != EnmModel.Automatic)
+                {
+                    _resp.Message = "当前车厅-" + moHall.DeviceCode + ",模式不是全自动！";
+                    return _resp;
+                }
+                if (lct.Type != EnmLocationType.Normal)
+                {
+                    _resp.Message = "车位不可用，Type-" + lct.Type.ToString();
+                    return _resp;
+                }
+                if (lct.Status != EnmLocationStatus.Occupy)
+                {
+                    _resp.Message = "车位正在作业，Status-" + lct.Status.ToString();
+                    return _resp;
+                }
+                string iccode = lct.ICCode;
+                ImplementTask itask = motsk.Find(tk => tk.IsComplete == 0 && tk.ICCardCode == iccode);
+                if (itask != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == iccode);
+                if (queue != null)
+                {
+                    _resp.Message = "正在作业，请稍后！";
+                    return _resp;
+                }
+
+                return motsk.TempGetCar(moHall, lct);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return _resp;
+        }
+
+        /// <summary>
         /// 处理指纹信息上报
         /// 指纹存车，只需采集一次就下发（1，9）
         /// </summary>

@@ -442,6 +442,22 @@ namespace Parking.Core
         }
         #endregion
 
+        #region 固定收费记录
+        private FixChargeLogManager fixChgLogManager = new FixChargeLogManager();
+
+        /// <summary>
+        /// 添加固定收费记录
+        /// </summary>
+        /// <param name="flog"></param>
+        /// <returns></returns>
+        public Response AddFixLog(FixUserChargeLog flog)
+        {
+            return fixChgLogManager.Add(flog);
+        }
+
+
+        #endregion
+
         /// <summary>
         /// 查询临时用户费用
         /// </summary>
@@ -668,7 +684,7 @@ namespace Parking.Core
                 }
                 else
                 {
-                    //没有周期最高限额
+                    //没有周期最高限额限制
                     fee = calcuteHoursFeeNoLimit(indate, outdate, timeslotLst);
                 }
                 resp.Code = 1;
@@ -682,6 +698,8 @@ namespace Parking.Core
 
             return resp;
         }
+
+        #region 临时卡费用计算
 
         /// <summary>
         /// 临时卡计费规则(有 周期最高限额 )
@@ -1126,6 +1144,8 @@ namespace Parking.Core
             return cyclefee + calcuteHoursFeeNoLimit(newIndate, Outdate, timeslotLst);
             
         }
+
+        #endregion
 
     }
 }

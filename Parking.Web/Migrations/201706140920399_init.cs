@@ -3,7 +3,7 @@ namespace Parking.Web.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class initial : DbMigration
+    public partial class init : DbMigration
     {
         public override void Up()
         {
@@ -101,6 +101,23 @@ namespace Parking.Web.Migrations
                         Unit = c.Int(nullable: false),
                         Fee = c.Single(nullable: false),
                         PreChgID = c.Int(),
+                    })
+                .PrimaryKey(t => t.ID);
+            
+            CreateTable(
+                "dbo.FixUserChargeLogs",
+                c => new
+                    {
+                        ID = c.Int(nullable: false, identity: true),
+                        UserName = c.String(),
+                        PlateNum = c.String(),
+                        UserType = c.String(),
+                        Proof = c.String(),
+                        LastDeadline = c.String(),
+                        CurrDeadline = c.String(),
+                        FeeType = c.String(),
+                        FeeUnit = c.Single(nullable: false),
+                        CurrFee = c.Single(nullable: false),
                     })
                 .PrimaryKey(t => t.ID);
             
@@ -331,6 +348,7 @@ namespace Parking.Web.Migrations
             DropTable("dbo.ICCards");
             DropTable("dbo.HourSectionInfoes");
             DropTable("dbo.HourChargeDetails");
+            DropTable("dbo.FixUserChargeLogs");
             DropTable("dbo.FixChargingRules");
             DropTable("dbo.FingerPrints");
             DropTable("dbo.FaultLogs");

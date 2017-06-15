@@ -10,12 +10,413 @@
     <div class="col-md-10">
         <ol class="breadcrumb">
             <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-            <li class="active">固定、定期用户缴费</li>
+            <li class="active">固定用户缴费</li>
         </ol>
 
-        <div>
+        <div class="dvDisp" style="display:none">
+            <form id="form1" name="form1">
+                <table class="form">
+                    <tr>
+                        <th class="formTitle" id="proof">用户卡号</th>
+                        <td class="formValue">
+                            <input id="uiccd" name="uiccd" type="text" class="form-control" placeholder="用户卡号" />
+                        </td>
+                        <th class="formTitle text-danger">选择</th>
+                        <td class="formValue">
+                           <div class="form-group" style="padding-top:10px">
+                               <label class="radio-inline">
+                                   <input class="radio" type="radio" value="1" name="genre" checked/>用户卡号
+                               </label>
+                               <label class="radio-inline">
+                                   <input class="radio" type="radio" value="2" name="genre" />车牌号码
+                               </label>
+                               <label class="radio-inline">
+                                   <input class="radio" type="radio" value="3" name="genre" />顾客姓名
+                               </label>
+                           </div>
+                        </td>
+                    </tr>
 
+                    <tr>
+                        <th class="formTitle">用户类型</th>
+                        <td class="formValue">
+                            <select id="utype" name="utype" class="form-control" disabled>
+                                <option value="1" selected>请选择</option>
+                                <option value="2">定期卡</option>
+                                <option value="3">固定卡</option>
+                            </select>
+                        </td>
+                        <th class="formTitle">上次期限</th>
+                        <td class="formValue">
+                            <input id="lastdeadline" name="lastdeadline" type="text" class="form-control text-danger" disabled />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">收费类型</th>
+                        <td class="formValue">
+                            <div class="form-group" style="padding-top:10px">
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="1" name="season" />月
+                                </label>
+                                &nbsp;&nbsp;&nbsp;
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="2" name="season" />季
+                                </label>
+                                &nbsp;&nbsp;&nbsp;
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="3" name="season" />年
+                                </label>
+                            </div>
+                        </td>
+                        <th class="formTitle"><b>本次期限</b></th>
+                        <td class="formValue">
+                            <input id="newdeadline" name="newdeadline" type="text" class="form-control" disabled />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle"><b>收费标准</b></th>
+                        <td class="formValue">
+                            <input id="feeunit" name="feeunit" type="number" step="0.1" class="form-control  text-center" disabled/>
+                        </td>
+                        <th class="formTitle"><b>实收金额</b></th>
+                        <td class="formValue">
+                            <input id="actualfee" name="actualfee" type="number" step="0.1" class="form-control  text-center" />
+                        </td>
+                    </tr>                   
+                </table>
+            </form>
+
+            <br />
+            <div>
+                <div class="text-info">
+                    <a data-toggle="collapse" href="#one">固定用户取车操作,点击展开或收回</a>
+                </div>
+                <div id="one" class="panel-collapse collapse">
+                    <form id="form2" name="form2">
+                        <table class="form">
+                            <tr>
+                                <th class="formTitle">库区</th>
+                                <td class="formValue">
+                                    <input id="wh" name="wh" type="text" class="form-control  text-center" value="1" disabled />
+                                </td>
+                                <th class="formTitle">出库车厅</th>
+                                <td class="formValue">
+                                    <select id="hallID" name="hallID" class="form-control">
+                                        <option value="0">请选择</option>
+                                    </select>
+                                </td>
+                            </tr>                          
+                        </table>
+                    </form>                   
+                </div>
+            </div>
+           
+            <br />
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-1 col-md-offset-3">
+                        <button type="button" id="btnFind" name="btnFind" class="btn btn-default">查询信息</button>
+                    </div>
+                    <div class="col-md-1 col-md-offset-1">
+                        <button type="button" id="btnFixFee" name="btnFixFee" class="btn btn-default">确认缴费</button>
+                    </div>  
+                    <div class="col-md-1 col-md-offset-1">
+                        <button type="button" id="btnOutCar" name="btnOutCar" class="btn btn-default">确认取车</button>
+                    </div>                 
+                </div>
+            </div>
+        </div>        
+        <br />
+        <div class="rdisplay text-info">
         </div>
     </div>
 </div>
 
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    <script>
+        $(function () {
+
+            setTimeout(function () {
+                $(".dvDisp").css("display", "block");
+                //加载车厅
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOutHallName")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                    },
+                    success: function (data) {
+                        var html = '<option value="0">请选择</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $("#hallID").empty();
+                        $("#hallID").append(html);
+                    }
+                });
+
+            }, 600);
+
+            //用户凭证
+            $("input:radio[name='genre']").change(function () {
+                $("#uiccd").val("");
+                var value = $("input[name='genre']:checked").val();
+                if (value == 1)
+                {
+                    $("#proof").html("用户卡号");
+                    $("#uiccd").attr("placeholder", "用户卡号");
+                }
+                else if (value == 2)
+                {
+                    $("#proof").html("车牌号码");
+                    $("#uiccd").attr("placeholder", "登记的车牌号");
+                }
+                else if (value == 3) {
+                    $("#proof").html("顾客姓名");
+                    $("#uiccd").attr("placeholder", "登记的车主姓名");
+                }
+            });
+
+            //收费类型
+            $("input:radio[name='season']").change(function () {
+                $("#feeunit").val("");
+                var value = $("input[name='season']:checked").val();
+                var utp = $("#utype option:selected").val();
+                if (utp == 1)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "用户类型为空，请先 查询用户信息 ！"
+                    });
+                    $("input[name='season']:checked").attr("checked",false);
+                    return;
+                }
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("QueryFixTariffFee")",
+                    data: {"utype":utp, "feeunit": value },
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+
+                    },
+                    success: function (nback) {
+                        if (nback.Code == 0)
+                        {
+                            $("input[name='season']:checked").attr("checked", false);
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: nback.Message
+                            });
+                        }
+                        else
+                        {
+                            $("#feetunit").val(nback.Data);
+                        }
+                    }
+                });
+
+            });
+
+            //查询用户信息
+            $("#btnFind").click(function () {
+                var iccd = $("#uiccd").val();
+                var value = $("input[name='genre']:checked").val();
+
+                $("#utype").val(1);
+                $("#lastdeadline").val("");
+                $("#newdeadline").val("");
+                $("#feeunit").val("");
+                $("input[name='season']:checked").attr("checked",false);
+
+                if (iccd == "")
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入查询凭证！"
+                    });
+                    return;
+                }
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("QueryCustInfo")",
+                    data: { "type": value, "uiccd": iccd },
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFind").text("查询中");
+                    },
+                    success: function (nback) {
+                        
+                        if (nback.Code == 0)
+                        {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: nback.Message
+                            });
+                        }
+                        else
+                        {
+                            var obj = nback.Data;
+
+                            $("#utype").val(obj.ICType);                          
+                            $("#newdeadline").val(obj.CurrDeadline);
+
+                            $("input:input[value='1']").attr("checked", "checked");
+                            $("#feeunit").val(obj.MonthFee);
+
+                        }
+
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFind").text("查询信息");
+                    }
+                });
+
+            });
+
+            //确认缴费
+            $("#btnFixFee").click(function () {
+
+                var ftype = $("input[name='season']:checked").val();
+                var feeuint = $("#feeunit").val();
+                var afee = $("#actualfee").val();
+
+                var iccd = $("#uiccd").val();
+                if (iccd == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入查询凭证！"
+                    });
+                    return;
+                }
+
+                if (feeuint == "")
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请先 查询信息，再 确认缴费 ！"
+                    });
+                    return;
+                }
+
+                if (afee < feeuint)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入正确的金额！"
+                    });
+                    return;
+                }
+
+                var mod = afee % feeuint;
+                if (mod != 0)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "缴费金额不是收费标准的整数倍，无法完成缴费！"
+                    });
+                    return;
+                }
+
+                BootstrapDialog.confirm("是否确认缴费？", function (result) {
+                    if (result) {
+
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("SetFixUserFee")",
+                            data: { "uiccd": $("#uiccd").val(), "feetype": ftype, "feeunit": feeuint, "actualfee": afee, },
+                            dataType: "json",
+                            cache: false,
+                            beforeSend: function (XMLHttpRequest) {
+                                $("#btnFixFee").text("提交中");
+                            },
+                            success: function (nback) {
+
+                                BootstrapDialog.show({
+                                    title: "温馨提示",
+                                    message: nback.Message
+                                });
+                               
+                                if (nback.Code == 1)
+                                {
+                                    var obj = nback.Data;
+                                    $("#lastdeadline").val(obj.LastDeadline);
+                                    $("#newdeadline").val(obj.CurrDeadline);
+                                    //清空收费标准
+                                    $("#feeunit").val("");
+                                    $("input[name='season']:checked").attr("checked", false);
+                                }
+
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#btnFixFee").text("确认缴费");
+                            }
+                        });
+
+                    }
+                });              
+
+            });
+
+            //确认出车
+            $("#btnOutCar").click(function () {
+
+                var iccd = $("#uiccd").val();
+                if (iccd == "") {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入查询凭证！"
+                    });
+                    return;
+                }
+                
+                var wh = $("#wh").val();
+                if (wh == "")
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入库区号！"
+                    });
+                    return;
+                }
+
+                var hallID = $("#hallID option:selected").val();
+                if (hallID == 0)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请选择出库车厅！"
+                    });
+                    return;
+                }
+
+                var vtype = $("input[name='genre']:checked").val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("FixGUIOutCar")",
+                    data: { "type": vtype, "uiccd": iccd, "warehouse": wh, "hallID": hallID },
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnOutCar").text("提交中");
+                    },
+                    success: function (nback) {
+
+
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnOutCar").text("确认取车");
+                    }
+                });
+
+            });
+
+        });
+    </script>
+    }

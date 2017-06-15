@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseManager.cs" />
+    <Compile Include="BaseManager\Charging\FixChargeLogManager.cs" />
     <Compile Include="BaseManager\Charging\FixChargingRuleManager.cs" />
     <Compile Include="BaseManager\Charging\HourChargeDetailManager.cs" />
     <Compile Include="BaseManager\Charging\HourSectionInfoManager.cs" />
@@ -73,6 +74,7 @@
     <Compile Include="MainCallback.cs" />
     <Compile Include="Models\Alarm.cs" />
     <Compile Include="Models\Charging\FixChargingRule.cs" />
+    <Compile Include="Models\Charging\FixUserChargeLog.cs" />
     <Compile Include="Models\Charging\PreCharging.cs" />
     <Compile Include="Models\Charging\TempChargingRule.cs" />
     <Compile Include="Models\Charging\TempUserChargeLog.cs" />

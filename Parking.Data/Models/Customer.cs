@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Parking.Data
 {
     /// <summary>
-    /// 顾客信息,实行一车牌一车主，
+    /// 顾客信息,实行一车牌一车主一卡，
     /// 绑定用户类型，释放用户卡的固定类型，
     /// 统一到用户这里绑定
     /// </summary>
