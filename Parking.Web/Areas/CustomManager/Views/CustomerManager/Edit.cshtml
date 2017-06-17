@@ -113,8 +113,8 @@
                             <label class="control-label col-md-2">指纹信息</label>
                             <div class="col-md-10">
                                 <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger1" title="0" class="print" id="FingerPrint1" /></a>
-                                <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger2" title="0" class="print" id="FingerPrint1" /></a>
-                                <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger3" title="0" class="print" id="FingerPrint1" /></a>
+                                <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger2" title="0" class="print" id="FingerPrint2" /></a>
+                                <a href="javascript:void(0)"><img src="~/Image/add.jpg" alt="finger3" title="0" class="print" id="FingerPrint3" /></a>
                                 @Html.HiddenFor(model => model.FingerPrint1)
                                 @Html.HiddenFor(model => model.FingerPrint2)
                                 @Html.HiddenFor(model => model.FingerPrint3)
@@ -142,18 +142,22 @@
 
             setTimeout(function () {
 
-                var arr = $("input[type='hidden']");
-                $.each(arr, function (i, item) {
-                    var value = item.val();
-                    console.log(value);
-                    if (value > 1000) {
-                        var name = item.attr("name");
-                        var ig = $("img[id='" + name + "']");
+                var f1 = $("input[id='FingerPrint1']").val();
+                if (f1 > 1000)
+                {
+                    $("img[id='FingerPrint1']").attr({ "src": "/Image/fingerprint.jpg", "title": f1 });
+                }
 
-                        ig.attr("src", "/Image/fingerprint.jpg");
-                        ig.attr("title", value);
-                    }
-                });
+                var f2 = $("input[id='FingerPrint2']").val();
+                if (f2 > 1000) {
+                    $("img[id='FingerPrint2']").attr({ "src": "/Image/fingerprint.jpg", "title": f2 });
+                }
+
+                var f3 = $("input[id='FingerPrint3']").val();
+                if (f3 > 1000) {
+                    $("img[id='FingerPrint3']").attr({ "src": "/Image/fingerprint.jpg", "title": f3 });
+                }
+
             }, 500);
 
 
@@ -189,61 +193,66 @@
             });
 
             $("img.print").click(function () {
-
+                console.log($("#ID").val())
                 var ig = $(this);
                 var title = ig.attr("title");
-                //添加
-                if (title == 0) {
+                if (title < 1000) {
+                    BootstrapDialog.confirm("<p class='text-info'>请先按压手指，稍后会出现提示框，如果没有出现提示框，请将手指拿起再按压。</p><p class='text-danger'>请按照严格 提示框的内容 操作！过程中，手指需要离开指纹仪几次！</p>", function (state) {
+                        if (state) {
+                            //添加
+                            if (title == 0) {
 
-                    $(this).attr("title", "-1");
+                                ig.attr({ "title": -1, "src": "/Image/scan.gif" });
 
-                    $.ajax({
-                        type: "GET",
-                        url: "@Url.Action("AddFingerPrint")",
-                        timeout: 10000,   //毫秒为单位
-                        dataType: "json",
-                        cache: false,
-                        beforeSend: function (XMLHttpRequest) {
-                            ig.attr("src", "/Image/scan.gif");
-                        },
-                        success: function (resp) {
+                                $.ajax({
+                                    type: "GET",
+                                    url: "@Url.Action("AddFingerPrintFromModify")",
+                                    data:{"custID":$("#ID").val()},
+                                    timeout: 40000,   //毫秒为单位
+                                    dataType: "json",
+                                    cache: false,
+                                    beforeSend: function (XMLHttpRequest) {
 
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: resp.Message
-                            });
+                                    },
+                                    success: function (resp) {
 
-                            if (resp.Code == 1) {
-                                ig.attr("src", "/Image/fingerprint.jpg");
-                                ig.attr("title", resp.Data);
+                                        BootstrapDialog.show({
+                                            title: "温馨提示",
+                                            message: resp.Message
+                                        });
 
-                                var idd = ig.attr("id");
-                                //写
-                                $("input[name='" + idd + "']").val(resp.Data);
+                                        if (resp.Code == 1) {
+                                            ig.attr({ "src": "/Image/fingerprint.jpg", "title": resp.Data });
+
+                                            var idd = ig.attr("id");
+                                            //写
+                                            $("input[name='" + idd + "']").val(resp.Data);
+                                        }
+                                        else {
+                                            ig.attr({ "title": 0, "src": "/Image/add.jpg" });
+                                        }
+
+                                    },
+                                    complete: function (XMLHttpRequest, textStatus) {
+
+                                        if (textStatus == 'timeout') {
+                                            ig.attr({ "title": 0, "src": "/Image/add.jpg" });
+                                        }
+                                    }
+                                });
+
                             }
-                            else {
-                                ig.attr("title", "0");
-                                ig.attr("src", "/Image/add.jpg");
-                            }
-
-                        },
-                        complete: function (XMLHttpRequest, textStatus) {
-
-                            if (textStatus == 'timeout') {
-                                $(this).attr("title", "0");
-                                ig.attr("src", "/Image/add.jpg");
+                            else if (title == -1) {
+                                BootstrapDialog.show({
+                                    title: "温馨提示",
+                                    message: "等待扫描指纹中"
+                                });
                             }
                         }
                     });
-
                 }
-                else if (title == -1) {
-                    BootstrapDialog.show({
-                        title: "温馨提示",
-                        message: "等待扫描指纹中"
-                    });
-                }
-                else {
+                else
+                {
                     BootstrapDialog.confirm("<b>确定要删除当前指纹模板？SN - </b>" + title, function (result) {
                         if (result) {
 
@@ -256,11 +265,10 @@
                                 success: function (resp) {
                                     BootstrapDialog.show({
                                         title: "温馨提示",
-                                        message: resp.Data
+                                        message: resp.Message
                                     });
                                     if (resp.Code == 1) {
-                                        ig.attr("title", "0");
-                                        ig.attr("src", "/Image/add.jpg");
+                                        ig.attr({ "title": 0, "src": "/Image/add.jpg" });
                                     }
                                 }
                             });

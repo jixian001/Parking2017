@@ -180,7 +180,7 @@ namespace Parking.Data
             if (nback > 0)
             {
                 resp.Code = 1;
-                resp.Message = "提交更新成功";
+                resp.Message = "数据写入成功";
             }
             return resp;
         }

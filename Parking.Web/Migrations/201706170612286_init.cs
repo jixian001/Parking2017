@@ -86,7 +86,7 @@ namespace Parking.Web.Migrations
                 c => new
                     {
                         ID = c.Int(nullable: false, identity: true),
-                        SN_Number = c.Short(nullable: false),
+                        SN_Number = c.Int(nullable: false),
                         FingerInfo = c.String(nullable: false),
                         CustID = c.Int(nullable: false),
                     })

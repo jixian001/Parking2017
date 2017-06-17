@@ -30,6 +30,11 @@ namespace Parking.Core
             return manager.Find(where);
         }
 
+        public Response Update(ICCard iccd,bool isSave)
+        {
+            return manager.Update(iccd,isSave);
+        }
+
         public Response Update(ICCard iccd)
         {
             return manager.Update(iccd);
@@ -90,7 +95,7 @@ namespace Parking.Core
                 if (userICCard == null)
                 {
                     //修改卡号
-                    physICCard.UserCode = userICCard.UserCode;
+                    physICCard.UserCode = usercode;
                     physICCard.Status = EnmICCardStatus.Normal;
                     resp= manager.Update(physICCard);
                     if (resp.Code == 1)
@@ -120,9 +125,19 @@ namespace Parking.Core
 
         private CustomerManager manager_cust = new CustomerManager();
 
-        public Response Add(Customer cust)
+        public Response AddCust(Customer cust,bool isSave)
+        {
+            return manager_cust.Add(cust, isSave);
+        }
+
+        public Response AddCust(Customer cust)
         {
             return manager_cust.Add(cust);
+        }
+
+        public Response UpdateCust(Customer cust, bool isSave)
+        {
+            return manager_cust.Update(cust,isSave);
         }
 
         public Response UpdateCust(Customer cust)
@@ -130,10 +145,20 @@ namespace Parking.Core
             return manager_cust.Update(cust);
         }
 
+        public Response Delete(int ID, bool isSave)
+        {
+            return manager_cust.Delete(ID,isSave);
+        }
+
         public Response Delete(int ID)
         {
 
             return manager_cust.Delete(ID);
+        }
+
+        public Response SaveChange()
+        {
+            return manager_cust.SaveChanges();
         }
 
         public Customer FindCust(int ID)

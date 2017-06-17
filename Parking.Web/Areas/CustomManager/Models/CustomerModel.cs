@@ -20,7 +20,7 @@ namespace Parking.Web.Areas.CustomManager.Models
         [StringLength(10)]
         [Display(Name = "注册卡号")]
         public string UserCode { get; set; }
-        [Display(Name = "卡类型")]
+        [Display(Name = "用户类型")]
         public  EnmICCardType Type { get; set; }
         [Display(Name = "卡状态")]
         public EnmICCardStatus Status { get; set; }

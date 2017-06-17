@@ -123,52 +123,54 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 addcust.Type = model.Type;              
             }
             addcust.StartDTime = DateTime.Parse("2017-1-1");
-            addcust.Deadline = DateTime.Parse("2017-1-1");           
+            addcust.Deadline = DateTime.Parse("2017-1-1");
 
-            Response resp = cwiccd.Add(addcust);
+            Response resp = cwiccd.AddCust(addcust);
             if (resp.Code == 1)
             {
                 //如果有卡号，则绑定顾客于卡号
                 if (iccd != null)
                 {
                     iccd.CustID = addcust.ID;
-                    resp = cwiccd.Update(iccd);
+                    resp = cwiccd.Update(iccd,false);
                 }
 
                 #region 绑定指纹，更新指纹信息
                 CWFingerPrint fprint = new CWFingerPrint();
                 if (!string.IsNullOrEmpty(model.FingerPrint1))
                 {
-                    short sn = Convert.ToInt16(model.FingerPrint1);
+                    Int32 sn = Convert.ToInt32(model.FingerPrint1);
                     FingerPrint finger = fprint.Find(p=>p.SN_Number==sn);
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger);
+                        fprint.Update(finger,false);
                     }
                 }
                 if (!string.IsNullOrEmpty(model.FingerPrint2))
                 {
-                    short sn = Convert.ToInt16(model.FingerPrint2);
+                    Int32 sn = Convert.ToInt32(model.FingerPrint2);
                     FingerPrint finger = fprint.Find(p => p.SN_Number == sn);
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger);
+                        fprint.Update(finger,false);
                     }
                 }
                 if (!string.IsNullOrEmpty(model.FingerPrint3))
                 {
-                    short sn = Convert.ToInt16(model.FingerPrint3);
+                    Int32 sn = Convert.ToInt32(model.FingerPrint3);
                     FingerPrint finger = fprint.Find(p => p.SN_Number == sn);
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger);
+                        fprint.Update(finger,false);
                     }
-                }
+                }               
                 #endregion
-            }          
+            }
+            cwiccd.SaveChange();
+
             #endregion
             return RedirectToAction("Index");
         }
@@ -197,43 +199,28 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             #region
             CWICCard cwiccd = new CWICCard();
             List<Customer> custLst = cwiccd.FindCustList(cust=>true);
-            List<ICCard> iccdLst = cwiccd.FindIccdList(iccd => iccd.CustID != 0);
-            var query = from cu in custLst
-                        join ic in iccdLst on cu.ID equals ic.CustID into temp
-                        from tt in temp.DefaultIfEmpty()
-                        select new
-                        {
-                            cu.ID,
-                            cu.UserName,
-                            UserCode=(tt==null?"":tt.UserCode),
-                            Type= (tt == null ? 0 : cu.Type),
-                            Status= (tt == null ? 0 : tt.Status),
-                            Warehouse= (tt == null ? 0 : cu.Warehouse),
-                            LocAddress= (tt == null ? "" : cu.LocAddress),
-                            Deadline= (tt == null ? DateTime.Parse("2017-1-1") : cu.Deadline),
-                            cu.MobilePhone,
-                            cu.PlateNum,
-                            cu.FamilyAddress
-                        };           
             List<CustomerModel> models = new List<CustomerModel>();
-            foreach(var obj in query)
+            foreach (Customer cust in custLst)
             {
-                CustomerModel model = new CustomerModel
+                CustomerModel model = new CustomerModel();
+                model.ID = cust.ID;
+                model.UserName = cust.UserName;
+                model.PlateNum = cust.PlateNum;
+                model.Type = cust.Type;
+                model.Warehouse = cust.Warehouse;
+                model.LocAddress = cust.LocAddress;
+                model.MobilePhone = cust.MobilePhone;
+                model.Deadline = cust.Deadline.ToString();
+                model.FamilyAddress = cust.FamilyAddress;
+
+                ICCard iccd = cwiccd.Find(ic=>ic.CustID==cust.ID);
+                if (iccd != null)
                 {
-                    ID=obj.ID,
-                    UserName=obj.UserName,
-                    UserCode=obj.UserCode,
-                    Type=obj.Type,
-                    Status=obj.Status,
-                    Warehouse=obj.Warehouse,
-                    LocAddress=obj.LocAddress,
-                    Deadline=obj.Deadline.ToString(),
-                    MobilePhone=obj.MobilePhone,
-                    PlateNum=obj.PlateNum,
-                    FamilyAddress=obj.FamilyAddress
-                };
+                    model.UserCode = iccd.UserCode;
+                    model.Status = iccd.Status;
+                }
                 models.Add(model);
-            }
+            }            
 
             List<CustomerModel> firstQuery = new List<CustomerModel>();
             if (queryName != "0"&&!string.IsNullOrEmpty(queryValue))
@@ -393,6 +380,20 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 total = total,
                 rows = last
             };
+
+            Task.Factory.StartNew(() =>
+            {
+                #region 删除没有绑定用户的指纹(垃圾指纹)
+                CWFingerPrint cwfinger = new CWFingerPrint();
+                List<FingerPrint> noCustFPrintLst = cwfinger.FindList(fp => fp.CustID == 0);
+                foreach (FingerPrint print in noCustFPrintLst)
+                {
+                    cwfinger.Delete(print.ID, false);
+                }
+                cwfinger.SaveChange();
+                #endregion
+            });
+
             return Json(value);
         }
 
@@ -445,6 +446,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 model.FingerPrint3 = printList[2].SN_Number.ToString();
             }
             #endregion
+            
             return View(model);
         }
 
@@ -539,7 +541,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 if (newIccd != null)
                 {
                     newIccd.CustID = cust.ID;
-                    cwiccd.Update(newIccd);
+                    cwiccd.Update(newIccd,false);
                 }
             }
             else
@@ -549,7 +551,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     //释放原来卡号
                     //释放旧卡                  
                     oriIccd.CustID = 0;
-                    cwiccd.Update(oriIccd);
+                    cwiccd.Update(oriIccd,false);
                 }
                 else //两卡都存在
                 {
@@ -574,10 +576,10 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                         #endregion
                         //释放旧卡                  
                         oriIccd.CustID = 0;
-                        cwiccd.Update(oriIccd);
+                        cwiccd.Update(oriIccd,false);
                         //绑定新卡                  
                         newIccd.CustID = cust.ID;
-                        cwiccd.Update(newIccd);
+                        cwiccd.Update(newIccd,false);
                     }
                 }
             }   
@@ -587,7 +589,54 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             cust.MobilePhone = model.MobilePhone;
             cust.UserName = model.UserName;
             cust.FamilyAddress = model.FamilyAddress;
-            cwiccd.UpdateCust(cust);
+
+            cwiccd.UpdateCust(cust,false);
+
+            #region 更新指纹
+            CWFingerPrint cwfprint = new CWFingerPrint();
+            if (model.FingerPrint1 != "")
+            {
+                int fpvalue = Convert.ToInt32(model.FingerPrint1);
+                FingerPrint fp = cwfprint.Find(fi=>fi.SN_Number==fpvalue);
+                if (fp != null)
+                {
+                    if (fp.CustID == 0)
+                    {
+                        fp.CustID = cust.ID;
+                        cwfprint.Update(fp, false);
+                    }
+                }
+            }
+            if (model.FingerPrint2 != "")
+            {
+                int fpvalue = Convert.ToInt32(model.FingerPrint2);
+                FingerPrint fp = cwfprint.Find(fi => fi.SN_Number ==fpvalue);
+                if (fp != null)
+                {
+                    if (fp.CustID == 0)
+                    {
+                        fp.CustID = cust.ID;
+                        cwfprint.Update(fp, false);
+                    }
+                }
+            }
+            if (model.FingerPrint3 != "")
+            {
+                int fpvalue = Convert.ToInt32(model.FingerPrint3);
+                FingerPrint fp = cwfprint.Find(fi => fi.SN_Number == fpvalue);
+                if (fp != null)
+                {
+                    if (fp.CustID == 0)
+                    {
+                        fp.CustID = cust.ID;
+                        cwfprint.Update(fp, false);
+                    }
+                }
+            }
+            #endregion
+
+            cwiccd.SaveChange();
+
             #endregion
             return RedirectToAction("Index");
         }
@@ -670,7 +719,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         /// </summary>
         /// <param name="sn"></param>
         /// <returns></returns>
-        public ActionResult DeleteFingerPrint(short sn)
+        public ActionResult DeleteFingerPrint(int sn)
         {
             Response resp = new Response();
             CWFingerPrint fpring = new CWFingerPrint();
@@ -683,7 +732,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             {
                 resp.Message = "系统异常，找不到SN-"+sn+" 的指纹";
             }
-            return Json(resp,JsonRequestBehavior.AllowGet);
+            return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>

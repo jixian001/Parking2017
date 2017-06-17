@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using Microsoft.AspNet.SignalR;
-using Microsoft.AspNet.SignalR.Hubs;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
@@ -15,138 +13,152 @@ namespace Parking.Web.Controllers
 {   
     public class HomeController : Controller
     {
-        private Log log;
-          
+        private static Log log;
+       
         public HomeController()
-        {
-            //订阅事件
-            MainCallback<Location>.Instance().WatchEvent+= FileWatch_LctnWatchEvent;
-
-            MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
-
-            MainCallback<ImplementTask>.Instance().WatchEvent+= FileWatch_IMPTaskWatchEvent;
-            
+        {           
             log = LogFactory.GetLogger("HomeController");
         }
 
+        #region 不用的
         /*
         * signalr 推送调用
         *  Task.Factory.StartNew(()=> {
         *       var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
         *       hubs.Clients.All.getMessage(message);
         *   });
+        *   
+        *   [HttpPost]
+        *    public ActionResult Send(string cid, string msg)
+        *    {
+        *        var context = GlobalHost.ConnectionManager.GetHubContext<CommHub>();
+        *        if (cid == "*") //對所有Client傳送
+        *            //注意: Clients是dynamic，故ShowMessage等方法名稱只要跟Client可以對應即可
+        *            context.Clients.ShowMessage(msg);
+        *        else 
+        *            //利用Clients[connection_id]指定特定的Client, 呼叫其ShowMessage()
+        *            context.Clients[cid].ShowMessage(msg);
+        *        return Content("OK");
+        *    }
+        *   
         */
 
         /// <summary>
         /// 推送车位信息
         /// </summary>
         /// <param name="loc"></param>
-        private void FileWatch_LctnWatchEvent(Location loca)
-        {
-            #region
-            int total = 0;
-            int occupy = 0;
-            int space = 0;
-            int fix = 0;
-            int bspace = 0;
-            int sspace = 0;
-            List<Location> locLst = new CWLocation().FindLocationList(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall);
-            total = locLst.Count;
-            CWICCard cwiccd = new CWICCard();
-            foreach (Location loc in locLst)
-            {
-                #region
-                if (loc.Type == EnmLocationType.Normal)
-                {
-                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
-                    {
-                        if (loc.Type == EnmLocationType.Normal)
-                        {
-                            if (loc.Status == EnmLocationStatus.Space)
-                            {
-                                space++;
-                                if (loc.LocSize.Length == 3)
-                                {
-                                    string last = loc.LocSize.Substring(2);
-                                    if (last == "1")
-                                    {
-                                        sspace++;
-                                    }
-                                    else if (last == "2")
-                                    {
-                                        bspace++;
-                                    }
-                                }
-                            }
-                            else if (loc.Status == EnmLocationStatus.Occupy)
-                            {
-                                occupy++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        fix++;
-                    }
-                }
-                #endregion
-            }
-            StatisInfo info = new StatisInfo
-            {
-                Total = total,
-                Occupy = occupy,
-                Space = space,
-                SmallSpace = sspace,
-                BigSpace = bspace,
-                FixLoc = fix
-            };
-            #endregion
+        //private void FileWatch_LctnWatchEvent(Location loca)
+        //{
+        //    #region
+        //    int total = 0;
+        //    int occupy = 0;
+        //    int space = 0;
+        //    int fix = 0;
+        //    int bspace = 0;
+        //    int sspace = 0;
+        //    List<Location> locLst = new CWLocation().FindLocationList(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall);
+        //    total = locLst.Count;
+        //    CWICCard cwiccd = new CWICCard();
+        //    foreach (Location loc in locLst)
+        //    {
+        //        #region
+        //        if (loc.Type == EnmLocationType.Normal)
+        //        {
+        //            if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
+        //            {
+        //                if (loc.Type == EnmLocationType.Normal)
+        //                {
+        //                    if (loc.Status == EnmLocationStatus.Space)
+        //                    {
+        //                        space++;
+        //                        if (loc.LocSize.Length == 3)
+        //                        {
+        //                            string last = loc.LocSize.Substring(2);
+        //                            if (last == "1")
+        //                            {
+        //                                sspace++;
+        //                            }
+        //                            else if (last == "2")
+        //                            {
+        //                                bspace++;
+        //                            }
+        //                        }
+        //                    }
+        //                    else if (loc.Status == EnmLocationStatus.Occupy)
+        //                    {
+        //                        occupy++;
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                fix++;
+        //            }
+        //        }
+        //        #endregion
+        //    }
+        //    StatisInfo info = new StatisInfo
+        //    {
+        //        Total = total,
+        //        Occupy = occupy,
+        //        Space = space,
+        //        SmallSpace = sspace,
+        //        BigSpace = bspace,
+        //        FixLoc = fix
+        //    };
+        //    #endregion
 
-            Task.Factory.StartNew(()=> {
-                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-                //推送车位信息变化
-                hubs.Clients.All.feedbackLocInfo(loca);
-                //推送统计信息
-                hubs.Clients.All.feedbackStatistInfo(info);
-            });
-        }
+        //    Task.Factory.StartNew(()=> {
+        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+        //        //推送车位信息变化
+        //        hubs.Clients.All.feedbackLocInfo(loca);
+        //        //推送统计信息
+        //        hubs.Clients.All.feedbackStatistInfo(info);
+        //    });
+        //}
 
         /// <summary>
         /// 推送设备信息
         /// </summary>
         /// <param name="entity"></param>
-        private void FileWatch_DeviceWatchEvent(Device smg)
-        {
-            Task.Factory.StartNew(() => {
-                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-                hubs.Clients.All.feedbackDevice(smg);
-            });
-        }
+        //private void FileWatch_DeviceWatchEvent(Device smg)
+        //{
+        //    if (log != null)
+        //    {
+        //        log.Debug("  warehouse- " + smg.Warehouse + " ,devicecode-" + smg.DeviceCode);
+        //    }
+        //    Task.Factory.StartNew(() =>
+        //    {
+        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+        //        hubs.Clients.All.feedbackDevice(smg);
+        //    });                      
+        //}
 
         /// <summary>
         /// 推送执行作业信息
         /// </summary>
         /// <param name="itask"></param>
-        private void FileWatch_IMPTaskWatchEvent(ImplementTask itask)
-        {
-            Task.Factory.StartNew(() => {
-                var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
+        //private void FileWatch_IMPTaskWatchEvent(ImplementTask itask)
+        //{
+        //    Task.Factory.StartNew(() => {
+        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
 
-                string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
-                string type = PlusCvt.ConvertTaskType(itask.Type);
-                string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
-                DeviceTaskDetail detail = new DeviceTaskDetail
-                {
-                    DevDescp = desp,
-                    TaskType = type,
-                    Status = status,
-                    Proof = itask.ICCardCode
-                };
+        //        string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
+        //        string type = PlusCvt.ConvertTaskType(itask.Type);
+        //        string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
+        //        DeviceTaskDetail detail = new DeviceTaskDetail
+        //        {
+        //            DevDescp = desp,
+        //            TaskType = type,
+        //            Status = status,
+        //            Proof = itask.ICCardCode
+        //        };
 
-                hubs.Clients.All.feedbackImpTask(detail);
-            });
-        }
+        //        hubs.Clients.All.feedbackImpTask(detail);
+        //    });
+        //}
 
+        #endregion
 
         public ActionResult Index()
         {

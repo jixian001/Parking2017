@@ -120,6 +120,31 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         }
 
         /// <summary>
+        /// 使用明进康刷卡器时，由物理卡号查询用户信息
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="isPhysc"></param>
+        /// <returns></returns>
+        public ActionResult FindCardOfGUI(string iccode, bool isPhysc)
+        {
+            CWICCard cwiccd = new CWICCard();
+            ICCard iccd=null;
+            if (isPhysc)
+            {
+                iccd = cwiccd.Find(ic=>ic.PhysicCode==iccode);
+            }
+            else
+            {
+                iccd = cwiccd.Find(ic => ic.UserCode == iccode);
+            }
+            if (iccd == null)
+            {
+                iccd = new ICCard();
+            }
+            return Json(iccd,JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
         /// 操作卡类
         /// </summary>
         /// <param name="iccode"></param>

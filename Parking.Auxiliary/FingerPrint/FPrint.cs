@@ -124,6 +124,47 @@ namespace Parking.Auxiliary
         }
 
         /// <summary>
+        /// 十六进制格式的指纹模板/特征数据转 Base64 格式,使用default编码，生成字符串
+        /// </summary>
+        /// <param name="cpMBBuf"></param>
+        /// <param name="iMBstr"></param>
+        /// <returns></returns>
+        public string HexFingerDataToBase64(byte[] cpMBBuf,int iMBstr)
+        {
+            byte[] cpMBStr = new byte[1024];
+            int iMBStrLen = 0;
+            int iRet = FPDll.FPIHexFingerDataToBase64(cpMBBuf, iMBstr, cpMBStr,ref iMBStrLen);
+            if (iRet == 0)
+            {
+                byte[] psDesBuf = new byte[iMBStrLen];
+                Array.ConstrainedCopy(cpMBStr, 0, psDesBuf, 0, iMBStrLen);
+                return Encoding.Default.GetString(psDesBuf);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// base64格式的指纹转化为16进制格式
+        /// </summary>
+        /// <param name="cpMBStr"></param>
+        /// <returns></returns>
+        public byte[] Base64FingerDataToHex(string cpMBStr)
+        {
+            byte[] psSrcBuf = Encoding.Default.GetBytes(cpMBStr);
+            byte[] cpMBBuf = new byte[512];
+            int piDestLen = 0;
+            int iRet = FPDll.FPIBase64FingerDataToHex(psSrcBuf, 512, cpMBBuf, ref piDestLen);
+            if (iRet == 0)
+            {
+                byte[] psDesBuf = new byte[piDestLen];
+                Array.ConstrainedCopy(cpMBBuf, 0, psDesBuf, 0, piDestLen);
+
+                return psDesBuf;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// 指纹比对
         /// </summary>
         /// <param name="psMBB"></param>

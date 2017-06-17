@@ -730,10 +730,10 @@
                         return;
                     }
                     console.log(name + " object exist");
-                    $("table[id='" + name + "'] input[id='address']").val(smg.Address);
-                    $("table[id='" + name + "'] input[id='mode']").val(smg.Mode);
-                    $("table[id='" + name + "'] input[id='able']").val(smg.IsAble);
-                    $("table[id='" + name + "'] input[id='accept']").val(smg.IsAvailabe);
+                    $("table[id='" + name + "'] input[id='address']").val(formatAddress(smg.Address));
+                    $("table[id='" + name + "'] input[id='mode']").val(formatMode(smg.Mode));
+                    $("table[id='" + name + "'] input[id='able']").val(formatAble(smg.IsAble));
+                    $("table[id='" + name + "'] input[id='accept']").val(formatAvaible(smg.IsAvailabe));
                     $("table[id='" + name + "'] input[id='step']").val(smg.RunStep);
                     $("table[id='" + name + "'] input[id='instep']").val(smg.InStep);
                     $("table[id='" + name + "'] input[id='outstep']").val(smg.OutStep);
@@ -749,7 +749,7 @@
                         $("input[id='" + proof + "']").val("");
 
                         var state = "status-" + code;
-                        $("input[id='" + state + "']").val(detail.Status);
+                        $("input[id='" + state + "']").val("");
                     }
 
                 },
@@ -803,7 +803,7 @@
                     }]
                 });
             });
-
+          
             //检查客户端
             function checkLogin(name) {
                 $.ajax({
@@ -843,6 +843,10 @@
             //start the connection
             $.connection.hub.start()
                             .then(function () {
+
+                                //注册下
+                                hubs.server.register("6193");
+
                                 return hubs.server.getStatus();
                             })
                             .done(function (status) {

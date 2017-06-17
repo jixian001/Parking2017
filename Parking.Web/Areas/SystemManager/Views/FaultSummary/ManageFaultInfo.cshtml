@@ -1,0 +1,36 @@
+﻿
+@{
+    ViewBag.Title = "故障内容管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><span class="glyphicon"></span>故障汇总</div>
+            </div>
+            <div class="panel-body">
+                <div class="list-group" id="sidenavlist">
+                    <div class="list-group-item"><span></span>&nbsp;@Html.ActionLink("故障汇总", "Index", "FaultSummary")</div>
+                    <div class="list-group-item"><span class="glyphicon glyphicon-home"></span>&nbsp;@Html.ActionLink("主 页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</div>
+                </div>
+            </div>           
+        </div>
+    </div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>故障汇总</li>
+            <li class="active">故障内容管理</li>
+        </ol>
+
+        <div id="toolbar" class="btn-group pull-right" role="group">           
+            <button id="btn_Modify" class="btn btn-default"><span></span>修改内容</button>
+        </div>
+
+        <table id="taskgrid"></table>
+    </div>
+</div>
+

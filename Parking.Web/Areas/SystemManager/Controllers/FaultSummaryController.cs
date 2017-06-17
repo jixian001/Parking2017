@@ -59,6 +59,14 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Json(descList, JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// 故障管理，显示故障信息，修改故障信息
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult ManageFaultInfo()
+        {
+            return View();
+        }
 
     }
 }

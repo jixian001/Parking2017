@@ -163,11 +163,9 @@ namespace Parking.Data
 
         public int Add(TEntity entity,bool isSave)
         {
-            _dbContext.Set<TEntity>().Add(entity);
-
-            //事件引发，回推数据,用于可执行作业创建时，回调至主页面中
             MainCallback<TEntity>.Instance().OnChange(entity);
 
+            _dbContext.Set<TEntity>().Add(entity);            
             return isSave ? _dbContext.SaveChanges() : 0;
         }
         #endregion
@@ -175,12 +173,10 @@ namespace Parking.Data
         #region 更新实体 update
         public int Update(TEntity entity,bool isSave)
         {
-            _dbContext.Set<TEntity>().Attach(entity);
-            _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
-
-            //事件引发，回推数据
             MainCallback<TEntity>.Instance().OnChange(entity);
 
+            _dbContext.Set<TEntity>().Attach(entity);
+            _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
             return isSave ? _dbContext.SaveChanges() : 0;
         }
 
@@ -194,6 +190,8 @@ namespace Parking.Data
         #region 删除
         public int Delete(TEntity entity,bool isSave)
         {
+            MainCallback<TEntity>.Instance().OnChange(entity);
+
             _dbContext.Set<TEntity>().Attach(entity);
             _dbContext.Entry<TEntity>(entity).State = EntityState.Deleted;
             return isSave ? _dbContext.SaveChanges() : 0;
@@ -206,7 +204,8 @@ namespace Parking.Data
 
         public int Delete(IEnumerable<TEntity> entities)
         {
-            _dbContext.Set<TEntity>().RemoveRange(entities);
+            _dbContext.Set<TEntity>().RemoveRange(entities);           
+
             return _dbContext.SaveChanges();
         }
 

@@ -269,18 +269,37 @@
             //查询
             $("#btnFind").click(function () {
                 var $iccd = $("#iccode");
-                if ($iccd.val() == "") {
-                    BootstrapDialog.show({
-                        title: "温馨提示",
-                        message: "请输入用户卡号!"
-                    });
-                    return;
+                var $physic = $("#physiccode");
+
+                var code = "";
+                var isPhys = false;
+                if ($iccd.val() == "")
+                {
+                    if ($physic == "")
+                    {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入用户卡号!"
+                        });
+                        return;
+                    }
+                    else
+                    {
+                        isPhys = true;
+                        code = $physic.val();
+                    }
                 }
+                else
+                {
+                    isPhys=false;
+                    code = $iccd.val();
+                }
+
                 
                 $.ajax({
                     type: "GET",
-                    url: "@Url.Action("FindCard")",
-                    data: {"iccode": $iccd.val() },
+                    url: "@Url.Action("FindCardOfGUI")",
+                    data: { "iccode": code, "isPhysc": isPhys },
                     dataType: "json",
                     beforeSend: function (XMLHttpRequest) {
                         $("#btnFind").text("查询中...");
@@ -289,7 +308,10 @@
                         var code = iccd.UserCode;
                         if (code == null)
                         {
-                            $("input[name='uiccd']").val(iccd.UserCode);
+                            $("input[name='uiccd']").val("");
+                            $("input[name='physiccode']").val("");
+                            $("input[name='status']").val("");
+                            $("input[name='createtime']").val("");
                             BootstrapDialog.show({
                                 title: "温馨提示",
                                 message: "找不到该卡号信息"
@@ -297,6 +319,8 @@
                         }
                         else
                         {
+                            $("#iccode").val(iccd.UserCode);
+                            $("input[name='physiccode']").val(iccd.PhysicCode);
                             $("input[name='uiccd']").val(iccd.UserCode);
                             $("input[name='createtime']").val(formatDate(iccd.CreateDate));                          
                             $("input[name='losstime']").val(formatDate(iccd.LossDate));
@@ -306,9 +330,6 @@
                     },
                     complete: function (XMLHttpRequest, textStatus) {
                         $("#btnFind").text("查 询");
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-
                     }
                 });
 

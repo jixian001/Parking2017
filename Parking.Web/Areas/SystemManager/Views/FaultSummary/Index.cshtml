@@ -11,8 +11,13 @@
                 <div class="panel-title"><span class="glyphicon"></span>故障汇总</div>
             </div>
             <div class="panel-body">
-                <div class="list-group" id="sidenavlist">                    
-                    <div class="list-group-item"><span class="glyphicon glyphicon-home"></span>&nbsp;@Html.ActionLink("主 页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</div>                   
+                <div class="list-group" id="sidenavlist">
+                    <div class="list-group-item"><span class="glyphicon glyphicon-home"></span>&nbsp;@Html.ActionLink("主 页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</div>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="list-group" id="sidenavlist">
+                    <div class="list-group-item"><span></span>&nbsp;@Html.ActionLink("内容管理", "ManageFaultInfo", "FaultSummary")</div>
                 </div>
             </div>
         </div>

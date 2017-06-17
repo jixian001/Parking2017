@@ -203,9 +203,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201706140920399_init.cs" />
-    <Compile Include="Migrations\201706140920399_init.Designer.cs">
-      <DependentUpon>201706140920399_init.cs</DependentUpon>
+    <Compile Include="Migrations\201706170612286_init.cs" />
+    <Compile Include="Migrations\201706170612286_init.Designer.cs">
+      <DependentUpon>201706170612286_init.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
@@ -318,6 +318,7 @@
     <Content Include="Areas\ExternalManager\Views\web.config" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\ChangeDeadline.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\_PartialSideNav.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\ManageFaultInfo.cshtml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
@@ -397,8 +398,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201706140920399_init.resx">
-      <DependentUpon>201706140920399_init.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201706170612286_init.resx">
+      <DependentUpon>201706170612286_init.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

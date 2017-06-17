@@ -18,9 +18,9 @@ namespace Parking.Data
         [Required]
         /// <summary>
         /// 编号，5位数，唯一
-        /// int16(最大32767) 范围（10000-30000）
+        /// int32范围（10000-30000）
         /// </summary>
-        public short SN_Number { get; set; } 
+        public int SN_Number { get; set; } 
         [Required]       
         /// <summary>
         /// 指纹信息

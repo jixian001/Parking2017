@@ -15,10 +15,11 @@ namespace Parking.Core
     public class CWDevice
     {    
         private DeviceManager manager=new DeviceManager();
+        private Log log;
 
         public CWDevice()
         {
-           
+            log = LogFactory.GetLogger("CWDevice");
         }
         /// <summary>
         /// 依设备号查找设备
@@ -32,7 +33,7 @@ namespace Parking.Core
         }
 
         public Response Update(Device smg)
-        {
+        {      
             return manager.Update(smg);
         }
 

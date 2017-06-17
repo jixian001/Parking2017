@@ -19,9 +19,10 @@ namespace Parking.Application
         private Dictionary<int,List<Thread>> dic_iccdsThread;
         //用于断开连接时，关闭刷卡器
         private List<CardControl> CardControlList; 
-        private bool isStart;
+        private bool isStart;        
 
         private Dictionary<int, WorkFlow> dic_WorkFlows;
+        private Log log;
 
         #region 系统所需变量
         private int plcCount;
@@ -32,6 +33,8 @@ namespace Parking.Application
         public EqpService()
         {           
             isStart = false;
+            log = LogFactory.GetLogger("EqpService");
+                       
             Init();
         }
 
@@ -42,6 +45,19 @@ namespace Parking.Application
         {
             get
             {
+                if (isStart)
+                {
+                    foreach (KeyValuePair<int, Thread> pair in dic_taskThread)
+                    {
+                        Thread thrd = pair.Value;
+                        if (thrd.ThreadState != ThreadState.Running &&
+                            thrd.ThreadState != ThreadState.WaitSleepJoin)
+                        {
+                            log.Debug("warhouse- "+pair.Key+" ,thread state- "+thrd.ThreadState.ToString());
+                            return false;
+                        }
+                    }
+                }
                 return isStart;
             }
         }
@@ -65,8 +81,7 @@ namespace Parking.Application
         }
 
         public bool OnStart()
-        {
-            Log log = LogFactory.GetLogger("EqpService.OnStart");
+        {           
             try
             {
                 log.Info("后台服务尝试启动...");
@@ -171,8 +186,7 @@ namespace Parking.Application
         }
 
         public bool OnStop()
-        {
-            Log log = LogFactory.GetLogger("EqpService.OnStop");
+        {           
             try
             {
                 log.Info("后台服务尝试停止...");
@@ -206,9 +220,10 @@ namespace Parking.Application
             return true;
         }
 
+
+
         private void DealMessage(object wh)
-        {
-            Log log = LogFactory.GetLogger("EqpService.DealMessage");
+        {          
             int warehouse = Convert.ToInt32(wh);
             if (!dic_WorkFlows.ContainsKey(warehouse))
             {
@@ -242,6 +257,8 @@ namespace Parking.Application
                     Thread.Sleep(5000);
                 }               
             }
+
+
         }
     }
 }

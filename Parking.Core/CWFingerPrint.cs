@@ -17,14 +17,24 @@ namespace Parking.Core
     public class CWFingerPrint
     {
         private FingerPrintManager manager = new FingerPrintManager();
-
+        
         public CWFingerPrint()
         {
+        }
+
+        public Response Add(FingerPrint finger,bool isSave)
+        {
+            return manager.Add(finger,isSave);
         }
 
         public Response Add(FingerPrint finger)
         {
             return manager.Add(finger);
+        }
+
+        public Response Update(FingerPrint finger,bool isSave)
+        {
+            return manager.Update(finger,isSave);
         }
 
         public Response Update(FingerPrint finger)
@@ -47,10 +57,20 @@ namespace Parking.Core
             return manager.FindList(where);
         }
 
+        public Response Delete(int ID,bool isSave)
+        {
+            return manager.Delete(ID,isSave);
+        }
+
         public Response Delete(int ID)
         {
             return manager.Delete(ID);
         }
+
+        public Response SaveChange()
+        {
+            return manager.SaveChanges();
+        }        
 
         //定义一个异步方法
         /// <summary>
@@ -65,91 +85,164 @@ namespace Parking.Core
         /// <returns></returns>
         public async Task<Response> AddFingerPrintAsync(int custID)
         {
+            
             return await Task.Run(()=> {
                 Response resp = new Response();
+                Log log = LogFactory.GetLogger("AddFingerPrintAsync");
 
-                FPrint print = new FPrint();
-                resp = print.OpenDevice();
-                if (resp.Code == 0)
+                try
                 {
-                    return resp;
-                }
-                bool isLoop = true;
-                while (isLoop)
-                {
-                    resp = print.CheckFinger();
+                    FPrint print = new FPrint();
+                    resp = print.OpenDevice();
+                    if (resp.Code == 0)
+                    {                       
+                        print.CloseDevice();
+                        return resp;
+                    }
+                    bool isLoop = true;
+                    DateTime now = DateTime.Now;
+                    while (isLoop)
+                    {
+                        resp = print.CheckFinger();
+                        if (resp.Code == 1)
+                        {
+                            log.Debug(resp.Message);
+                            isLoop = false;
+                        }
+                        TimeSpan ts = DateTime.Now - now;
+                        if (ts.TotalSeconds > 30)
+                        {
+                            print.CloseDevice();
+                            resp.Message = "超时，请重新操作";
+                            return resp;
+                        }
+                    }
+                    resp = print.GetFingerTemplate();
+                    log.Debug(resp.Message);
                     if (resp.Code == 1)
                     {
-                        isLoop = false;                       
-                    }
-                }
-                resp = print.GetFingerTemplate();
-                if (resp.Code == 1)
-                {
-                    //采集到指纹,匹配指纹库,是否有相同的指纹
-                    byte[] current = resp.Data;
-                    FingerPrint origPrint = null;
-                    List<FingerPrint> printList = manager.FindList().ToList();
-                    foreach(FingerPrint fp in printList)
-                    {
-                        byte[] orig = Encoding.Default.GetBytes(fp.FingerInfo);
-                        resp = print.VerifyFinger(current, orig);
-                        if (resp.Code == 1)
+                        //采集到指纹,匹配指纹库,是否有相同的指纹
+                        byte[] current = resp.Data;
+                        FingerPrint origPrint = null;
+                        List<FingerPrint> printList = manager.FindList().ToList();
+                        foreach (FingerPrint fp in printList)
                         {
-                            origPrint = fp;
-                            break;
-                        }
-                    }
-                    //没有指纹库内没有匹配指纹，允许添加
-                    if (origPrint == null)
-                    {
-                        origPrint = new FingerPrint();
-                        short max = 10000;
-                        if (printList.Count > 0)
-                        {
-                            max = printList.Select(m => m.SN_Number).Max();
-                        }
-                        if (max > 32000)
-                        {
-                            max = 9000;
-                        }
-                        origPrint.SN_Number = ++max;
-                        origPrint.FingerInfo = Encoding.Default.GetString(current);
-                        origPrint.CustID = custID;
-                        resp = manager.Add(origPrint);
-                        resp.Data = null;
-                        if (resp.Code == 1)
-                        {
-                            resp.Message = "绑定指纹成功";
-                            resp.Data = origPrint.SN_Number;
-                        }
-                    }
-                    else //有匹配指纹
-                    {
-                        resp.Code = 0;
-                        resp.Data = null;
-                        Customer cust = new CWICCard().FindCust(origPrint.CustID);
-                        if (cust != null)
-                        {
-                            resp.Message = "指纹已绑定到用户-" + cust.UserName + " ,车牌-" + cust.PlateNum;
-                        }
-                        else
-                        {
-                            resp.Message = "指纹库内有匹配指纹，CustID-" + origPrint.CustID;
-                        }
-                        if (custID != 0)
-                        {
-                            if (origPrint.CustID == custID)
+                            byte[] orig = print.Base64FingerDataToHex(fp.FingerInfo);
+                            if (orig == null)
                             {
-                                resp.Message = "库内已有匹配指纹已绑定到车主";
+                                log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
+                            }
+                            //log.Debug("指纹库中的指纹");
+                            //this.PrintFingerStrData(fp.FingerInfo);
+                            //this.PrintFingerData(orig);                        
+
+                            resp = print.VerifyFinger(current, orig);
+                            if (resp.Code == 1)
+                            {
+                                origPrint = fp;
+                                break;
                             }
                         }
+                        //没有指纹库内没有匹配指纹，允许添加
+                        if (origPrint == null)
+                        {
+                            origPrint = new FingerPrint();
+                            Int32 max = 10000;
+                            if (printList.Count > 0)
+                            {
+                                max = printList.Select(m => m.SN_Number).Max();
+                            }
+                            if (max > 32000)
+                            {
+                                max = 9000;
+                            }
+                            origPrint.SN_Number = ++max;
+                            string finfo = print.HexFingerDataToBase64(current, current.Length);
+                            if (string.IsNullOrEmpty(finfo))
+                            {
+                                resp.Message = "指纹Length-" + current.Length + " ,转化为BASE64失败！";
+                            }
+                            else
+                            {
+                                //this.PrintFingerData(current);
+                                //this.PrintFingerStrData(finfo);
+
+                                origPrint.FingerInfo = finfo;
+                                origPrint.CustID = custID;
+                                resp = manager.Add(origPrint);
+                                resp.Data = null;
+                                if (resp.Code == 1)
+                                {
+                                    resp.Message = "绑定指纹成功";
+                                    resp.Data = origPrint.SN_Number;
+                                }
+                            }
+                        }
+                        else //有匹配指纹
+                        {
+                            resp.Code = 0;
+                            resp.Data = null;
+                            Customer cust = new CWICCard().FindCust(origPrint.CustID);
+                            if (cust != null)
+                            {
+                                resp.Message = "指纹已绑定到用户-" + cust.UserName + " ,车牌-" + cust.PlateNum;
+                            }
+                            else
+                            {
+                                resp.Message = "指纹库内有匹配指纹，CustID-" + origPrint.CustID;
+                            }
+                            if (custID != 0)
+                            {
+                                if (origPrint.CustID == custID)
+                                {
+                                    resp.Message = "库内已有匹配指纹已绑定到车主";
+                                }
+                            }
+                        }
+
                     }
-                    
+                    print.CloseDevice();
                 }
-                print.CloseDevice();
+                catch (Exception ex)
+                {
+                    log.Error(ex.ToString());                   
+                }
                 return resp;
             });      
+        }
+
+        private void PrintFingerData(byte[] psMBBuf)
+        {
+            Task.Factory.StartNew(()=> {
+
+                Log log = LogFactory.GetLogger("打印字节指纹");
+                log.Debug("指纹模板数量- " + psMBBuf.Length);
+                StringBuilder strBuild = new StringBuilder();
+                int i = 0;
+                foreach(byte by in psMBBuf)
+                {
+                    if (i % 20 == 0 && i != 0)
+                    {
+                        strBuild.Append(Environment.NewLine+" ["+ by.ToString("X")+"] ");
+                    }
+                    else
+                    {
+                        strBuild.Append(" [" + by.ToString("X") + "] ");
+                    }
+                }
+                log.Debug(strBuild.ToString());
+
+            });           
+        }
+
+        private void PrintFingerStrData(string strData)
+        {
+            Task.Factory.StartNew(() => {
+
+                Log log = LogFactory.GetLogger("打印字节指纹");
+                log.Debug("Base64编码后的指纹- " + strData);              
+
+            });
         }
 
 
