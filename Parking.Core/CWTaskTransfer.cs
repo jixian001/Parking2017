@@ -659,14 +659,32 @@ namespace Parking.Core
             List<FingerPrint> FingerList = fingerprint.FindList(p=>true).ToList();
             foreach(FingerPrint fp in FingerList)
             {
-                byte[] psMB = Encoding.Default.GetBytes(fp.FingerInfo);
+                FPrint printfinger = new FPrint();
+                byte[] orig = printfinger.Base64FingerDataToHex(fp.FingerInfo);
+                if (orig == null)
+                {
+                    log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
+                }
+                log.Debug("开始比对指纹，指纹库内指纹Code - " + fp.SN_Number + " 字节数量-" + orig.Length);
+
+                byte[] psMB = orig;
                 int nback = FiPrintMatch.FPIMatch(psMB, psTZ, iLevel);
                 //比对成功
                 if (nback == 0)
                 {
+                    log.Debug("指纹对比成功，Code- " + fp.SN_Number);
                     print = fp;
                     break;
                 }
+                else
+                {
+                    log.Debug("指纹对比失败，Code- " + fp.SN_Number);
+                }
+            }
+            if (moHall == null)
+            {
+                resp.Message = "找不到车厅设备！";
+                return resp;
             }
             int warehouse = moHall.Warehouse;
             int code = moHall.DeviceCode;
@@ -855,6 +873,11 @@ namespace Parking.Core
             Response resp = new Response();
             try
             {
+                if (moHall == null)
+                {
+                    resp.Message = "找不到车厅设备！";
+                    return resp;
+                }
                 int warehouse = moHall.Warehouse;
                 int code = moHall.DeviceCode;
                 if (moHall.Mode != EnmModel.Automatic)

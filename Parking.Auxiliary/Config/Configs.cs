@@ -26,7 +26,7 @@ namespace Parking.Auxiliary
         public static void SetValue(string key, string value)
         {
             System.Xml.XmlDocument xDoc = new System.Xml.XmlDocument();
-            xDoc.Load(HttpContext.Current.Server.MapPath("~/Configs/System.config"));
+            xDoc.Load(HttpContext.Current.Server.MapPath("/Configs/System.config"));
             System.Xml.XmlNode xNode;
             System.Xml.XmlElement xElem1;
             System.Xml.XmlElement xElem2;
@@ -44,7 +44,7 @@ namespace Parking.Auxiliary
                 xElem2.SetAttribute("value", value);
                 xNode.AppendChild(xElem2);
             }
-            xDoc.Save(HttpContext.Current.Server.MapPath("~/Configs/System.config"));
+            xDoc.Save(HttpContext.Current.Server.MapPath("/Configs/System.config"));
         }
     }
 
@@ -63,9 +63,11 @@ namespace Parking.Auxiliary
         /// <returns></returns>
         public static string GetRootNodeValueByXpath(string root,string nodeName)
         {
+            Log log = LogFactory.GetLogger("XMLHelper.GetRootNodeValueByXpath");
+            string path = "";
             try
             {
-                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -80,9 +82,8 @@ namespace Parking.Auxiliary
                 }
             }
             catch (Exception ex)
-            {
-                Log log = LogFactory.GetLogger("XMLHelper.GetRootNodeValueByXpath");
-                log.Error(ex.ToString());
+            {               
+                log.Error("path - " + path + " ,root - " + root + " ,nodename - " + nodeName + Environment.NewLine + ex.ToString());
             }
             return null;
         }
@@ -96,9 +97,11 @@ namespace Parking.Auxiliary
         /// <returns></returns>
         public static XmlNode GetPlcNodeByTagName(string settingpath,string warehouse,string nodeName)
         {
+            Log log = LogFactory.GetLogger("XMLHelper.GetPlcNodeByTagName");
+            string path = "";
             try
             {
-                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -122,8 +125,8 @@ namespace Parking.Auxiliary
             }
             catch (Exception ex)
             {
-                Log log = LogFactory.GetLogger("XMLHelper.GetPlcNodeByTagName");
-                log.Error(ex.ToString());
+                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - "+warehouse+" ,nodename - " + nodeName + 
+                            Environment.NewLine + ex.ToString());
             }
             return null;
         }
@@ -139,9 +142,11 @@ namespace Parking.Auxiliary
         /// <returns></returns>
         public static XmlNode GetHallNodeByTageName(string settingpath,string warehouse,string hall, string nodeName)
         {
+            Log log = LogFactory.GetLogger("XMLHelper.GetHallNodeByTageName");
+            string path = "";
             try
             {
-                string path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -164,8 +169,8 @@ namespace Parking.Auxiliary
             }
             catch (Exception ex)
             {
-                Log log = LogFactory.GetLogger("XMLHelper.GetHallNodeByTageName");
-                log.Error(ex.ToString());
+                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - " + warehouse +" ,Hall - "+hall+ " ,nodename - " + nodeName +
+                             Environment.NewLine + ex.ToString());
             }
             return null;
         }

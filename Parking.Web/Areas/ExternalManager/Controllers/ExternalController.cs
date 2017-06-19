@@ -25,38 +25,46 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         [HttpPost]
         public JsonResult SubmitFingerPrint()
         {
-            string warehouse = Request.Form["warehouse"];
-            string hallID = Request.Form["hallID"];
-            string fingerPrint = Request.Form["fingerInfo"];
-
-            Log log = LogFactory.GetLogger("FingerPrint");
-            log.Info("Warehouse-" + warehouse + " ,Hall-" + hallID + " , FingerPrint Info- " + fingerPrint);
-
             Response resp = new Response();
-            int wh = 1;
-            if (!string.IsNullOrEmpty(warehouse))
+            Log log = LogFactory.GetLogger("SubmitCardsInfo");
+            try
             {
-                wh = Convert.ToInt32(warehouse);
+                string warehouse = Request.Form["warehouse"];
+                string hallID = Request.Form["hallID"];
+                string fingerPrint = Request.Form["fingerInfo"];
+             
+                log.Info("Warehouse-" + warehouse + " ,Hall-" + hallID + " , FingerPrint Info- " + fingerPrint);
+                              
+                int wh = 1;
+                if (!string.IsNullOrEmpty(warehouse))
+                {
+                    wh = Convert.ToInt32(warehouse);
+                }
+                int hall = 0;
+                if (!string.IsNullOrEmpty(hallID))
+                {
+                    hall = Convert.ToInt32(hallID);
+                }
+                if (hall < 10)
+                {
+                    resp.Message = "车厅号不正确，hallID- " + hallID;
+                    return Json(resp);
+                }
+
+                string[] arrayFinger = fingerPrint.Trim().Split(' ');
+                byte[] psTZ = new byte[arrayFinger.Length];
+                for (int i = 0; i < arrayFinger.Length; i++)
+                {
+                    psTZ[i] = Convert.ToByte(arrayFinger[i]);
+                }
+
+                resp = new CWTaskTransfer(wh, hall).DealFingerPrintMessage(psTZ);
             }
-            int hall = 0;
-            if (!string.IsNullOrEmpty(hallID))
+            catch (Exception ex)
             {
-                hall = Convert.ToInt32(hallID);
-            }
-            if (hall < 10)
-            {
-                resp.Message = "车厅号不正确，hallID- "+hallID;
-                return Json(resp);
+                log.Error(ex.ToString());
             }
 
-            string[] arrayFinger = fingerPrint.Trim().Split(' ');
-            byte[] psTZ = new byte[arrayFinger.Length];
-            for (int i = 0; i < arrayFinger.Length; i++)
-            {
-                psTZ[i] = Convert.ToByte(arrayFinger[i]);
-            }
-
-            resp = new CWTaskTransfer(wh, hall).DealFingerPrintMessage(psTZ);           
             return Json(resp);
         }
 
@@ -67,27 +75,35 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         [HttpPost]
         public JsonResult SubmitCardsInfo()
         {
-            string warehouse = Request.Form["warehouse"];
-            string hallID = Request.Form["hallID"];
-            string ccode = Request.Form["physcode"];
-
             Response resp = new Response();
-            int wh = 1;
-            if (!string.IsNullOrEmpty(warehouse))
+            Log log = LogFactory.GetLogger("SubmitCardsInfo");
+            try
             {
-                wh = Convert.ToInt32(warehouse);
+                string warehouse = Request.Form["warehouse"];
+                string hallID = Request.Form["hallID"];
+                string ccode = Request.Form["physcode"];
+
+                int wh = 1;
+                if (!string.IsNullOrEmpty(warehouse))
+                {
+                    wh = Convert.ToInt32(warehouse);
+                }
+                int hall = 0;
+                if (!string.IsNullOrEmpty(hallID))
+                {
+                    hall = Convert.ToInt32(hallID);
+                }
+                if (hall < 10)
+                {
+                    resp.Message = "车厅号不正确，hallID- " + hallID;
+                    return Json(resp);
+                }
+                resp = new CWTaskTransfer(wh, hall).DealFingerICCardMessage(ccode);
             }
-            int hall = 0;
-            if (!string.IsNullOrEmpty(hallID))
+            catch (Exception ex)
             {
-                hall = Convert.ToInt32(hallID);
-            }
-            if (hall < 10)
-            {
-                resp.Message = "车厅号不正确，hallID- " + hallID;
-                return Json(resp);
-            }
-            resp = new CWTaskTransfer(wh, hall).DealFingerICCardMessage(ccode);           
+                log.Error(ex.ToString());
+            }          
             return Json(resp);
         }
 

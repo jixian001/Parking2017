@@ -209,6 +209,8 @@
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\AIOFingerPrint.cs" />
+    <Compile Include="Models\AIOICCard.cs" />
     <Compile Include="Models\DeviceTaskDetail.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\StatisInfo.cs" />

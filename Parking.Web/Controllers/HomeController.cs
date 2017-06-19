@@ -8,6 +8,8 @@ using Parking.Data;
 using Parking.Core;
 using System.Threading.Tasks;
 using Parking.Web.Models;
+using System.Web.Script.Serialization;
+using System.Text;
 
 namespace Parking.Web.Controllers
 {   
@@ -361,6 +363,116 @@ namespace Parking.Web.Controllers
         {
             return View("Error");
         }
+
+        /// <summary>
+        /// 接收指纹一体机上传上来的指纹信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult ZhiWen()
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("ZhiWen");
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                //log.Debug("接收到指纹，解析流到字符串- " + req);
+                 
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                AIOFingerPrint fpring = js.Deserialize<AIOFingerPrint>(req);
+                          
+                string warehouse = "1";
+                string hallID = fpring.equipmentID;
+                string fingerPrint = fpring.zhiWenInfo;
+
+                //log.Debug("接收到的指纹,信息 Warehouse-" + warehouse + " ,Hall-" + hallID + " , FingerPrint Info- " + fingerPrint);
+
+                int wh = 1;
+                if (!string.IsNullOrEmpty(warehouse))
+                {
+                    wh = Convert.ToInt32(warehouse);
+                }
+                int hall = 0;
+                if (!string.IsNullOrEmpty(hallID))
+                {
+                    hall = Convert.ToInt32(hallID);
+                }
+                if (hall < 10)
+                {
+                    resp.Message = "车厅号不正确，hallID- " + hallID;
+                    return Json(resp);
+                }
+
+                string[] arrayFinger = fingerPrint.Trim().Split(' ');                
+                byte[] psTZ = new byte[arrayFinger.Length];
+                for (int i = 0; i < arrayFinger.Length; i++)
+                {
+                    psTZ[i] = Convert.ToByte(arrayFinger[i].Trim(),16);
+                }
+                log.Debug("接收到的指纹数量- "+psTZ.Length);
+
+                resp = new CWTaskTransfer(wh, hall).DealFingerPrintMessage(psTZ);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 接收指纹一体机上传上来的刷卡信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult IcCard()
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("IcCard");
+            try
+            {               
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes,0,bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                log.Debug("接收到卡号，解析流到字符串- " + req);
+               
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                AIOICCard iccard = js.Deserialize<AIOICCard>(req);
+
+                string warehouse = "1";
+                string hallID = iccard.equipmentID;
+                string ccode = iccard.cardInfo;
+
+                log.Debug("接收到的卡号,信息 Warehouse-" + warehouse + " ,Hall-" + hallID + " , ICCard- " + ccode);
+
+                int wh = 1;
+                if (!string.IsNullOrEmpty(warehouse))
+                {
+                    wh = Convert.ToInt32(warehouse);
+                }
+                int hall = 0;
+                if (!string.IsNullOrEmpty(hallID))
+                {
+                    hall = Convert.ToInt32(hallID);
+                }
+                if (hall < 10)
+                {
+                    resp.Message = "车厅号不正确，hallID- " + hallID;
+                    return Json(resp);
+                }
+                resp = new CWTaskTransfer(wh, hall).DealFingerICCardMessage(ccode);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return Json(resp);
+        }
+
+
 
     }
 }
