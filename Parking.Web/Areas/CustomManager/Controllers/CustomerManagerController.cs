@@ -693,11 +693,11 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         /// </summary>
         /// <param name="custID"></param>
         /// <returns></returns>
-        public async Task<ActionResult> AddFingerPrint()
+        public ActionResult AddFingerPrint()
         {
-            CWFingerPrint fprint = new CWFingerPrint();
-            Response resp = await fprint.AddFingerPrintAsync(0);
-
+            //CWFingerPrint fprint = new CWFingerPrint();
+            //Response resp = await fprint.AddFingerPrintAsync(0);
+            Response resp = new Response();
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
@@ -706,12 +706,39 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         /// </summary>
         /// <param name="custID"></param>
         /// <returns></returns>
-        public async Task<ActionResult> AddFingerPrintFromModify(int custID)
+        public ActionResult AddFingerPrintFromModify(int custID)
         {
-            CWFingerPrint fprint = new CWFingerPrint();
-            Response resp = await fprint.AddFingerPrintAsync(custID);
-
+            //CWFingerPrint fprint = new CWFingerPrint();
+            //Response resp = await fprint.AddFingerPrintAsync(custID);
+            Response resp = new Response();
             return Json(resp, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult SubmitFPrint(int custID,string strMBBuf)
+        {
+            Response resp = new Response();
+            if (!string.IsNullOrEmpty(strMBBuf))
+            {
+                resp = new CWFingerPrint().SubmitFingerTemplate(custID, strMBBuf);
+            }
+            else
+            {
+                resp.Message = "指纹信息为空";
+            }
+            return Json(resp);
+        }
+
+        [HttpGet]
+        public ActionResult GetOCXIPAddress()
+        {
+            string ipaddrs = "";
+            string addrs = XMLHelper.GetRootNodeValueByXpath("root", "OCXIPAddrs");
+            if (addrs != null)
+            {
+                ipaddrs = addrs;
+            }
+            return Content(ipaddrs);
         }
 
         /// <summary>

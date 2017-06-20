@@ -132,10 +132,7 @@ namespace Parking.Core
                             {
                                 log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
                             }
-                            //log.Debug("指纹库中的指纹");
-                            //this.PrintFingerStrData(fp.FingerInfo);
-                            //this.PrintFingerData(orig);                        
-
+                           
                             resp = print.VerifyFinger(current, orig);
                             if (resp.Code == 1)
                             {
@@ -205,11 +202,99 @@ namespace Parking.Core
                 }
                 catch (Exception ex)
                 {
-                    log.Error(ex.ToString());                   
+                    log.Error(ex.ToString());
+                    resp.Message = "系统异常";                   
                 }
                 return resp;
             });      
         }
+
+        /// <summary>
+        /// 前端读取指纹模板后，后台处理，是否保存
+        /// </summary>
+        /// <param name="custID"></param>
+        /// <param name="strMBBuf"></param>
+        /// <returns></returns>
+        public Response SubmitFingerTemplate(int custID,string strMBBuf)
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("SubmitFingerTemplate");
+            try
+            {              
+                FingerPrint origPrint = null;
+                byte[] current = FPrintBase64.Base64FingerDataToHex(strMBBuf);               
+                List<FingerPrint> printList = manager.FindList().ToList();
+                foreach (FingerPrint fp in printList)
+                {
+                    byte[] orig = FPrintBase64.Base64FingerDataToHex(fp.FingerInfo);
+                    if (orig == null)
+                    {
+                        log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
+                    }
+
+                    int iRet = FiPrintMatch.FPIMatch(current, orig, 3);
+                    if (iRet == 0)
+                    {
+                        origPrint = fp;
+                        break;
+                    }
+                }
+                //没有指纹库内没有匹配指纹，允许添加
+                if (origPrint == null)
+                {
+                    origPrint = new FingerPrint();
+                    Int32 max = 10000;
+                    if (printList.Count > 0)
+                    {
+                        max = printList.Select(m => m.SN_Number).Max();
+                    }
+                    if (max > 32000)
+                    {
+                        max = 9000;
+                    }
+                    origPrint.SN_Number = ++max;
+
+                    origPrint.FingerInfo = strMBBuf;
+                    origPrint.CustID = custID;
+                    resp = manager.Add(origPrint);
+                    resp.Data = null;
+                    if (resp.Code == 1)
+                    {
+                        resp.Message = "绑定指纹成功";
+                        resp.Data = origPrint.SN_Number;
+                    }
+                }
+                else //有匹配指纹
+                {
+                    resp.Code = 0;
+                    resp.Data = null;
+                    Customer cust = new CWICCard().FindCust(origPrint.CustID);
+                    if (cust != null)
+                    {
+                        resp.Message = "指纹已绑定到用户-" + cust.UserName + " ,车牌-" + cust.PlateNum;
+                    }
+                    else
+                    {
+                        resp.Message = "指纹库内有匹配指纹，CustID-" + origPrint.CustID;
+                    }
+                    if (custID != 0)
+                    {
+                        if (origPrint.CustID == custID)
+                        {
+                            resp.Message = "库内已有匹配指纹已绑定到当前车主";
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+                resp.Message = "系统异常";
+            }
+            return resp;
+        }
+
 
         private void PrintFingerData(byte[] psMBBuf)
         {

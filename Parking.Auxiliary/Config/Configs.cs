@@ -25,26 +25,45 @@ namespace Parking.Auxiliary
         /// <param name="value">要修改为的值</param>
         public static void SetValue(string key, string value)
         {
-            System.Xml.XmlDocument xDoc = new System.Xml.XmlDocument();
-            xDoc.Load(HttpContext.Current.Server.MapPath("/Configs/System.config"));
-            System.Xml.XmlNode xNode;
-            System.Xml.XmlElement xElem1;
-            System.Xml.XmlElement xElem2;
-            xNode = xDoc.SelectSingleNode("//appSettings");
+            Log log = LogFactory.GetLogger("XMLHelper.SetValue");
+            try
+            {
+                string path = "";
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                }
+                //log.Debug("Path- " + path);
 
-            xElem1 = (System.Xml.XmlElement)xNode.SelectSingleNode("//add[@key='" + key + "']");
-            if (xElem1 != null)
-            {
-                xElem1.SetAttribute("value", value);
+                System.Xml.XmlDocument xDoc = new System.Xml.XmlDocument();
+                xDoc.Load(path);
+                System.Xml.XmlNode xNode;
+                System.Xml.XmlElement xElem1;
+                System.Xml.XmlElement xElem2;
+                xNode = xDoc.SelectSingleNode("//appSettings");
+
+                xElem1 = (System.Xml.XmlElement)xNode.SelectSingleNode("//add[@key='" + key + "']");
+                if (xElem1 != null)
+                {
+                    xElem1.SetAttribute("value", value);
+                }
+                else
+                {
+                    xElem2 = xDoc.CreateElement("add");
+                    xElem2.SetAttribute("key", key);
+                    xElem2.SetAttribute("value", value);
+                    xNode.AppendChild(xElem2);
+                }
+                xDoc.Save(path);
             }
-            else
+            catch (Exception ex)
             {
-                xElem2 = xDoc.CreateElement("add");
-                xElem2.SetAttribute("key", key);
-                xElem2.SetAttribute("value", value);
-                xNode.AppendChild(xElem2);
+                log.Error(ex.ToString());
             }
-            xDoc.Save(HttpContext.Current.Server.MapPath("/Configs/System.config"));
         }
     }
 
@@ -67,7 +86,16 @@ namespace Parking.Auxiliary
             string path = "";
             try
             {
-                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                }
+                //log.Debug("Path- "+path);
+
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -101,7 +129,16 @@ namespace Parking.Auxiliary
             string path = "";
             try
             {
-                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                }
+                //log.Debug("Path- " + path);
+
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -146,7 +183,16 @@ namespace Parking.Auxiliary
             string path = "";
             try
             {
-                path = HttpContext.Current.Server.MapPath("/Configs/System.xml");
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                }
+                //log.Debug("Path- " + path);
+               
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;

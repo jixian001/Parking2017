@@ -378,17 +378,15 @@ namespace Parking.Web.Controllers
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
                 string req = System.Text.Encoding.Default.GetString(bytes);
-                //log.Debug("接收到指纹，解析流到字符串- " + req);
-                 
+                log.Debug("有指纹信息上传！");
+
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 AIOFingerPrint fpring = js.Deserialize<AIOFingerPrint>(req);
                           
                 string warehouse = "1";
                 string hallID = fpring.equipmentID;
                 string fingerPrint = fpring.zhiWenInfo;
-
-                //log.Debug("接收到的指纹,信息 Warehouse-" + warehouse + " ,Hall-" + hallID + " , FingerPrint Info- " + fingerPrint);
-
+                
                 int wh = 1;
                 if (!string.IsNullOrEmpty(warehouse))
                 {
@@ -399,6 +397,7 @@ namespace Parking.Web.Controllers
                 {
                     hall = Convert.ToInt32(hallID);
                 }
+                log.Debug("指纹信息中，warehouse - " + warehouse + " ,hallID - " + hall);
                 if (hall < 10)
                 {
                     resp.Message = "车厅号不正确，hallID- " + hallID;
@@ -411,16 +410,33 @@ namespace Parking.Web.Controllers
                 {
                     psTZ[i] = Convert.ToByte(arrayFinger[i].Trim(),16);
                 }
-                log.Debug("接收到的指纹数量- "+psTZ.Length);
 
-                resp = new CWTaskTransfer(wh, hall).DealFingerPrintMessage(psTZ);
+                log.Debug("接收到的指纹数量- "+psTZ.Length);
+                if (psTZ.Length > 380)
+                {
+                    resp = new CWTaskTransfer(hall,wh).DealFingerPrintMessage(psTZ);
+                }
+                else
+                {
+                    resp.Message = "上传的指纹特性数量不正确，Length- "+psTZ.Length;
+                }
+
+                log.Debug(resp.Message);
             }
             catch (Exception ex)
             {
                 log.Error(ex.ToString());
             }
-
-            return Json(resp);
+            var json = new
+            {
+                status = resp.Code,
+                msg = resp.Message,
+                isTakeCar = 0,
+                carBrand = "",
+                counter = 0,
+                sound = ""
+            };
+            return Json(json);
         }
 
         /// <summary>
@@ -437,7 +453,7 @@ namespace Parking.Web.Controllers
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes,0,bytes.Length);
                 string req = System.Text.Encoding.Default.GetString(bytes);
-                log.Debug("接收到卡号，解析流到字符串- " + req);
+                log.Debug("有卡号信息上传，解析流得到字符串 - " + req);
                
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 AIOICCard iccard = js.Deserialize<AIOICCard>(req);
@@ -445,9 +461,7 @@ namespace Parking.Web.Controllers
                 string warehouse = "1";
                 string hallID = iccard.equipmentID;
                 string ccode = iccard.cardInfo;
-
-                log.Debug("接收到的卡号,信息 Warehouse-" + warehouse + " ,Hall-" + hallID + " , ICCard- " + ccode);
-
+                
                 int wh = 1;
                 if (!string.IsNullOrEmpty(warehouse))
                 {
@@ -463,13 +477,23 @@ namespace Parking.Web.Controllers
                     resp.Message = "车厅号不正确，hallID- " + hallID;
                     return Json(resp);
                 }
-                resp = new CWTaskTransfer(wh, hall).DealFingerICCardMessage(ccode);
+                log.Debug("一体机刷卡信息中，warehouse - " + warehouse + " ,hallID - " + hall);
+                resp = new CWTaskTransfer(hall,wh).DealFingerICCardMessage(ccode);
             }
             catch (Exception ex)
             {
                 log.Error(ex.ToString());
             }
-            return Json(resp);
+            var json = new
+            {
+                status = resp.Code,
+                msg = resp.Message,
+                isTakeCar = 0,
+                carBrand = "",
+                counter = 0,
+                sound = ""
+            };
+            return Json(json);
         }
 
 

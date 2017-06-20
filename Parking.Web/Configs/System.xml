@@ -14,6 +14,7 @@
   <MaxHallGetCar>4</MaxHallGetCar>
   <!--EXCEL报表导出路径-->
   <FilePath>D:\Parking_Report</FilePath>
+  <OCXIPAddrs>http://10.34.60.147:81/</OCXIPAddrs>
   <!--区分库区，区分车厅-->
   <setting>
     <!--开始设定库区信息-->

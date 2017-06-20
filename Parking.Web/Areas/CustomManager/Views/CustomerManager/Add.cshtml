@@ -122,6 +122,9 @@
     </div>
 </div>
 
+<div>
+    <object classid="clsid:5F709CBC-669E-466B-91A3-66A626E987EA" width="152" height="200" id="dtm" codebase="Fp30Dev_WL.ocx" hidden></object>
+</div>
 @section scripts{
     <script>
         $(function () {
@@ -161,92 +164,130 @@
                     $("img[id='FingerPrint3']").attr({ "src": "/Image/fingerprint.jpg", "title": f3 });
                 }
 
+                //绑定OCX所在目录
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOCXIPAddress")",                  
+                    dataType: "text",
+                    cache: false,
+                    success: function (resp) {                     
+                        if (resp != "") {                          
+                            $("object[id='dtm']").attr("codebase", resp + "Fp30Dev_WL.ocx");
+                            console.log($("object[id='dtm']").attr("codebase"));
+                        }
+                    }
+                });
+
             }, 500);
 
             $("img.print").click(function () {
 
+                if (window.ActiveXObject || "ActiveXObject" in window)
+                {
+                    consol.log("is ie");
+                }
+                else
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请使用IE浏览器进行操作！"
+                    });
+                    return;
+                }
+
+                var iRet = dtm.FConnect();
+                if (iRet != 0) {
+                    BootstrapDialog.warning("连接指纹仪失败");
+                    return;
+                }
                 var ig = $(this);
                 var title = ig.attr("title");
+                //添加
+                if (title == 0) {
+                    ig.attr({ "title": -1, "src": "/Image/scan.gif" });
+                    iRet = dtm.FGetTemplate(60000);
+                    if (iRet != 0) {
+                        ig.attr({ "title": 0, "src": "/Image/add.jpg" });
+                        if (iRet == -100) {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: "用户取消!"
+                            });                            
+                        }
+                        else {
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: "采集指纹模板失败!"
+                            });                           
+                        }
+                        return;
+                    }
+                    var strMB = dtm.FGetFingerInfo();
 
-                BootstrapDialog.confirm("<p class='text-info'>请先按压手指，稍后会出现提示框，如果没有出现提示框，请将手指拿起再按压。</p><p class='text-danger'>请按照严格 提示框的内容 操作！过程中，手指需要离开指纹仪几次！</p>", function (state) {
-                    if (state) {                     
-                        //添加
-                        if (title == 0) {
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("SubmitFPrint")",
+                        data: { "custID": 0, "strMBBuf": strMB },
+                        dataType: "json",
+                        cache: false,
+                        success: function (resp) {
 
-                            ig.attr({ "title": -1, "src": "/Image/scan.gif" });
+                            BootstrapDialog.show({
+                                title: "温馨提示",
+                                message: resp.Message
+                            });
+                          
+                            if (resp.Code == 1) {
+                                ig.attr({ "title": resp.Data, "src": "/Image/fingerprint.jpg" });
+                                //写
+                                var idd = ig.attr("id");
+                                $("input[name='" + idd + "']").val(resp.Data);
+                            }
+                            else {
+                                ig.attr({ "title": 0, "src": "/Image/add.jpg" });
+                            }
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+
+                            if (textStatus == 'timeout') {
+                                console.log("timeout");
+                                ig.attr({ "title": 0, "src": "/Image/add.jpg" });
+                            }
+                        }
+                    });
+
+                }
+                else if (title == -1) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "等待扫描指纹中"
+                    });
+                }
+                else if (title > 1000) {
+                    BootstrapDialog.confirm("<b>确定要删除当前指纹模板？SN - </b>" + title, function (result) {
+                        if (result) {
 
                             $.ajax({
                                 type: "GET",
-                                url: "@Url.Action("AddFingerPrint")",
-                                timeout: 30000,
+                                url: "@Url.Action("DeleteFingerPrint")",
+                                data: { "sn": title },
                                 dataType: "json",
                                 cache: false,
-                                beforeSend: function (XMLHttpRequest) {
-
-                                },
                                 success: function (resp) {
-
                                     BootstrapDialog.show({
                                         title: "温馨提示",
                                         message: resp.Message
                                     });
-
                                     if (resp.Code == 1) {
-                                        ig.attr({ "src": "/Image/fingerprint.jpg", "title": resp.Data });
-
-                                        var idd = ig.attr("id");
-                                        //写
-                                        $("input[name='" + idd + "']").val(resp.Data);
-                                    }
-                                    else {
-                                        ig.attr({ "title": 0, "src": "/Image/add.jpg" });
-                                    }
-
-                                },
-                                complete: function (XMLHttpRequest, textStatus) {
-
-                                    if (textStatus == 'timeout') {
-                                        console.log("timeout");
                                         ig.attr({ "title": 0, "src": "/Image/add.jpg" });
                                     }
                                 }
                             });
 
+
                         }
-                        else if (title == -1) {
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: "等待扫描指纹中"
-                            });
-                        }
-                        else if (title > 1000) {
-                            BootstrapDialog.confirm("<b>确定要删除当前指纹模板？SN - </b>" + title, function (result) {
-                                if (result) {
-
-                                    $.ajax({
-                                        type: "GET",
-                                        url: "@Url.Action("DeleteFingerPrint")",
-                                        data: { "sn": title },
-                                        dataType: "json",
-                                        cache: false,
-                                        success: function (resp) {
-                                            BootstrapDialog.show({
-                                                title: "温馨提示",
-                                                message: resp.Message
-                                            });
-                                            if (resp.Code == 1) {
-                                                ig.attr({ "title": 0, "src": "/Image/add.jpg" });
-                                            }
-                                        }
-                                    });
-
-
-                                }
-                            });
-                        }
-
-                    }
-                });
+                    });
+                }
 
             });
 

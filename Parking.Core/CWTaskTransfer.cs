@@ -657,30 +657,30 @@ namespace Parking.Core
             
             FingerPrint print = null;
             List<FingerPrint> FingerList = fingerprint.FindList(p=>true).ToList();
-            foreach(FingerPrint fp in FingerList)
-            {
-                FPrint printfinger = new FPrint();
-                byte[] orig = printfinger.Base64FingerDataToHex(fp.FingerInfo);
+           
+            foreach (FingerPrint fp in FingerList)
+            {              
+                byte[] orig = FPrintBase64.Base64FingerDataToHex(fp.FingerInfo);
                 if (orig == null)
                 {
                     log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
                 }
-                log.Debug("开始比对指纹，指纹库内指纹Code - " + fp.SN_Number + " 字节数量-" + orig.Length);
-
+                
                 byte[] psMB = orig;
                 int nback = FiPrintMatch.FPIMatch(psMB, psTZ, iLevel);
                 //比对成功
                 if (nback == 0)
                 {
-                    log.Debug("指纹对比成功，Code- " + fp.SN_Number);
+                    log.Debug("指纹对比，成功，SN- " + fp.SN_Number);
                     print = fp;
                     break;
                 }
                 else
                 {
-                    log.Debug("指纹对比失败，Code- " + fp.SN_Number);
+                    log.Debug("指纹对比，失败，SN- " + fp.SN_Number);
                 }
             }
+            
             if (moHall == null)
             {
                 resp.Message = "找不到车厅设备！";
