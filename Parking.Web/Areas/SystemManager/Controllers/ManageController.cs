@@ -496,5 +496,24 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Content("删除队列成功，数量-" + count);
         }
 
+        [HttpGet]
+        public ActionResult GetOCXIPAddress()
+        {
+            string ipaddrs = "";
+            string addrs = XMLHelper.GetRootNodeValueByXpath("root", "OCXIPAddrs");
+            if (addrs != null)
+            {
+                ipaddrs = addrs;
+            }
+            return Content(ipaddrs);
+        }
+
+        [HttpPost]
+        public ActionResult SubmitFPrintFeacture(string strTZ)
+        {
+            Response resp = new CWFingerPrint().FindCustByFPrintFeacture(strTZ);
+            return Json(resp);
+        }
+
     }
 }

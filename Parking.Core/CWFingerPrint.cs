@@ -330,6 +330,62 @@ namespace Parking.Core
             });
         }
 
+        /// <summary>
+        /// 依指纹特性值，查找对应的顾客及存车车位
+        /// </summary>
+        /// <param name="strTZ"></param>
+        /// <returns></returns>
+        public Response FindCustByFPrintFeacture(string strTZ)
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("FindCustByFPrintFeacture");
+            try
+            {
+                FingerPrint origPrint = null;
+                byte[] current = FPrintBase64.Base64FingerDataToHex(strTZ);
+                List<FingerPrint> printList = manager.FindList().ToList();
+                foreach (FingerPrint fp in printList)
+                {
+                    byte[] orig = FPrintBase64.Base64FingerDataToHex(fp.FingerInfo);
+                    if (orig == null)
+                    {
+                        log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
+                    }
+
+                    int iRet = FiPrintMatch.FPIMatch(current, orig, 3);
+                    if (iRet == 0)
+                    {
+                        origPrint = fp;
+                        break;
+                    }
+                }
+                if (origPrint != null)
+                {
+                    resp.Code = 1;
+                    RetFPring iRet = new RetFPring();
+                    Customer cust = new CWICCard().FindCust(origPrint.CustID);
+                    if (cust != null)
+                    {
+                        iRet.UserName = cust.UserName;
+                        iRet.Plate = cust.PlateNum;
+                    }
+                    Location loc = new CWLocation().FindLocation(lc => lc.ICCode == origPrint.SN_Number.ToString());
+                    if (loc != null)
+                    {
+                        iRet.Warehouse = loc.Warehouse.ToString();
+                        iRet.LocAddrs = loc.Address;
+                    }
+                    resp.Message = "找到匹配指纹";
+                    resp.Data = iRet;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return resp;
+        }
+
 
     }
 }

@@ -15,7 +15,8 @@
                 <a href="#section2">数据挪移</a>&nbsp;| &nbsp;
                 <a href="#section3">车位禁启</a>&nbsp;| &nbsp;
                 <a href="#section4">数据入库</a>&nbsp;| &nbsp;
-                <a href="#section5">数据出库</a>
+                <a href="#section5">数据出库</a>&nbsp;| &nbsp;
+                <a href="#section6">指纹查询</a>
             </li>
         </ol>
         <div class="panel panel-default">
@@ -198,9 +199,49 @@
                         </fieldset>
                     </form>
                 </div>
+                <div id="section6"> 
+                    <div class="form-horizontal">
+                        <fieldset>
+                            <legend>指纹用户信息查询</legend>
+                            <div class="form-group">
+                                <label for="fpusername" class="col-md-2 control-label">车主姓名</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="fpusername" name="fpusername" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fpplate" class="col-md-2 control-label">车牌号码</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="fpplate" name="fpplate" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fpoutWh" class="col-md-2 control-label">存车库区</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="fpsavewh" name="fpsavewh" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fpoutLoc" class="col-md-2 control-label">存车车位</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="fpsaveloc" name="fpsaveloc" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-10 col-md-offset-2">
+                                    <button type="button" id="btnFPrint" class="btn btn-default">采集指纹</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>                    
+                </div>
             </div>
         </div>             
     </div>
+</div>
+
+<div>
+    <object classid="clsid:5F709CBC-669E-466B-91A3-66A626E987EA" width="152" height="200" id="dtm" codebase="Fp30Dev_WL.ocx" hidden></object>
 </div>
 
 @section scripts{
@@ -280,7 +321,7 @@
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("TransferLoc")",
-                    cache:false,
+                    cache: false,
                     data: params,
                     dataType: "text",
                     success: function (data) {
@@ -365,8 +406,7 @@
                     cache: false,
                     data: params,
                     dataType: "text",
-                    success: function (data)
-                    {
+                    success: function (data) {
                         BootstrapDialog.show({
                             title: "温馨提示",
                             message: data
@@ -428,8 +468,7 @@
                 checkboxClick();
             });
 
-            function checkboxClick()
-            {
+            function checkboxClick() {
                 $("#txtIccd").val("");
                 var chk = $('#chkplate').is(':checked');
                 if (chk) {
@@ -441,6 +480,93 @@
                     $("#txtIccd").attr("placeholder", "用户卡号");
                 }
             }
+
+            //修改codebase
+            setTimeout(function () {
+                //绑定OCX所在目录
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOCXIPAddress")",
+                    dataType: "text",
+                    cache: false,
+                    success: function (resp) {
+                        if (resp != "") {
+                            $("object[id='dtm']").attr("codebase", resp + "Fp30Dev_WL.ocx");
+                            console.log($("object[id='dtm']").attr("codebase"));
+                        }
+                    }
+                });
+
+            }, 500);
+
+            $("#btnFPrint").click(function () {
+
+                $("input[name='fpusername']").val("");
+                $("input[name='fpplate']").val("");
+                $("input[name='fpsavewh']").val("");
+                $("input[name='fpsaveloc']").val("");
+
+                if (window.ActiveXObject || "ActiveXObject" in window) {
+                    console.log("is ie");
+                }
+                else {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请使用IE浏览器进行操作！"
+                    });
+                    return;
+                }
+
+                var iRet = dtm.FConnect();
+                if (iRet != 0) {
+                    BootstrapDialog.warning("连接指纹仪失败");
+                    return;
+                }
+                $("#btnFPrint").attr("disabled", true);
+
+                iRet = dtm.FGetFeature(15000);
+                if (iRet != 0) {
+                    if (iRet == -100) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "用户取消!"
+                        });
+                    }
+                    else {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "采集指纹模板失败!"
+                        });
+                    }
+                    $("#btnFPrint").removeAttr("disabled");
+                }
+                else {
+                    //获取特性值
+                    var strTZ = dtm.FGetFingerInfo();
+
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("SubmitFPrintFeacture")",
+                        data: { "strTZ": strTZ },
+                        dataType: "json",
+                        cache: false,
+                        success: function (resp) {
+                            if (resp.Code == 1) {
+                                var iRet = resp.Data;
+                                $("input[name='fpusername']").val(iRet.UserName);
+                                $("input[name='fpplate']").val(iRet.Plate);
+                                $("input[name='fpsavewh']").val(iRet.Warehouse);
+                                $("input[name='fpsaveloc']").val(iRet.LocAddrs);
+                            }
+                        },
+                        complete: function (XMLHttpRequest, textStatus) {
+                            $("#btnFPrint").removeAttr("disabled");
+                        }
+                    });
+                }
+
+            });
+
 
         });
 
@@ -475,6 +601,7 @@
                     });
                 }
             });
+
         }
     </script>
     }
