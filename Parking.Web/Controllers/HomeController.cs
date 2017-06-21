@@ -496,7 +496,30 @@ namespace Parking.Web.Controllers
             return Json(json);
         }
 
+        #region 测试用
+        public ActionResult AnalogFPrintSubmit()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult TestSubmitFPrint(int wh,int hall,string FPrint)
+        {
+            Response resp = new Response();
+            byte[] psTZ = FPrintBase64.Base64FingerDataToHex(FPrint.Trim());
+            resp = new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ);
+            return Json(resp);
+        }
 
 
+        [HttpPost]
+        public ActionResult TestSubmitICCard(int wh,int hall,string physcode)
+        {
+            Response resp = new Response();
+            resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(physcode);
+            return Json(resp);
+        }
+
+        #endregion
     }
 }

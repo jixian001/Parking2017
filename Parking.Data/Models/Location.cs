@@ -34,7 +34,7 @@ namespace Parking.Data
         /// <summary>
         /// 优先级序号
         /// </summary>
-        public int Index { get; set; }
+        public int Idx { get; set; }
 
         /*
          * 以下是车辆信息
@@ -42,6 +42,7 @@ namespace Parking.Data
         [StringLength(10)]
         public string ICCode { get; set; }
         public int WheelBase { get; set; }
+        public int CarWeight { get; set; }
         [StringLength(10)]
         public string CarSize { get; set; }
         public DateTime InDate { get; set; }
@@ -53,9 +54,7 @@ namespace Parking.Data
         /// <summary>
         /// 车头图片
         /// </summary>
-        public byte[] ImageData { get; set; }
-
-        public int CarWeight { get; set; }
+        public string ImageData { get; set; }       
     }
 
     public enum EnmLocationType

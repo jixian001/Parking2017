@@ -1,0 +1,175 @@
+﻿
+@{
+    ViewBag.Title = "模拟指纹提交";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div>
+    <object classid="clsid:5F709CBC-669E-466B-91A3-66A626E987EA" width="152" height="200" id="dtm" codebase="Fp30Dev_WL.ocx" hidden></object>
+</div>
+<div class="form-horizontal">
+    <fieldset>
+        <legend>模拟指纹数据提交</legend>      
+        <div class="form-group">
+            <label for="fpoutWh" class="col-md-2 control-label">库区</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="wh" name="wh" value="1"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="fpoutLoc" class="col-md-2 control-label">车厅</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="hall" name="hall" value="11"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button type="button" id="btnFPrint" class="btn btn-default">采集特性值并提交</button>
+            </div>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>模拟刷卡数据提交</legend>
+        <div class="form-group">
+            <label for="fpoutWh" class="col-md-2 control-label">物理卡号</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="physc" name="physc" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="fpoutWh" class="col-md-2 control-label">库区</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="icwh" name="icwh" value="1" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="fpoutLoc" class="col-md-2 control-label">车厅</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="ichall" name="ichall" value="11" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button type="button" id="btnICCard" class="btn btn-default">模拟刷卡提交</button>
+            </div>
+        </div>
+    </fieldset>
+</div>  
+
+@section scripts{
+    <script>
+        $(function () {
+
+            $("#btnFPrint").click(function () {
+
+                var wh = $("#wh").val();
+                var hall = $("#hall").val();
+
+                if (wh == "" || hall == "") {
+                    alert("不允许库区或车厅为空！");
+                    return;
+                }
+                
+                if (window.ActiveXObject || "ActiveXObject" in window) {
+                    console.log("is ie");
+                }
+                else {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请使用IE浏览器进行操作！"
+                    });
+                    return;
+                }
+
+                var iRet = dtm.FConnect();
+                if (iRet != 0) {
+                    BootstrapDialog.warning("连接指纹仪失败");
+                    return;
+                }
+                iRet = dtm.FGetFeature(15000);
+                if (iRet != 0) {
+                    if (iRet == -100) {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "用户取消!"
+                        });
+                    }
+                    else {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "采集指纹模板失败!"
+                        });
+                    }
+                    return;
+                }
+                //获取特性值
+                var strTZ = dtm.FGetFingerInfo();
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("TestSubmitFPrint")",
+                    data:{"wh":wh,"hall":hall,"FPrint":strTZ},
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFPrint").text("查询中...");
+                    },
+                    success: function (resp) {
+                       
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: resp.Message
+                        });
+
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFPrint").text("采集特性值并提交");
+                    }
+                });
+
+            });
+
+            $("#btnICCard").click(function () {
+
+                var wh = $("#icwh").val();
+                var hall = $("#ichall").val();
+
+                if (wh == "" || hall == "") {
+                    alert("不允许库区或车厅为空！");
+                    return;
+                }
+
+                var physc = $("#physc").val();
+                if (physc == "")
+                {
+                    alert("物理卡号不允许为空！");
+                    return;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("TestSubmitICCard")",
+                    data: { "wh": wh, "hall": hall, "physcode": physc},
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnFPrint").text("查询中...");
+                    },
+                    success: function (resp) {
+
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: resp.Message
+                        });
+
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnFPrint").text("采集特性值并提交");
+                    }
+                });
+            });
+        })
+    </script>
+
+    }

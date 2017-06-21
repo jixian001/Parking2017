@@ -688,7 +688,7 @@ namespace Parking.Core
             {
                 motsk.AddNofication(warehouse, code, "80.wav");
                 resp.Message = "指纹库内未找到匹配模板";
-                log.Debug("指纹对比，失败，SN- " + print.SN_Number);
+                log.Debug("指纹对比，失败，找不到对应模板！");
                 return resp;
             }
             if (moHall.Mode != EnmModel.Automatic)

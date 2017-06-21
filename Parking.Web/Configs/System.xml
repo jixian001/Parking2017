@@ -20,7 +20,7 @@
     <!--开始设定库区信息-->
     <PLC ID="1">
       <!--plc ip地址-->
-      <PlcIPAddress>192.168.0.101</PlcIPAddress>    
+      <PlcIPAddress>10.34.3.22</PlcIPAddress>    
       <!--要读取的连接项,以分号截取的，最后一个不能有分号-->
       <ConnectItem>
         S7:[S7 connection_1]DB1001,INT0,50;
@@ -34,25 +34,24 @@
         S7:[S7 connection_1]DB1025,B0,54
       </ConnectItem>
       <!--库区车位边列层，以‘-’分开-->
-      <LocInfo>2-20-3</LocInfo>
+      <LocInfo>3-18-2</LocInfo>
       <!--车厅-->
       <halls count="2">
         <hall>
           <ID>11</ID>
           <!--刷卡器的网络地址-->
-          <ICCardIPAddrss>192.168.0.10</ICCardIPAddrss>
+          <ICCardIPAddrss></ICCardIPAddrss>
           <!--LED显示屏网络地址-->
           <LEDAddress></LEDAddress>          
         </hall>
         <hall>
           <ID>12</ID>
           <!--刷卡器的网络地址-->
-          <ICCardIPAddrss>192.168.0.11</ICCardIPAddrss>
+          <ICCardIPAddrss></ICCardIPAddrss>
           <!--LED显示屏网络地址-->
           <LEDAddress></LEDAddress>
         </hall>
       </halls>            
-    </PLC>
-    
+    </PLC>    
   </setting>
 </root>

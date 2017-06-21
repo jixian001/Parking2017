@@ -202,15 +202,15 @@ namespace Parking.Web.Migrations
                         LocSize = c.String(maxLength: 10),
                         Region = c.Int(nullable: false),
                         NeedBackup = c.Int(nullable: false),
-                        Index = c.Int(nullable: false),
+                        Idx = c.Int(nullable: false),
                         ICCode = c.String(maxLength: 10),
                         WheelBase = c.Int(nullable: false),
+                        CarWeight = c.Int(nullable: false),
                         CarSize = c.String(maxLength: 10),
                         InDate = c.DateTime(nullable: false),
                         PlateNum = c.String(),
                         ImagePath = c.String(),
-                        ImageData = c.Binary(),
-                        CarWeight = c.Int(nullable: false),
+                        ImageData = c.String(),
                     })
                 .PrimaryKey(t => t.ID);
             

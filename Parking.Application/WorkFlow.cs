@@ -872,7 +872,7 @@ namespace Parking.Application
                             //可接收新指令
                             if (faultAddrs == 297)
                             {
-                                if (value != fault.Value)
+                                if (smg.IsAvailabe != fault.Value)
                                 {
                                     smg.IsAvailabe = value;
                                     //更新设备可接收新指令
@@ -945,7 +945,7 @@ namespace Parking.Application
                             if (pValue != (int)smg.HallType)
                             {
                                 string itname = itemName.Split(',').First()+",INT"+workpattern+",1";
-                                WriteValueToPlc(itname, (short)smg.HallType);
+                                WriteValueToPlc(itname, (Int16)smg.HallType);
                             }
                         }
                         #endregion
@@ -1002,7 +1002,7 @@ namespace Parking.Application
                             //可接收新指令
                             if (faultAddrs == 297)
                             {
-                                if (value != fault.Value)
+                                if (smg.IsAvailabe != fault.Value)
                                 {
                                     smg.IsAvailabe = value;
                                     //更新设备可接收新指令
@@ -1148,7 +1148,7 @@ namespace Parking.Application
                 if (recvBuff != null)
                 {
                     //清空标志字                    
-                    int flag = 0;
+                    Int16 flag = 0;
                     int nback = plcAccess.WriteData(recvFlag, flag);
                     if (nback == 1)
                     {
@@ -1191,7 +1191,7 @@ namespace Parking.Application
                         if (nback == 1)
                         {
                             //标志字置9999
-                            int flag = 9999;
+                            Int16 flag = 9999;
                             nback= plcAccess.WriteData(sendbuff, flag);
                             if (nback == 1) //完成写入工作
                             {
@@ -1358,7 +1358,7 @@ namespace Parking.Application
         /// </summary>
         /// <param name="itemname"></param>
         /// <param name="value"></param>
-        private void WriteValueToPlc(string itemname,short value)
+        private void WriteValueToPlc(string itemname,Int16 value)
         {
             Log log = LogFactory.GetLogger("WorkFlow.WriteValueToPlc");
             try

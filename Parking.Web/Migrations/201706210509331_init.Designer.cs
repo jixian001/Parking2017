@@ -13,7 +13,7 @@ namespace Parking.Web.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201706170612286_init"; }
+            get { return "201706210509331_init"; }
         }
         
         string IMigrationMetadata.Source

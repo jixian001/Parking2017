@@ -161,6 +161,11 @@ namespace Parking.Application
                             continue;
                         }
                         string ipadr = iNode.InnerText;
+                        if (string.IsNullOrEmpty(ipadr))
+                        {
+                            log.Error("库区-" + i.ToString() + " halls下指定车厅-" + j + " 的（ICCardIPAddrss）节点其内容为空，是否不要刷卡器？");
+                            continue;
+                        }
 
                         //添加刷卡器的线程
                         CardControl card = new CardControl(i, hallID, ipadr);
@@ -254,7 +259,7 @@ namespace Parking.Application
                 catch(Exception ec)
                 {
                     log.Error("处理业务异常-" + ec.ToString());
-                    Thread.Sleep(5000);
+                    Thread.Sleep(15000);
                 }               
             }
 

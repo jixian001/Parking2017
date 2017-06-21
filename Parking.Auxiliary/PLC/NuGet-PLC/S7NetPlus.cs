@@ -148,9 +148,9 @@ namespace Parking.Auxiliary
             DB = removeNotNumber(dtype);
 
             string startAddress = lstItems[1];
-            if (!startAddress.ToLower().Contains("int"))
+            if (!startAddress.ToLower().Contains("int")&& !startAddress.ToLower().Contains("b"))
             {
-                log.Info("Itme-" + itemName + "格式不正确，不包含INT！");
+                log.Info("Itme-" + itemName + "格式不正确，不包含INT或B！（INTxx,Bx）");
                 return null;
             }
             startByteAddrs = removeNotNumber(startAddress);
@@ -229,8 +229,32 @@ namespace Parking.Auxiliary
 
             if (PLCServer != null)
             {
-                ErrorCode ecode= PLCServer.Write(dataType, DB, startByteAddrs, value);
-                if (ecode == ErrorCode.NoError)
+                byte[] package = null;
+                #region
+                switch (value.GetType().Name)
+                {
+                    case "Byte":
+                        package = new byte[] { (byte)value };
+                        break;
+                    case "Int16":                   
+                        package = this.ToByteArray((short)value);
+                        break;
+                    case "Byte[]":
+                        package = (byte[])value;
+                        break;
+                    case "Int16[]":
+                        package = this.ShortArrayToByteArray((short[])value);
+                        break;
+                    default:
+                        return 103;
+                }
+                #endregion
+
+                ErrorCode ecode = PLCServer.WriteBytes(dataType, DB, startByteAddrs, package);
+                if (ecode == ErrorCode.NoError||                   
+                    ecode==ErrorCode.WriteData||
+                    ecode==ErrorCode.ReadData||
+                    ecode==ErrorCode.SendData)
                 {
                     return 1;
                 }
@@ -238,7 +262,6 @@ namespace Parking.Auxiliary
                 {
                     log.Error("PLCServer向项 "+ itemName + " 写入数据失败，错误代码-" + ecode.ToString());
                     //后面如果出现通讯异常，再以ErrorCode 返回值进行分析，再对isconnected进行设置，进行重连工作
-
                     return -1;
                 }
             }
@@ -278,6 +301,42 @@ namespace Parking.Auxiliary
             string pattern = "^[0-9]*[1-9][0-9]*$";
             Regex rx = new Regex(pattern);
             return rx.IsMatch(linkNum);
+        }
+
+        /// <summary>
+        /// 短整型转化为字节数据
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private byte[] ToByteArray(Int16 value)
+        {
+            byte[] bytes = new byte[2];
+            int x = 2;
+            long valLong = (long)((Int16)value);
+            for (int cnt = 0; cnt < x; cnt++)
+            {
+                Int64 x1 = (Int64)Math.Pow(256, (cnt));
+
+                Int64 x3 = (Int64)(valLong / x1);
+                bytes[x - cnt - 1] = (byte)(x3 & 255);
+                valLong -= bytes[x - cnt - 1] * x1;
+            }
+            return bytes;
+        }
+
+        /// <summary>
+        /// 整型数组转化为字节型数组
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private byte[] ShortArrayToByteArray(Int16[] value)
+        {
+            List<byte> arr = new List<byte>();
+            foreach (Int16 val in value)
+            {
+                arr.AddRange(this.ToByteArray(val));
+            }
+            return arr.ToArray();
         }
 
     }

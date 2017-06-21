@@ -250,9 +250,9 @@
                             $disp.html(html);
                             html = '<li>地址：' + obj.LocSide + '边' + obj.LocColumn + '列' + obj.LocLayer + '层</li>';
                             $disp.append(html);
-                            html = '<li id="li_type">类型：' + obj.Type + '</li>';
+                            html = '<li id="li_type">类型：' + formatLocType(obj.Type) + '</li>';
                             $disp.append(html);
-                            html = '<li>状态：' + obj.Status + '</li>';
+                            html = '<li>状态：' + formatLocStatus(obj.Status) + '</li>';
                             $disp.append(html);
                             html = '<li>车位尺寸：<b>' + obj.LocSize + '</b></li>';
                             $disp.append(html);
@@ -644,6 +644,72 @@
                 {
                     return " 不可接收指令";
                 }
+            }
+
+            //车位类型
+            function formatLocType(type)
+            {
+                var msg="";
+                switch (type)
+                {
+                    case 1:
+                        msg="正常";
+                        break;
+                    case 2:
+                        msg = "车厅";
+                        break;
+                    case 3:
+                        msg = "禁用";
+                        break;
+                    case 5:
+                        msg = "无效";
+                        break;
+                    case 6:
+                        msg = "缓存";
+                        break;
+                    case 7:
+                        msg = "禁用";
+                        break;
+                    default:
+                        msg = type;
+                        break;
+                }
+                return msg;
+            }
+
+            //车位状态
+            function formatLocStatus(state)
+            {
+                var msg="";
+                switch (state)
+                {
+                    case 0:                      
+                    case 1:
+                        msg = "空闲";
+                        break;
+                    case 2:
+                        msg = "占用";
+                        break;
+                    case 3:
+                        msg = "入库";
+                        break;
+                    case 4:
+                        msg = "出库";
+                        break;
+                    case 5:
+                        msg = "取物";
+                        break;
+                    case 6:
+                        msg = "无效";
+                        break;
+                    case 7:
+                        msg = "待挪";
+                        break;
+                    default:
+                        msg = state;
+                        break;
+                }
+                return msg;
             }
 
             /*
