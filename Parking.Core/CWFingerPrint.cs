@@ -16,7 +16,7 @@ namespace Parking.Core
     /// </summary>
     public class CWFingerPrint
     {
-        private FingerPrintManager manager = new FingerPrintManager();
+        private static FingerPrintManager manager = new FingerPrintManager();
         
         public CWFingerPrint()
         {

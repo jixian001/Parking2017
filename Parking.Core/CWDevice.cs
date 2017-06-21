@@ -14,8 +14,8 @@ namespace Parking.Core
     /// </summary>
     public class CWDevice
     {    
-        private DeviceManager manager=new DeviceManager();
-        private Log log;
+        private static  DeviceManager manager=new DeviceManager();
+        private static  Log log;
 
         public CWDevice()
         {
@@ -136,7 +136,7 @@ namespace Parking.Core
         
 
         #region 报警状态位控制
-        private AlarmManager manager_alarm = new AlarmManager();
+        private static AlarmManager manager_alarm = new AlarmManager();
 
         public List<Alarm> FindAlarmList(Expression<Func<Alarm, bool>> where)
         {
@@ -156,7 +156,7 @@ namespace Parking.Core
         #endregion
 
         #region 车牌识别映射到车厅设备表
-        private PlateInfoManager plateManager = new PlateInfoManager();
+        private static PlateInfoManager plateManager = new PlateInfoManager();
 
         /// <summary>
         /// 查找车厅车牌

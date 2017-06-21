@@ -809,7 +809,7 @@ namespace Parking.Application
         /// </summary>
         public void DealAlarmInfo()
         {
-            Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");           
+            Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");
             try
             {
                 List<Device> deviceLst =cwdevice.FindList(d => true);
@@ -843,10 +843,10 @@ namespace Parking.Application
                         }
                         #endregion
                         byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
-                        if (bytesAlarmBuf == null)
+                        if (bytesAlarmBuf == null|| bytesAlarmBuf.Length==0)
                         {
                             continue;
-                        }
+                        }                       
                         #region 更新报警信息
                         List<Alarm> needUpdate = new List<Alarm>();
                         List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
@@ -973,7 +973,7 @@ namespace Parking.Application
                         }
                         #endregion
                         byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
-                        if (bytesAlarmBuf == null)
+                        if (bytesAlarmBuf == null|| bytesAlarmBuf.Length == 0)
                         {
                             continue;
                         }

@@ -14,7 +14,7 @@ namespace Parking.Core
     /// </summary>
     public class CWLocation
     {
-        private LocationManager manager = new LocationManager();
+        private static LocationManager manager = new LocationManager();
 
         public Location SelectLocByAddress(int warehouse,string addrs)
         {

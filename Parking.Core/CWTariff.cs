@@ -16,16 +16,16 @@ namespace Parking.Core
     {
         #region manager类
         //预付类
-        private PreChargingManager preChgManager = new PreChargingManager();
+        private static PreChargingManager preChgManager = new PreChargingManager();
         //固定类
-        private FixChargingRuleManager fixManager = new FixChargingRuleManager();
+        private static FixChargingRuleManager fixManager = new FixChargingRuleManager();
         //临时类
-        private TempChargingRuleManager tempManager = new TempChargingRuleManager();
+        private static TempChargingRuleManager tempManager = new TempChargingRuleManager();
         //按次计费
-        private OrderChargeDetailManager orderDetailManager = new OrderChargeDetailManager();
+        private static OrderChargeDetailManager orderDetailManager = new OrderChargeDetailManager();
         //按时计费
-        private HourChargeDetailManager hourDetailManager = new HourChargeDetailManager();
-        private HourSectionInfoManager hourSectionManager = new HourSectionInfoManager();
+        private static HourChargeDetailManager hourDetailManager = new HourChargeDetailManager();
+        private static HourSectionInfoManager hourSectionManager = new HourSectionInfoManager();
         #endregion
 
         #region 预付类
@@ -399,7 +399,7 @@ namespace Parking.Core
         #endregion
 
         #region 临时收费记录
-        private TempChargeLogManager templogManager = new TempChargeLogManager();
+        private static TempChargeLogManager templogManager = new TempChargeLogManager();
 
         /// <summary>
         /// 添加临时收费记录
@@ -443,7 +443,7 @@ namespace Parking.Core
         #endregion
 
         #region 固定收费记录
-        private FixChargeLogManager fixChgLogManager = new FixChargeLogManager();
+        private static FixChargeLogManager fixChgLogManager = new FixChargeLogManager();
 
         /// <summary>
         /// 添加固定收费记录

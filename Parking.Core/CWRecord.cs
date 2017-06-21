@@ -14,8 +14,8 @@ namespace Parking.Core
 {
     public class CWTelegramLog
     {
-        private TelegramLogManager manager = new TelegramLogManager();
-        private Log log;
+        private static TelegramLogManager manager = new TelegramLogManager();
+        private static Log log;
 
         public CWTelegramLog()
         {
@@ -35,11 +35,11 @@ namespace Parking.Core
                 tlog.Type = type;
                 if (type == 1)
                 {
-                    tlog.Warehouse = data[1];
+                    tlog.Warehouse = data[0];
                 }
                 if (type == 2)
                 {
-                    tlog.Warehouse = data[0];
+                    tlog.Warehouse = data[1];
                 }
                 if (data[4] != 0)
                 {
@@ -144,7 +144,7 @@ namespace Parking.Core
 
     public class CWOperateRecordLog
     {
-        private OperateLogManager manager = new OperateLogManager();
+        private static OperateLogManager manager = new OperateLogManager();
 
         public List<OperateLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
         {
@@ -181,7 +181,7 @@ namespace Parking.Core
 
     public class CWFaultLog
     {
-        private FaultLogManager manager = new FaultLogManager();
+        private static FaultLogManager manager = new FaultLogManager();
 
         public List<FaultLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
         {

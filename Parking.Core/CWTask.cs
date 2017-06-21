@@ -14,7 +14,7 @@ namespace Parking.Core
     /// </summary>
     public class CWTask
     {
-        private CurrentTaskManager manager = new CurrentTaskManager();
+        private static CurrentTaskManager manager = new CurrentTaskManager();
 
         private static List<string> soundsList = new List<string>();
 
@@ -184,14 +184,13 @@ namespace Parking.Core
                 task.Distance = 0;
                 task.CarSize = "";
                 task.IsComplete = 0;
-                Response _resp = manager.Add(task, false);
+                Response _resp = manager.Add(task);
                 if (_resp.Code == 1)
                 {
                     //这里是否可以获取到ID？或者再查询一次
                     hall.TaskID = task.ID;
-                    new CWDevice().Update(hall, false);
-                }
-                manager.SaveChanges();
+                    new CWDevice().Update(hall);
+                }               
             }
             catch (Exception ex)
             {
@@ -756,8 +755,8 @@ namespace Parking.Core
                 }
                 task.Status = EnmTaskStatus.Finished;
                 task.IsComplete = 1;
-                manager.Update(task,false);
-
+                //manager.Update(task,false);
+                manager.Delete(task.ID, false);
                 manager.SaveChanges();
             }
             catch (Exception ex)
@@ -800,8 +799,8 @@ namespace Parking.Core
                 }
                 task.Status = EnmTaskStatus.Finished;
                 task.IsComplete = 1;
-                manager.Update(task,false);
-
+                //manager.Update(task,false);
+                manager.Delete(task.ID, false);
                 manager.SaveChanges();
             }
             catch (Exception ex)
@@ -1903,12 +1902,12 @@ namespace Parking.Core
                                 CarWeight = forwardLctn.CarWeight,
                                 IsComplete = 0
                             };
-                            resp = manager.Add(transtask,false);
+                            resp = manager.Add(transtask);
                             if (resp.Code == 1)
                             {
                                 dev.SoonTaskID = 0;
                                 dev.TaskID = transtask.ID;
-                                resp = new CWDevice().Update(dev);
+                                resp = new CWDevice().Update(dev,false);
                                 log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
 
                                 #region 判断是否生成回挪作业
@@ -1977,7 +1976,7 @@ namespace Parking.Core
                 CarWeight = queue.CarWeight,
                 IsComplete = 0
             };
-            resp = manager.Add(subtask,false);
+            resp = manager.Add(subtask);
             if (resp.Code == 1)
             {               
                 dev.SoonTaskID = 0;
@@ -2130,7 +2129,7 @@ namespace Parking.Core
                                 CarWeight = 0,
                                 IsComplete = 0
                             };
-                            Response resp = manager.Add(subtask,false);
+                            Response resp = manager.Add(subtask);
                             if (resp.Code == 1)
                             {
                                 otherEtv.SoonTaskID = 0;
@@ -2248,7 +2247,7 @@ namespace Parking.Core
                                     CarWeight = 0,
                                     IsComplete = 0
                                 };
-                                Response resp = manager.Add(subtask,false);
+                                Response resp = manager.Add(subtask);
                                 if (resp.Code == 1)
                                 {
                                     otherEtv.SoonTaskID = othertak.ID;
@@ -2392,7 +2391,7 @@ namespace Parking.Core
                 CarWeight = master.CarWeight,
                 IsComplete = 0
             };
-            resp = manager.Add(hallTask,false);
+            resp = manager.Add(hallTask);
             if (resp.Code == 1)
             {
                 hall.TaskID = hallTask.ID;
@@ -2462,7 +2461,7 @@ namespace Parking.Core
                                     CarWeight = forwardLctn.CarWeight,
                                     IsComplete = 0
                                 };
-                                resp = manager.Add(transtask,false);
+                                resp = manager.Add(transtask);
                                 if (resp.Code == 1)
                                 {
                                     tv.SoonTaskID = 0;
@@ -2591,7 +2590,7 @@ namespace Parking.Core
                         CarWeight = master.CarWeight,
                         IsComplete = 0
                     };
-                    resp = manager.Add(TvTask,false);
+                    resp = manager.Add(TvTask);
                     if (resp.Code == 1)
                     {
                         tv.TaskID = TvTask.ID;
@@ -2627,11 +2626,11 @@ namespace Parking.Core
                     CarSize = master.CarSize,
                     CarWeight = master.CarWeight
                 };
-                manager_queue.Add(waitqueue,false);
+                manager_queue.Add(waitqueue, false);
             }
 
             //删除队列
-            resp = manager_queue.Delete(master.ID,false);
+            resp = manager_queue.Delete(master.ID, false);
 
             //提交，更新数据库
             manager_queue.SaveChanges();
@@ -2728,7 +2727,7 @@ namespace Parking.Core
                                         CarWeight = forwardLctn.CarWeight,
                                         IsComplete = 0
                                     };
-                                    resp = manager.Add(transtask,false);
+                                    resp = manager.Add(transtask);
                                     if (resp.Code == 1)
                                     {
                                         tv.SoonTaskID = 0;
@@ -2827,7 +2826,7 @@ namespace Parking.Core
                                 CarWeight = master.CarWeight,
                                 IsComplete = 0
                             };
-                            resp = manager.Add(TvTask,false);
+                            resp = manager.Add(TvTask);
                             if (resp.Code == 1)
                             {
                                 tv.TaskID = TvTask.ID;
@@ -2932,7 +2931,7 @@ namespace Parking.Core
                     CarWeight = frLctn.CarWeight,
                     IsComplete = 0
                 };
-                Response resp = manager.Add(TvTask,false);
+                Response resp = manager.Add(TvTask);
                 if (resp.Code == 1)
                 {
                     etv.TaskID = TvTask.ID;
@@ -2974,7 +2973,7 @@ namespace Parking.Core
 
 
         #region 队列管理
-        private WorkTaskManager manager_queue = new WorkTaskManager();
+        private static WorkTaskManager manager_queue = new WorkTaskManager();
 
         /// <summary>
         /// 

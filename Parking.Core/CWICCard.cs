@@ -14,7 +14,7 @@ namespace Parking.Core
     /// </summary>
     public class CWICCard
     {
-        private ICCardManager manager = new ICCardManager();
+        private static ICCardManager manager = new ICCardManager();
 
         public CWICCard()
         {
@@ -123,7 +123,7 @@ namespace Parking.Core
 
         #region 顾客
 
-        private CustomerManager manager_cust = new CustomerManager();
+        private static CustomerManager manager_cust = new CustomerManager();
 
         public Response AddCust(Customer cust,bool isSave)
         {
