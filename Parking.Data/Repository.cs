@@ -40,7 +40,7 @@ namespace Parking.Data
         }
 
         public IQueryable<TEntity> FindList(Expression<Func<TEntity, bool>> where)
-        {
+        {           
             return _dbContext.Set<TEntity>().Where(where);
         }
 
@@ -237,5 +237,7 @@ namespace Parking.Data
         {
             return _dbContext.SaveChanges();
         }
+
+        
     }
 }

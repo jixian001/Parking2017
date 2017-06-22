@@ -582,6 +582,17 @@ namespace Parking.Application
                                 }
                             }
                         }
+                        else if (task.Status == EnmTaskStatus.ISecondSwipedWaitforCarLeave)
+                        {
+                            if (data[2] == 1 && data[3] == 2 && data[4] == 9999)
+                            {
+                                cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                            }
+                            if(data[2] == 1001 && data[3] == 4)
+                            {
+                                cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
+                            }
+                        }
                         #endregion
                         #region 取车
                         else if (task.Status == EnmTaskStatus.OWaitforEVDown)
@@ -621,7 +632,7 @@ namespace Parking.Application
                             {
                                 cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                             }
-                            if(data[2] == 1003 && data[3] == 4)
+                            if (data[2] == 1003 && data[3] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.OHallFinishing);
                             }
@@ -662,7 +673,7 @@ namespace Parking.Application
                         }
                         else if (task.Status == EnmTaskStatus.TempWaitforEVUp)
                         {
-                            if(data[2] == 1002 && data[3] == 1)
+                            if (data[2] == 1002 && data[3] == 1)
                             {
                                 cwtask.ODealEVUp(task);
                             }

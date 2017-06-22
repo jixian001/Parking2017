@@ -12,7 +12,13 @@ namespace Parking.Data
     {
         public List<Alarm> FindList(Expression<Func<Alarm, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<Alarm> alarmsLst= _repository.FindList(where);
+            List<Alarm> alarms = new List<Alarm>();
+            foreach(Alarm am in alarmsLst)
+            {
+                alarms.Add(am);
+            }
+            return alarms;
         }
 
         /// <summary>

@@ -8,6 +8,7 @@ using Parking.Data;
 using Parking.Auxiliary;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 #endregion
 
 namespace Parking.Core
@@ -15,7 +16,7 @@ namespace Parking.Core
     public class CWTelegramLog
     {
         private static TelegramLogManager manager = new TelegramLogManager();
-        private static Log log;
+        private Log log;
 
         public CWTelegramLog()
         {
@@ -28,18 +29,22 @@ namespace Parking.Core
         /// <param name="type">1：发送，2：接收</param>
         public void AddRecord(Int16[] data, int type)
         {
-            TelegramLog tlog = new TelegramLog();
             try
             {
+                #region 记录数据库
+                TelegramLog tlog = new TelegramLog();
+                string head = "";
                 tlog.RecordDtime = DateTime.Now;
                 tlog.Type = type;
                 if (type == 1)
                 {
                     tlog.Warehouse = data[0];
+                    head = "报文发送";
                 }
                 if (type == 2)
                 {
                     tlog.Warehouse = data[1];
+                    head = "报文接收";
                 }
                 if (data[4] != 0)
                 {
@@ -59,11 +64,33 @@ namespace Parking.Core
                 tlog.TelegramID = data[48];
 
                 manager.Add(tlog);
+                #endregion
+                Task.Factory.StartNew(() =>
+                {
+                    #region 打印出来吧                   
+                    log.Info(head);
+                    StringBuilder strBuild = new StringBuilder();
+                    int i = 0;
+                    foreach (Int16 by in data)
+                    {
+                        if (i % 10 == 0 && i != 0)
+                        {
+                            strBuild.Append(Environment.NewLine + "[" + by + "]");
+                        }
+                        else
+                        {
+                            strBuild.Append("[" + by + "]");
+                        }
+                    }
+                    log.Info(strBuild.ToString());
+                    #endregion
+                });
             }
             catch (Exception ex)
             {
                 log.Error(ex.ToString());
             }
+
         }
 
         /// <summary>

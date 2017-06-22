@@ -22,7 +22,13 @@ namespace Parking.Data
 
         public List<ImplementTask> FindList(Expression<Func<ImplementTask, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<ImplementTask> itaskLst= _repository.FindList(where);
+            List<ImplementTask> taskLst = new List<ImplementTask>();
+            foreach(ImplementTask tsk in itaskLst)
+            {
+                taskLst.Add(tsk);
+            }
+            return taskLst;
         }
     }
 }

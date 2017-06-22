@@ -16,7 +16,13 @@ namespace Parking.Data
 
         public List<FingerPrint> FindList(Expression<Func<FingerPrint, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<FingerPrint> iqueryLst = _repository.FindList(where);
+            List<FingerPrint> allLst = new List<FingerPrint>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
     }
 }

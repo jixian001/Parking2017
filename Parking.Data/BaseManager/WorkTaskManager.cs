@@ -22,13 +22,25 @@ namespace Parking.Data
 
         public List<WorkTask> FindList(Expression<Func<WorkTask,bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<WorkTask> iqueryLst = _repository.FindList(where);
+            List<WorkTask> allLst = new List<WorkTask>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
 
         public Page<WorkTask> FindPageList(Page<WorkTask> workPage, Expression<Func<WorkTask, bool>> where,OrderParam oparam)
         {
             int totalNum = 0;
-            workPage.ItemLists = _repository.FindPageList(workPage.PageSize, workPage.PageIndex, out totalNum, where, new OrderParam[] { oparam }).ToList();
+            IQueryable<WorkTask> iqueryLst = _repository.FindPageList(workPage.PageSize, workPage.PageIndex, out totalNum, where, new OrderParam[] { oparam });
+            List<WorkTask> allLst = new List<WorkTask>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            workPage.ItemLists = allLst;
             workPage.TotalNumber = totalNum;
             return workPage;
         }

@@ -22,7 +22,13 @@ namespace Parking.Data
 
         public List<ICCard> FindList(Expression<Func<ICCard, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<ICCard> iqueryLst = _repository.FindList(where);
+            List<ICCard> allLst = new List<ICCard>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
     }
 }

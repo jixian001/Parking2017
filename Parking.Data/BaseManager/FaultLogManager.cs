@@ -13,7 +13,13 @@ namespace Parking.Data
 
         public List<FaultLog> FindList(Expression<Func<FaultLog, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<FaultLog> iqueryLst = _repository.FindList(where);
+            List<FaultLog> allLst = new List<FaultLog>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;            
         }
     }
 }

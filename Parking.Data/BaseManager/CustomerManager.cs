@@ -22,7 +22,13 @@ namespace Parking.Data
 
         public List<Customer> FindList(Expression<Func<Customer,bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<Customer> iqueryLst = _repository.FindList(where);
+            List<Customer> allLst = new List<Customer>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }           
+            return allLst;
         }
     }
 }

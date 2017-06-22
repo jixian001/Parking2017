@@ -24,11 +24,23 @@ namespace Parking.Data
         {
             if (orderParams == null)
             {
-                return _repository.FindList(where).ToList();
+                IQueryable<Location> iqueryLst = _repository.FindList(where);
+                List<Location> allLst = new List<Location>();
+                foreach (var tsk in iqueryLst)
+                {
+                    allLst.Add(tsk);
+                }
+                return allLst;               
             }
             else
             {
-                return _repository.FindList(where, orderParams, 0).ToList();
+                IQueryable<Location> iqueryLst = _repository.FindList(where, orderParams, 0);
+                List<Location> allLst = new List<Location>();
+                foreach (var tsk in iqueryLst)
+                {
+                    allLst.Add(tsk);
+                }
+                return allLst;
             }
         }
 

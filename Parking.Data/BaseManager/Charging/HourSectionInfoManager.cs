@@ -21,7 +21,14 @@ namespace Parking.Data
 
         public List<HourSectionInfo> FindList(Expression<Func<HourSectionInfo, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<HourSectionInfo> iqueryLst = _repository.FindList(where);
+            List<HourSectionInfo> allLst = new List<HourSectionInfo>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
+           
         }
 
     }

@@ -356,6 +356,9 @@
                         html += '</div>';
 
                         $devs.html(html);
+
+                        //更新作业任务
+                        updateDevTasLst();
                     },
                     complete: function (XMLHttpRequest, textStatus) {
 
@@ -395,8 +398,10 @@
                                         l3_sc.get([mark]).status(color);
                                     }
                                 }
-
                             });
+
+                            //获取车位的统计信息
+                            updateLocStaInfo();
                         }
                     },
                     error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -409,9 +414,10 @@
                 var wd = $(".dheight").height();
                 $("#details").css("height", wd);
 
-            }, 500);
+               
+            }, 2000);
 
-            setTimeout(function () {
+            function updateDevTasLst() {
                 //更新设备作业状态
                 $.ajax({
                     type: "GET",
@@ -436,7 +442,9 @@
 
                     }
                 });
+            }
 
+            function updateLocStaInfo() {
                 //更新下车位信息
                 $.getJSON("@Url.Action("GetLocStatInfo")", function (json) {
                     $("span[id='total']").text(json.Total);
@@ -446,8 +454,8 @@
                     $("span[id='small']").text(json.SmallSpace);
                     $("span[id='fix']").text(json.FixLoc);
                 });
-
-            }, 1500);
+            }
+          
 
             function setlocationcolor(type, status)
             {
@@ -724,12 +732,16 @@
                     $("#svcStatus").html("启动中...");
                     $("#svcRun").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
                     $("#svcStop").addClass("btn-info").prop("disabled", false);
+
+                    $("#svc").text("启动中");
                 },
 
                 serveClosed: function () {
                     $("#svcStatus").html("已停止...");
                     $("#svcRun").addClass("btn-info").prop("disabled", false);
                     $("#svcStop").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
+
+                    $("#svc").text("停止中");
                 },
 
                 //Define a function to get 'location updated' events
@@ -918,8 +930,13 @@
                             .done(function (status) {
                                 if (status == "Close") {
                                     hubs.client.serveClosed();
+
+                                    $("#svc").text("停止中");
+
                                 } else if (status == "Open") {
                                     hubs.client.serveOpened();
+
+                                    $("#svc").text("启动中");
                                 }
                             });
            

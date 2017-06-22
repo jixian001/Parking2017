@@ -7,7 +7,7 @@ using System.Data.Entity;
 
 namespace Parking.Data
 {
-    public class ParkingContext:DbContext
+    public class ParkingContext:DbContext,IDisposable
     {
         public ParkingContext() : 
             base("DefaultConnection")
@@ -36,6 +36,8 @@ namespace Parking.Data
         public DbSet<FingerPrint> FingerPrints { get; set; }
         public DbSet<TempUserChargeLog> TempUserChargeLogs { get; set; }
         public DbSet<FixUserChargeLog> FixUserChargeLogs { get; set; }
+
+        
 
     }
 }

@@ -172,6 +172,10 @@ namespace Parking.Web.Models
             {
                 msg += ",等待ACK";
             }
+            else if(detail == EnmTaskStatusDetail.Asked)
+            {
+                msg += ",收到ACK";
+            }
             #endregion
             return msg;
         }

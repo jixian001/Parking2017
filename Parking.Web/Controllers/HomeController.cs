@@ -15,11 +15,9 @@ namespace Parking.Web.Controllers
 {   
     public class HomeController : Controller
     {
-        private static Log log;
        
         public HomeController()
-        {           
-            log = LogFactory.GetLogger("HomeController");
+        { 
         }
 
         #region 不用的
@@ -180,10 +178,7 @@ namespace Parking.Web.Controllers
         public ActionResult GetDeviceList()
         {
             List<Device> devices = new CWDevice().FindList(smg => true);
-            if (devices == null)
-            {
-                devices = new List<Device>();
-            }
+           
             return Json(devices, JsonRequestBehavior.AllowGet);
         }
 
@@ -193,25 +188,35 @@ namespace Parking.Web.Controllers
         /// <returns></returns>
         public ActionResult GetDeviceTaskLst()
         {
-            CWTask cwtask = new CWTask();
-            List<Device> hasTask = new CWDevice().FindList(smg => smg.TaskID != 0);
             List<DeviceTaskDetail> detailLst = new List<DeviceTaskDetail>();
-            foreach(Device dev in hasTask)
+            try
             {
-                ImplementTask itask = cwtask.Find(dev.TaskID);
-                if (itask != null)
+                List<Device> hasTask = new CWDevice().FindList(dv => dv.TaskID != 0);
+                CWTask cwtask = new CWTask();
+                foreach (Device dev in hasTask)
                 {
-                    string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
-                    string type = PlusCvt.ConvertTaskType(itask.Type);
-                    string status = PlusCvt.ConvertTaskStatus(itask.Status,itask.SendStatusDetail);
-                    DeviceTaskDetail detail = new DeviceTaskDetail {
-                        DevDescp=desp,
-                        TaskType=type,
-                        Status=status,
-                        Proof=itask.ICCardCode
-                    };
-                    detailLst.Add(detail);
+                    ImplementTask itask = cwtask.Find(dev.TaskID);
+                    if (itask != null)
+                    {
+                        string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
+                        string type = PlusCvt.ConvertTaskType(itask.Type);
+                        string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
+                        DeviceTaskDetail detail = new DeviceTaskDetail
+                        {
+                            DevDescp = desp,
+                            TaskType = type,
+                            Status = status,
+                            Proof = itask.ICCardCode
+                        };
+                        detailLst.Add(detail);
+                    }
                 }
+
+            }
+            catch (Exception ex)
+            {
+                Log log = LogFactory.GetLogger("GetDeviceTaskLst");
+                log.Error(ex.ToString());
             }
             return Json(detailLst,JsonRequestBehavior.AllowGet);
         }
@@ -232,23 +237,36 @@ namespace Parking.Web.Controllers
                 };
                 return Json(nback,JsonRequestBehavior.AllowGet);
             }
-            int wh = Convert.ToInt32(info[0]);
-            string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2,'0');
-            Location lctn = new CWLocation().FindLocation(lc=>lc.Address==address&&lc.Warehouse==wh);
+            Location lctn = null;
+            try
+            {
+                int wh = Convert.ToInt32(info[0]);
+                string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2, '0');
+                lctn = new CWLocation().FindLocation(lc => lc.Address == address && lc.Warehouse == wh);
+            }
+            catch (Exception ex)
+            {
+                Log log = LogFactory.GetLogger("GetLocation");
+                log.Error(ex.ToString());
+            }
             if (lctn == null)
             {
                 var nback = new
                 {
                     code = 0,
-                    data = "找不到车位，"+locinfo
+                    data = "找不到车位，" + locinfo
                 };
                 return Json(nback, JsonRequestBehavior.AllowGet);
             }
-            var ret = new {
-                code=1,
-                data=lctn
-            };
-            return Json(ret, JsonRequestBehavior.AllowGet);
+            else
+            {
+                var ret = new
+                {
+                    code = 1,
+                    data = lctn
+                };
+                return Json(ret, JsonRequestBehavior.AllowGet);
+            }            
         }        
         
         [HttpPost]
@@ -274,7 +292,7 @@ namespace Parking.Web.Controllers
         /// <returns></returns>
         public ActionResult GetLocationList()
         {
-            List<Location> locList = new CWLocation().FindLocationList(lc => true);
+            List<Location> locList = new CWLocation().FindLocList();
             if (locList == null || locList.Count == 0)
             {
                 var resp = new
@@ -284,12 +302,16 @@ namespace Parking.Web.Controllers
                 };
                 return Json(resp, JsonRequestBehavior.AllowGet);
             }
-            var nback = new
+            else
             {
-                code = 1,
-                data = locList
-            };
-            return Json(nback, JsonRequestBehavior.AllowGet);
+                TempData["locations"] = locList;
+                var nback = new
+                {
+                    code = 1,
+                    data = locList
+                };
+                return Json(nback, JsonRequestBehavior.AllowGet);
+            }
 
         }
 
@@ -299,63 +321,64 @@ namespace Parking.Web.Controllers
         /// <returns></returns>
         public ActionResult GetLocStatInfo()
         {
-            #region
-            int total = 0;
-            int occupy = 0;
-            int space = 0;
-            int fix = 0;
-            int bspace = 0;
-            int sspace = 0;
-            List<Location> locLst = new CWLocation().FindLocationList(lc=>lc.Type!=EnmLocationType.Invalid&&lc.Type!=EnmLocationType.Hall);
-            total = locLst.Count;
-            CWICCard cwiccd = new CWICCard();
-            foreach(Location loc in locLst)
+            StatisInfo info = new StatisInfo();
+            if (TempData["locations"] != null)
             {
                 #region
-                if (loc.Type == EnmLocationType.Normal)
+                int total = 0;
+                int occupy = 0;
+                int space = 0;
+                int fix = 0;
+                int bspace = 0;
+                int sspace = 0;
+                List<Location> locLst = ((List<Location>)TempData["locations"]).Where(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall).ToList();
+                total = locLst.Count;
+                CWICCard cwiccd = new CWICCard();
+                foreach (Location loc in locLst)
                 {
-                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
+                    #region
+                    if (loc.Type == EnmLocationType.Normal)
                     {
-                        if (loc.Type == EnmLocationType.Normal)
+                        if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
                         {
-                            if (loc.Status == EnmLocationStatus.Space)
+                            if (loc.Type == EnmLocationType.Normal)
                             {
-                                space++;
-                                if (loc.LocSize.Length == 3)
+                                if (loc.Status == EnmLocationStatus.Space)
                                 {
-                                    string last = loc.LocSize.Substring(2);
-                                    if (last == "1")
+                                    space++;
+                                    if (loc.LocSize.Length == 3)
                                     {
-                                        sspace++;
-                                    }
-                                    else if (last == "2")
-                                    {
-                                        bspace++;
+                                        string last = loc.LocSize.Substring(2);
+                                        if (last == "1")
+                                        {
+                                            sspace++;
+                                        }
+                                        else if (last == "2")
+                                        {
+                                            bspace++;
+                                        }
                                     }
                                 }
-                            }
-                            else if (loc.Status == EnmLocationStatus.Occupy)
-                            {
-                                occupy++;
+                                else if (loc.Status == EnmLocationStatus.Occupy)
+                                {
+                                    occupy++;
+                                }
                             }
                         }
+                        else
+                        {
+                            fix++;
+                        }
                     }
-                    else
-                    {
-                        fix++;
-                    }
+                    #endregion
                 }
+                info.Total = total;
+                info.Occupy = occupy;
+                info.Space = space;
+                info.SmallSpace = sspace;
+                info.BigSpace = bspace;              
                 #endregion
             }
-            StatisInfo info = new StatisInfo {
-                Total=total,
-                Occupy=occupy,
-                Space=space,
-                SmallSpace=sspace,
-                BigSpace=bspace,
-                FixLoc=fix
-            };
-            #endregion
             return Json(info,JsonRequestBehavior.AllowGet);
         }
 

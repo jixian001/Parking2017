@@ -13,9 +13,9 @@ namespace Parking.Core
     /// 设备的业务逻辑
     /// </summary>
     public class CWDevice
-    {    
-        private static  DeviceManager manager=new DeviceManager();
-        private static  Log log;
+    {
+        private static DeviceManager manager = new DeviceManager();
+        private Log log;
 
         public CWDevice()
         {
@@ -55,7 +55,16 @@ namespace Parking.Core
 
         public List<Device> FindList(Expression<Func<Device, bool>> where)
         {
-            return manager.FindList(where);
+            List<Device> devsLst = new List<Device>();
+            try
+            {
+                devsLst = manager.FindList(where);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return devsLst;
         }
 
         public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)

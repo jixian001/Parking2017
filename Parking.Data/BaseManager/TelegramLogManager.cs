@@ -12,7 +12,13 @@ namespace Parking.Data
     {
         public List<TelegramLog> FindList(Expression<Func<TelegramLog, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<TelegramLog> iqueryLst = _repository.FindList(where);
+            List<TelegramLog> allLst = new List<TelegramLog>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
     }
 }

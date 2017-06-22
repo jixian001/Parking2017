@@ -60,7 +60,7 @@ namespace Parking.Core.Schedule
                 return 0;
             }
             int realColmn = Convert.ToInt32(addrs.Substring(1, 2));
-            int disableCol = PhysicLeftCol(cPhysScope.LeftCol, realColmn);
+            int disableCol = PhysicRightCol(realColmn, cPhysScope.RightCol);
             if (disableCol != cPhysScope.RightCol)
             {
                 return disableCol - safeDistCol;

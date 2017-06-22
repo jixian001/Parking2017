@@ -210,6 +210,8 @@ namespace Parking.Core
             try
             {
                 #region 上报外形数据不正确
+                htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+                htsk.SendDtime = DateTime.Now.AddMinutes(-1);
                 if (checkCode.Length != 3)
                 {
                     htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
@@ -223,7 +225,8 @@ namespace Parking.Core
                 #region
                 if (Convert.ToInt32(htsk.ICCardCode) >= 10000) //是指纹激活的
                 {
-                    FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == Convert.ToInt32(htsk.ICCardCode));
+                    int prf = Convert.ToInt32(htsk.ICCardCode);
+                    FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == prf);
                     if (print == null)
                     {
                         //上位控制系统故障

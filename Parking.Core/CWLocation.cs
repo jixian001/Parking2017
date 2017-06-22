@@ -27,7 +27,17 @@ namespace Parking.Core
         /// <returns></returns>
         public List<Location> FindLocList()
         {
-            return manager.FindList().ToList();
+            List<Location> locLst = null;
+            try
+            {
+                locLst = manager.FindList().ToList();
+            }
+            catch (Exception ex)
+            {
+                Log log = LogFactory.GetLogger("FindLocList");
+                log.Error(ex.ToString());
+            }
+            return locLst;
         }
 
         /// <summary>
@@ -67,30 +77,38 @@ namespace Parking.Core
         public Response DisableLocation(int warehouse,string addrs,bool isDis)
         {
             Response _resp = new Response();
-            Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == warehouse && lc.Address == addrs);
-            if (loc == null)
+            try
             {
-                _resp.Code = 0;
-                _resp.Message = "找不到车位-" + addrs;
-                return _resp;
+                Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == warehouse && lc.Address == addrs);
+                if (loc == null)
+                {
+                    _resp.Code = 0;
+                    _resp.Message = "找不到车位-" + addrs;
+                    return _resp;
+                }
+                if (loc.Type == EnmLocationType.Invalid ||
+                    loc.Type == EnmLocationType.Hall ||
+                    loc.Type == EnmLocationType.ETV)
+                {
+                    _resp.Code = 0;
+                    _resp.Message = "当前车位-" + addrs + "无效，不允许操作！";
+                    return _resp;
+                }
+                if (isDis)
+                {
+                    loc.Type = EnmLocationType.Disable;
+                }
+                else
+                {
+                    loc.Type = EnmLocationType.Normal;
+                }
+                _resp = manager.Update(loc);
             }
-            if (loc.Type == EnmLocationType.Invalid ||
-                loc.Type == EnmLocationType.Hall ||
-                loc.Type == EnmLocationType.ETV)
+            catch (Exception ex)
             {
-                _resp.Code = 0;
-                _resp.Message = "当前车位-" + addrs + "无效，不允许操作！";
-                return _resp;
+                Log log = LogFactory.GetLogger("DisableLocation");
+                log.Error(ex.ToString());
             }          
-            if (isDis)
-            {
-                loc.Type = EnmLocationType.Disable;
-            }
-            else
-            {
-                loc.Type = EnmLocationType.Normal;
-            }
-            _resp=  manager.Update(loc);            
             return _resp;
         }
 

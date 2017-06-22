@@ -47,7 +47,13 @@ namespace Parking.Data
         
         public List<Device> FindList(Expression<Func<Device, bool>> where)
         {
-            return _repository.FindList(where).ToList();
+            IQueryable<Device> iqueryLst = _repository.FindList(where);
+            List<Device> allLst = new List<Device>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;           
         }
 
         /// <summary>
@@ -58,13 +64,25 @@ namespace Parking.Data
         /// <returns></returns>
         public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)
         {
-            return _repository.FindList(where, param).ToList();
+            IQueryable<Device> iqueryLst= _repository.FindList(where, param);
+            List<Device> allLst = new List<Device>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
 
         public Page<Device> FindPageList(Page<Device> workPage, Expression<Func<Device, bool>> where, OrderParam oparam)
         {
             int totalNum = 0;
-            workPage.ItemLists = _repository.FindPageList(workPage.PageSize, workPage.PageIndex, out totalNum, where, new OrderParam[] { oparam }).ToList();
+            IQueryable<Device> iqueryLst = _repository.FindPageList(workPage.PageSize, workPage.PageIndex, out totalNum, where, new OrderParam[] { oparam });
+            List<Device> allLst = new List<Device>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            workPage.ItemLists = allLst;
             workPage.TotalNumber = totalNum;
             return workPage;
         }

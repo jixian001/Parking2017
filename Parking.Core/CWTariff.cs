@@ -36,7 +36,13 @@ namespace Parking.Core
         /// <returns></returns>
         public List<PreCharging> FindPreChargeList(Expression<Func<PreCharging,bool>> where)
         {
-            return preChgManager.FindList().ToList();
+            IQueryable<PreCharging> iqueryLst = preChgManager.FindList().Where(where);
+            List<PreCharging> allLst = new List<PreCharging>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
 
         /// <summary>
@@ -122,7 +128,13 @@ namespace Parking.Core
         /// <returns></returns>
         public List<TempChargingRule> GetTempChgRuleList()
         {
-            return tempManager.FindList().ToList();
+            IQueryable<TempChargingRule> iqueryLst = tempManager.FindList();
+            List<TempChargingRule> allLst = new List<TempChargingRule>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }       
 
         /// <summary>
@@ -176,7 +188,13 @@ namespace Parking.Core
         /// <returns></returns>
         public List<OrderChargeDetail> GetOrderDetailList()
         {
-            return orderDetailManager.FindList().ToList();
+            IQueryable<OrderChargeDetail> iqueryLst = orderDetailManager.FindList();
+            List<OrderChargeDetail> allLst = new List<OrderChargeDetail>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }
 
         /// <summary>
@@ -233,7 +251,13 @@ namespace Parking.Core
         /// <returns></returns>
         public List<HourChargeDetail> FindHourChgDetailList()
         {
-            return hourDetailManager.FindList().ToList();
+            IQueryable<HourChargeDetail> iqueryLst = hourDetailManager.FindList();
+            List<HourChargeDetail> allLst = new List<HourChargeDetail>();
+            foreach (var tsk in iqueryLst)
+            {
+                allLst.Add(tsk);
+            }
+            return allLst;
         }      
 
         /// <summary>
