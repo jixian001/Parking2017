@@ -61,24 +61,28 @@ namespace Parking.Web.Areas.SystemManager.Controllers
            
             foreach(ImplementTask itask in pageTask.ItemLists)
             {
-                DisplayITask dtask = new DisplayITask {
-                    ID = itask.ID,
-                    Warehouse = itask.Warehouse,
-                    DeviceCode = itask.DeviceCode,
-                    Type = PlusCvt.ConvertTaskType(itask.Type),
-                    Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
-                    SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
-                    CreateDate=itask.CreateDate.ToString(),
-                    SendDtime=itask.SendDtime.ToString(),
-                    HallCode=itask.HallCode,
-                    FromLctAddress=itask.FromLctAddress,
-                    ToLctAddress=itask.ToLctAddress,
-                    ICCardCode=itask.ICCardCode,
-                    Distance=itask.Distance,
-                    CarSize=itask.CarSize,
-                    CarWeight=itask.CarWeight
-                };
-                dispTaskLst.Add(dtask);
+                if (itask.IsComplete == 0)
+                {
+                    DisplayITask dtask = new DisplayITask
+                    {
+                        ID = itask.ID,
+                        Warehouse = itask.Warehouse,
+                        DeviceCode = itask.DeviceCode,
+                        Type = PlusCvt.ConvertTaskType(itask.Type),
+                        Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
+                        SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
+                        CreateDate = itask.CreateDate.ToString(),
+                        SendDtime = itask.SendDtime.ToString(),
+                        HallCode = itask.HallCode,
+                        FromLctAddress = itask.FromLctAddress,
+                        ToLctAddress = itask.ToLctAddress,
+                        ICCardCode = itask.ICCardCode,
+                        Distance = itask.Distance,
+                        CarSize = itask.CarSize,
+                        CarWeight = itask.CarWeight
+                    };
+                    dispTaskLst.Add(dtask);
+                }
             }
             int rcdNum = pageTask.TotalNumber;
             var data = new
@@ -183,27 +187,24 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         }
 
         /// <summary>
-        /// 手动完成（多选）
+        /// 手动完成
         /// </summary>
         /// <param name="ids"></param>
         /// <returns></returns>
-        public ActionResult CompleteTask(List<int> ids)
+        public ActionResult ManualCompleteTask(int ids)
         {
-            if (ids == null)
+            if (ids == 0)
             {
                 return Content("Fail");
             }
             CWTask cwtask = new CWTask();
-            int count = 0;
-            foreach (int id in ids)
+            Response resp = cwtask.ManualCompleteTask(ids);
+            if (resp.Code == 1)
             {
-                Response resp = cwtask.ManualCompleteTask(id);
-                if (resp.Code == 1)
-                {
-                    count++;
-                }
+               return Content("操作成功！");
             }
-            return Content("操作成功,作用数量-" + count);
+
+            return Content("操作失败！");
         }
 
         /// <summary>
@@ -223,24 +224,23 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// </summary>
         /// <param name="ids"></param>
         /// <returns></returns>
-        public ActionResult ResetTask(List<int> ids)
+        public ActionResult ManualResetTask(int ids)
         {
-            if (ids == null)
+            if (ids == 0)
             {
                 return Content("Fail");
             }
             CWTask cwtask = new CWTask();
-            int count = 0;
-            foreach (int id in ids)
+
+            Response resp = cwtask.ManualResetTask(ids);
+            if (resp.Code == 1)
             {
-                Response resp = cwtask.ManualResetTask(id);
-                if (resp.Code == 1)
-                {
-                    count++;
-                }
+                return Content("操作成功！");
             }
-            return Content("操作成功,数量-" + count);
+
+            return Content("操作失败！");
         }
+
         /// <summary>
         /// 查询存车车位
         /// </summary>

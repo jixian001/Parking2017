@@ -256,15 +256,15 @@
                             $disp.append(html);
                             html = '<li>车位尺寸：<b>' + obj.LocSize + '</b></li>';
                             $disp.append(html);
-                            html = '<li>用户卡号：' + obj.ICCode + '</li>';
+                            html = '<li>存车凭证：<span class="text-info">' + obj.ICCode + '</span></li>';
                             $disp.append(html);
                             html = '<li>轴距：' + obj.WheelBase + '</li>';
                             $disp.append(html);
                             html = '<li>车辆外形：' + obj.CarSize + '</li>';
                             $disp.append(html);
-                            html = '<li>车牌：' + obj.PlateNum + '</li>';
+                            html = '<li>车牌：<span class="text-info">' + obj.PlateNum + '</span></li>';
                             $disp.append(html);
-                            html = '<li>入库时间：<br/>' +formatDate(obj.InDate) + '</li>';
+                            html = '<li>入库时间：<br/><span class="text-info">' +formatDate(obj.InDate) + '</span></li>';
                             $disp.append(html);
 
                             $btn.css("display", "block");
@@ -775,21 +775,21 @@
                         $disp.html(html);
                         html = '<li>地址：' + lctn.LocSide + '边' + lctn.LocColumn + '列' + lctn.LocLayer + '层</li>';
                         $disp.append(html);
-                        html = '<li id="li_type">类型：' + lctn.Type + '</li>';
+                        html = '<li id="li_type">类型：' + formatLocType(lctn.Type) + '</li>';
                         $disp.append(html);
-                        html = '<li>状态：' + lctn.Status + '</li>';
+                        html = '<li>状态：' + formatLocStatus(lctn.Status) + '</li>';
                         $disp.append(html);
                         html = '<li>车位尺寸：<b>' + lctn.LocSize + '</b></li>';
                         $disp.append(html);
-                        html = '<li>用户卡号：' + lctn.ICCode + '</li>';
+                        html = '<li>用户卡号：<span class="text-info">' + lctn.ICCode + '</span></li>';
                         $disp.append(html);
                         html = '<li>轴距：' + lctn.WheelBase + '</li>';
                         $disp.append(html);
                         html = '<li>车辆外形：' + lctn.CarSize + '</li>';
                         $disp.append(html);
-                        html = '<li>车牌：' + lctn.PlateNum + '</li>';
+                        html = '<li>车牌：<span class="text-info">' + lctn.PlateNum + '</span></li>';
                         $disp.append(html);
-                        html = '<li>入库时间：<br/>' + lctn.InDate + '</li>';
+                        html = '<li>入库时间：<br/><span class="text-info">' + formatDate(lctn.InDate) + '</span></li>';
                         $disp.append(html);
                     }
                     console.log("location addrs-" + adrs + " callback");

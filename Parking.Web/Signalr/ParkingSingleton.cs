@@ -236,7 +236,13 @@ namespace Parking.Web
                 Status = status,
                 Proof = itask.ICCardCode
             };
-
+            //作业要删除时
+            if (itask.IsComplete == 1)
+            {
+                detail.TaskType = "";
+                detail.Status = "";
+                detail.Proof = "";
+            }
             Clients.All.feedbackImpTask(detail);
         }
 

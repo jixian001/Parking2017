@@ -67,20 +67,12 @@ namespace Parking.Core
                 #endregion
                 Task.Factory.StartNew(() =>
                 {
-                    #region 打印出来吧                   
-                    log.Info(head);
+                    #region 打印出来吧
                     StringBuilder strBuild = new StringBuilder();
-                    int i = 0;
+                    strBuild.Append(head + Environment.NewLine);                
                     foreach (Int16 by in data)
                     {
-                        if (i % 10 == 0 && i != 0)
-                        {
-                            strBuild.Append(Environment.NewLine + "[" + by + "]");
-                        }
-                        else
-                        {
-                            strBuild.Append("[" + by + "]");
-                        }
+                        strBuild.Append("[" + by + "]");
                     }
                     log.Info(strBuild.ToString());
                     #endregion

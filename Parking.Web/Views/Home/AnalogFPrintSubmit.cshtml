@@ -81,8 +81,21 @@
                     });
                     return;
                 }
+                var iRet = -1;
+                try
+                {
+                    iRet = dtm.FConnect();
+                }
+                catch (err)
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请先注册OCX控件！"
+                    });
+                    return;
+                }
 
-                var iRet = dtm.FConnect();
+                //var iRet = dtm.FConnect();
                 if (iRet != 0) {
                     BootstrapDialog.warning("连接指纹仪失败");
                     return;
@@ -154,7 +167,7 @@
                     dataType: "json",
                     cache: false,
                     beforeSend: function (XMLHttpRequest) {
-                        $("#btnFPrint").text("查询中...");
+                        $("#btnICCard").text("查询中...");
                     },
                     success: function (resp) {
 
@@ -165,7 +178,7 @@
 
                     },
                     complete: function (XMLHttpRequest, textStatus) {
-                        $("#btnFPrint").text("采集特性值并提交");
+                        $("#btnICCard").text("采集特性值并提交");
                     }
                 });
             });

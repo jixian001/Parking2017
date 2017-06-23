@@ -11,7 +11,9 @@ namespace Parking.Data
 {
     public class Repository<TEntity> where TEntity:class
     {
-        public DbContext _dbContext { get; set; }        
+        public DbContext _dbContext { get; set; }
+
+        private object objLock = new object();     
 
         private Repository()
         {
@@ -165,8 +167,12 @@ namespace Parking.Data
         {
             MainCallback<TEntity>.Instance().OnChange(entity);
 
-            _dbContext.Set<TEntity>().Add(entity);            
-            return isSave ? _dbContext.SaveChanges() : 0;
+            _dbContext.Set<TEntity>().Add(entity);
+            if (isSave)
+            {
+               return SaveChanges();
+            }         
+            return 0;
         }
         #endregion
 
@@ -177,7 +183,11 @@ namespace Parking.Data
 
             _dbContext.Set<TEntity>().Attach(entity);
             _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
-            return isSave ? _dbContext.SaveChanges() : 0;
+            if (isSave)
+            {
+                return SaveChanges();
+            }
+            return 0;
         }
 
         public int Update(TEntity entity)
@@ -194,7 +204,11 @@ namespace Parking.Data
 
             _dbContext.Set<TEntity>().Attach(entity);
             _dbContext.Entry<TEntity>(entity).State = EntityState.Deleted;
-            return isSave ? _dbContext.SaveChanges() : 0;
+            if (isSave)
+            {
+                return SaveChanges();
+            }
+            return 0;
         }
 
         public int Delete(TEntity entity)
@@ -204,9 +218,8 @@ namespace Parking.Data
 
         public int Delete(IEnumerable<TEntity> entities)
         {
-            _dbContext.Set<TEntity>().RemoveRange(entities);           
-
-            return _dbContext.SaveChanges();
+            _dbContext.Set<TEntity>().RemoveRange(entities);
+            return SaveChanges();
         }
 
         #endregion
@@ -235,7 +248,10 @@ namespace Parking.Data
 
         public int SaveChanges()
         {
-            return _dbContext.SaveChanges();
+            lock (objLock)
+            {
+                return _dbContext.SaveChanges();
+            }
         }
 
         

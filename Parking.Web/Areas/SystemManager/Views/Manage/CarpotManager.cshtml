@@ -516,8 +516,18 @@
                     });
                     return;
                 }
-
-                var iRet = dtm.FConnect();
+                var iRet = -1;
+                try {
+                    iRet = dtm.FConnect();
+                }
+                catch (err) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请先注册指纹仪OCX控件！"
+                    });
+                    return;
+                }
+                //var iRet = dtm.FConnect();
                 if (iRet != 0) {
                     BootstrapDialog.warning("连接指纹仪失败");
                     return;

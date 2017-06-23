@@ -38,7 +38,8 @@
                 pagination: true,
                 striped: true,              //是否显示行间隔色
                 sidePagination: "server",
-                //clickToSelect:true,
+                clickToSelect: true,
+                singleSelect: true,   //单选
                 pageNumber: 1,              //初始化加载第一页，默认第一页
                 pageSize: 10,                 //每页的记录数
                 pageList: "[5,10,20,50]",
@@ -49,7 +50,7 @@
                 dataType: "json",
                 columns: [
                     {
-                        title: "state",
+                        title: "选择",
                         checkbox: true,
                         align: "center",
                         valign: "middle"
@@ -194,12 +195,12 @@
                 {
                     BootstrapDialog.confirm("确定要执行此操作？作用域-" + $(selected).length, function (result) {
                         if (result) {
-                            var _list = [];
-                            $.each(selected, function (index, value) {
-                                _list[index] = value.ID;
-                            });
+                            var _list = selected[0].ID;
+                            //$.each(selected, function (index, value) {
+                            //    _list[index] = value.ID;
+                            //});
                             $.ajax({
-                                url: "@Url.Action("CompleteTask")",
+                                url: "@Url.Action("ManualCompleteTask")",
                                 type: "GET",
                                 data: {
                                     "ids": _list
@@ -225,12 +226,12 @@
                 {
                     BootstrapDialog.confirm("确定要执行此操作？作用域-" + $(selected).length, function (result) {
                         if (result) {
-                            var _list = [];
-                            $.each(selected, function (index, value) {
-                                _list[index] = value.ID;
-                            });
+                            var _list = selected[0].ID;
+                            //$.each(selected, function (index, value) {
+                            //    _list[index] = value.ID;
+                            //});
                             $.ajax({
-                                url: "@Url.Action("ResetTask")",
+                                url: "@Url.Action("ManualResetTask")",
                                 type: "GET",
                                 data: {
                                     "ids":_list

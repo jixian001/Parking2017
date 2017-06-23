@@ -136,7 +136,7 @@ namespace Parking.Application
                         {
                             if (dev.TaskID == 0)
                             {
-                                cwtask.CreateDeviceTaskByQueue(queue,dev,false);
+                                cwtask.CreateDeviceTaskByQueue(queue,dev);
                             }
                         }
                         else if (dev.Type == EnmSMGType.ETV)
@@ -146,7 +146,7 @@ namespace Parking.Application
                                 //可以增加避让判断
                                 if (cwtask.DealAvoid(queue, dev))
                                 {
-                                    cwtask.CreateDeviceTaskByQueue(queue, dev,false);
+                                    cwtask.CreateDeviceTaskByQueue(queue, dev);
                                 }
                             }
                             else //处理卸载指令
@@ -162,8 +162,7 @@ namespace Parking.Application
                                         //可以增加避让判断
                                         if (cwtask.DealAvoid(queue, dev))
                                         {
-                                            Response resp = cwtask.CreateDeviceTaskByQueue(queue, dev,true);
-                                            log.Info(resp.Message);
+                                            cwtask.DealTVUnloadTask(itask,queue);
                                         }
                                     }
                                 }
@@ -567,7 +566,7 @@ namespace Parking.Application
                                  task.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize ||
                                  task.Status == EnmTaskStatus.ICheckCarFail)
                         {
-                            if (data[2] == 1001 && data[3] == 4)
+                            if (data[2] == 1001 && data[4] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
                             }
@@ -588,7 +587,7 @@ namespace Parking.Application
                             {
                                 cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                             }
-                            if(data[2] == 1001 && data[3] == 4)
+                            if(data[2] == 1001 && data[4] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
                             }
@@ -604,7 +603,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
-                            if (data[2] == 1003 && data[3] == 54)
+                            if (data[2] == 1003 && data[4] == 54)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.OEVDownFinishing);
                             }
@@ -621,7 +620,7 @@ namespace Parking.Application
                         }
                         else if (task.Status == EnmTaskStatus.OWaitforEVUp)
                         {
-                            if (data[2] == 1003 && data[3] == 1)
+                            if (data[2] == 1003 && data[4] == 1)
                             {
                                 cwtask.ODealEVUp(task);
                             }
@@ -632,7 +631,7 @@ namespace Parking.Application
                             {
                                 cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                             }
-                            if (data[2] == 1003 && data[3] == 4)
+                            if (data[2] == 1003 && data[4] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.OHallFinishing);
                             }
@@ -656,7 +655,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
-                            if (data[2] == 1002 && data[3] == 54)
+                            if (data[2] == 1002 && data[4] == 54)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.TempEVDownFinishing);
                             }
@@ -673,7 +672,7 @@ namespace Parking.Application
                         }
                         else if (task.Status == EnmTaskStatus.TempWaitforEVUp)
                         {
-                            if (data[2] == 1002 && data[3] == 1)
+                            if (data[2] == 1002 && data[4] == 1)
                             {
                                 cwtask.ODealEVUp(task);
                             }
@@ -684,7 +683,7 @@ namespace Parking.Application
                             {
                                 cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                             }
-                            if (data[2] == 1002 && data[3] == 4)
+                            if (data[2] == 1002 && data[4] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.TempHallFinishing);
                             }
@@ -713,7 +712,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
-                            if (data[2] == 1013 && data[3] == 1)
+                            if (data[2] == 1013 && data[4] == 1)
                             {
                                 //处理装载完成
                                 cwtask.DealLoadFinishing(task, data[25]);
@@ -741,7 +740,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
-                            if (data[2] == 1014 && data[3] == 1)
+                            if (data[2] == 1014 && data[4] == 1)
                             {
                                 //处理卸载完成
                                 cwtask.DealUnLoadFinishing(task);
@@ -769,7 +768,7 @@ namespace Parking.Application
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                                 }
                             }
-                            if (data[2] == 1011 && data[3] == 1)
+                            if (data[2] == 1011 && data[4] == 1)
                             {
                                 //处理卸载完成
                                 cwtask.DealMoveFinishing(task);

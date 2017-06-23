@@ -37,6 +37,12 @@ namespace Parking.Core
             return manager.Update(smg);
         }
 
+        /// <summary>
+        /// 强制更新
+        /// </summary>
+        /// <param name="smg"></param>
+        /// <param name="isSave"></param>
+        /// <returns></returns>
         public Response Update(Device smg,bool isSave)
         {
             return manager.Update(smg,isSave);

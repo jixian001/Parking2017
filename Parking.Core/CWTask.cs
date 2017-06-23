@@ -173,10 +173,8 @@ namespace Parking.Core
                 task.Type = EnmTaskType.SaveCar;
                 task.Status = EnmTaskStatus.ICarInWaitFirstSwipeCard;
                 task.SendStatusDetail = EnmTaskStatusDetail.NoSend;
-                task.CreateDate = DateTime.Now;
-                #region 发送时间没有暂为空，看看有没有异常出现
-                task.SendDtime = DateTime.Parse("2017-1-1");
-                #endregion
+                task.CreateDate = DateTime.Now;              
+                task.SendDtime = DateTime.Now.AddMinutes(-1);               
                 task.HallCode = hall.DeviceCode;
                 task.FromLctAddress = hall.Address;
                 task.ToLctAddress = "";
@@ -212,6 +210,9 @@ namespace Parking.Core
                 #region 上报外形数据不正确
                 htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                 htsk.SendDtime = DateTime.Now.AddMinutes(-1);
+                htsk.Distance = distance;
+                htsk.CarSize = checkCode;
+                htsk.CarWeight = weight;
                 if (checkCode.Length != 3)
                 {
                     htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
@@ -314,7 +315,7 @@ namespace Parking.Core
                 lct.Status = EnmLocationStatus.Entering;
                 lct.ICCode = htsk.ICCardCode;
                 lct.CarWeight = weight;
-                Response resp = new CWLocation().UpdateLocation(lct,false);
+                Response resp = new CWLocation().UpdateLocation(lct);
 
                 if (resp.Code == 1)
                 {
@@ -325,14 +326,14 @@ namespace Parking.Core
                         device_plate.HeadImagePath = "";
                         device_plate.PlateImagePath = "";
                         device_plate.PlateNum = "";
-                        new CWDevice().UpdatePlateInfo(device_plate,false);
+                        new CWDevice().UpdatePlateInfo(device_plate);
                     }
                     #endregion
                 }
 
                 htsk.ToLctAddress = lct.Address;
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
-                resp = manager.Update(htsk,false);
+                resp = manager.Update(htsk);
                 //添加TV的存车装载，将其加入队列中
                 WorkTask queue = new WorkTask()
                 {
@@ -342,6 +343,7 @@ namespace Parking.Core
                     MasterType = EnmTaskType.SaveCar,
                     TelegramType = 13,
                     SubTelegramType = 1,
+                    HallCode=hallID,
                     FromLctAddress = hall.Address,
                     ToLctAddress = lct.Address,
                     ICCardCode = htsk.ICCardCode,
@@ -349,13 +351,12 @@ namespace Parking.Core
                     CarSize = checkCode,
                     CarWeight = weight
                 };
-                resp = manager_queue.Add(queue,false);
+                resp = manager_queue.Add(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 队列中添加TV装载作业，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
                 }
-                //更新至数据库中
-                manager.SaveChanges();
+               
             }
             catch (Exception ex)
             {
@@ -392,7 +393,7 @@ namespace Parking.Core
                 lct.InDate = DateTime.Now;
                 lct.ICCode = htsk.ICCardCode;
                 lct.Status = EnmLocationStatus.Entering;
-                Response resp = new CWLocation().UpdateLocation(lct,false);
+                Response resp = new CWLocation().UpdateLocation(lct);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 转存更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
@@ -404,7 +405,7 @@ namespace Parking.Core
                 htsk.ToLctAddress = lct.Address;
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
                 htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
-                resp = manager.Update(htsk,false);
+                resp = manager.Update(htsk);
 
                 //添加TV的存车装载，将其加入队列中
                 WorkTask queue = new WorkTask()
@@ -415,6 +416,7 @@ namespace Parking.Core
                     MasterType = EnmTaskType.SaveCar,
                     TelegramType = 13,
                     SubTelegramType = 1,
+                    HallCode=hall.DeviceCode,
                     FromLctAddress = htsk.FromLctAddress,
                     ToLctAddress = lct.Address,
                     ICCardCode = htsk.ICCardCode,
@@ -422,13 +424,12 @@ namespace Parking.Core
                     CarSize = carsize,
                     CarWeight = weight
                 };
-                resp = manager_queue.Add(queue,false);
+                resp = manager_queue.Add(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 队列中添加TV装载作业，转存，车位-" + lct.Address + "，iccode-" + lct.ICCode);
                 }
 
-                manager.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -486,13 +487,13 @@ namespace Parking.Core
                         dev.TaskID = dev.SoonTaskID;
                         dev.SoonTaskID = 0;
                     }
-                    cwdevice.Update(dev,false);
+                    cwdevice.Update(dev);
                     #endregion
                 }
 
                 //获取相关联的作业
                 string iccode = itask.ICCardCode;
-                ImplementTask relatetask = manager.Find(tsk => tsk.ICCardCode == iccode && tsk.ID != tid && tsk.Type != EnmTaskType.Avoid);
+                ImplementTask relatetask = manager.Find(tsk => tsk.ICCardCode == iccode && tsk.ID != tid && tsk.Type != EnmTaskType.Avoid&&tsk.IsComplete==0);
                 if (relatetask != null)
                 {
                     #region 释放关联的车厅或TV设备
@@ -509,7 +510,7 @@ namespace Parking.Core
                             dev.TaskID = dev.SoonTaskID;
                             dev.SoonTaskID = 0;
                         }
-                        cwdevice.Update(dev,false);
+                        cwdevice.Update(dev);
                     }
                     #endregion
                 }
@@ -528,7 +529,7 @@ namespace Parking.Core
                             toLct.WheelBase = etvtask.Distance;
                             toLct.CarSize = etvtask.CarSize;
 
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
                         }
                     }
                     else if (etvtask.Type == EnmTaskType.GetCar ||
@@ -544,7 +545,7 @@ namespace Parking.Core
                             toLct.CarSize = "";
                             toLct.CarWeight = 0;
 
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
                         }
                     }
                     else if (etvtask.Type == EnmTaskType.Transpose)
@@ -560,7 +561,7 @@ namespace Parking.Core
                             toLct.CarSize = frLct.CarSize;
                             toLct.CarWeight = frLct.CarWeight;
 
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
 
                             frLct.Status = EnmLocationStatus.Space;
                             frLct.InDate = DateTime.Parse("2017-1-1");
@@ -569,7 +570,7 @@ namespace Parking.Core
                             frLct.CarSize = "";
                             frLct.CarWeight = 0;
 
-                            cwlctn.UpdateLocation(frLct,false);
+                            cwlctn.UpdateLocation(frLct);
                         }
                     }
                 }
@@ -579,22 +580,21 @@ namespace Parking.Core
                 List<WorkTask> queueLst = manager_queue.FindList(wk => wk.ICCardCode == iccode);
                 foreach (WorkTask wtsk in queueLst)
                 {
-                    manager_queue.Delete(wtsk.ID,false);
+                    manager_queue.Delete(wtsk.ID);
                 }
                 #endregion
 
                 //删除作业
                 if (relatetask != null)
                 {
-                    manager.Delete(relatetask.ID,false);
+                    manager.Delete(relatetask.ID);
                 }
-                resp = manager.Delete(tid,false);
+                resp = manager.Delete(tid);
                 if (resp.Code == 1)
                 {
                     resp.Message = "手动完成作业成功,ID-" + tid;
                 }
-                //提交清单
-                manager.SaveChanges();
+              
             }
             catch (Exception ex)
             {
@@ -638,7 +638,7 @@ namespace Parking.Core
                         dev.TaskID = dev.SoonTaskID;
                         dev.SoonTaskID = 0;
                     }
-                    cwdevice.Update(dev,false);
+                    cwdevice.Update(dev);
                     #endregion
                 }
 
@@ -661,7 +661,7 @@ namespace Parking.Core
                             dev.TaskID = dev.SoonTaskID;
                             dev.SoonTaskID = 0;
                         }
-                        cwdevice.Update(dev,false);
+                        cwdevice.Update(dev);
                     }
                     #endregion
                 }
@@ -680,7 +680,7 @@ namespace Parking.Core
                             toLct.WheelBase = 0;
                             toLct.CarSize = "";
                             toLct.CarWeight = 0;
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
                         }
                     }
                     else if (etvtask.Type == EnmTaskType.GetCar ||
@@ -694,7 +694,7 @@ namespace Parking.Core
                             toLct.ICCode = etvtask.ICCardCode;
                             toLct.WheelBase = etvtask.Distance;
                             toLct.CarSize = etvtask.CarSize;
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
                         }
                     }
                     else if (etvtask.Type == EnmTaskType.Transpose)
@@ -708,7 +708,7 @@ namespace Parking.Core
                             frLct.ICCode = etvtask.ICCardCode;
                             frLct.WheelBase = etvtask.Distance;
                             frLct.CarSize = etvtask.CarSize;
-                            cwlctn.UpdateLocation(frLct,false);
+                            cwlctn.UpdateLocation(frLct);
 
                             toLct.Status = EnmLocationStatus.Space;
                             toLct.InDate = DateTime.Parse("2017-1-1");
@@ -716,7 +716,7 @@ namespace Parking.Core
                             toLct.WheelBase = 0;
                             toLct.CarSize = "";
                             toLct.CarWeight = 0;
-                            cwlctn.UpdateLocation(toLct,false);
+                            cwlctn.UpdateLocation(toLct);
                         }
                     }
                 }
@@ -725,14 +725,14 @@ namespace Parking.Core
                 //删除作业
                 if (relatetask != null)
                 {
-                    manager.Delete(relatetask.ID,false);
+                    manager.Delete(relatetask.ID);
                 }
-                resp = manager.Delete(tid,false);
+                resp = manager.Delete(tid);
                 if (resp.Code == 1)
                 {
                     resp.Message = "手动复位作业成功,ID-" + tid;
                 }
-                manager.SaveChanges();
+                
             }
             catch (Exception ex)
             {
@@ -754,13 +754,12 @@ namespace Parking.Core
                 if (hall != null)
                 {
                     hall.TaskID = 0;
-                    new CWDevice().Update(hall,false);
+                    new CWDevice().Update(hall);
                 }
                 task.Status = EnmTaskStatus.Finished;
                 task.IsComplete = 1;
                 //manager.Update(task,false);
-                manager.Delete(task.ID, false);
-                manager.SaveChanges();
+                manager.Delete(task.ID);
             }
             catch (Exception ex)
             {
@@ -789,7 +788,7 @@ namespace Parking.Core
                         else
                         {
                             lct.Status = EnmLocationStatus.Space;
-                            new CWLocation().UpdateLocation(lct,false);
+                            new CWLocation().UpdateLocation(lct);
                         }
                     }
                 }
@@ -798,13 +797,13 @@ namespace Parking.Core
                 if (hall != null)
                 {
                     hall.TaskID = 0;
-                    new CWDevice().Update(hall,false);
+                    new CWDevice().Update(hall);
                 }
                 task.Status = EnmTaskStatus.Finished;
                 task.IsComplete = 1;
                 //manager.Update(task,false);
-                manager.Delete(task.ID, false);
-                manager.SaveChanges();
+                manager.Delete(task.ID);
+               
             }
             catch (Exception ex)
             {
@@ -839,10 +838,12 @@ namespace Parking.Core
                         {
                             halltask.Status = EnmTaskStatus.Finished;
                             halltask.IsComplete = 1;
-                            manager.Update(halltask,false);
+                            //manager.Update(halltask);
+                            manager.Delete(halltask.ID);
                         }
                         hall.TaskID = 0;
-                        cwdevice.Update(hall,false);
+                        hall.SoonTaskID = 0;
+                        cwdevice.Update(hall);
                     }
                     else
                     {
@@ -855,7 +856,7 @@ namespace Parking.Core
                     {
                         toLct.WheelBase = distance;
                         toLct.Status = EnmLocationStatus.Entering;
-                        cwlocation.UpdateLocation(toLct,false);
+                        cwlocation.UpdateLocation(toLct);
                     }
                     else
                     {
@@ -870,11 +871,11 @@ namespace Parking.Core
                 {
                     #region 更新下车位信息
                     frLct = cwlocation.FindLocation(l => l.Address == etsk.FromLctAddress && l.Warehouse == etsk.Warehouse);
-                    if (toLct != null)
+                    if (frLct != null)
                     {
                         frLct.WheelBase = distance;
                         frLct.Status = EnmLocationStatus.Outing;
-                        cwlocation.UpdateLocation(frLct,false);
+                        cwlocation.UpdateLocation(frLct);
                     }
                     else
                     {
@@ -910,8 +911,8 @@ namespace Parking.Core
                         frLct.PlateNum = "";
                         frLct.InDate = DateTime.Parse("2017-1-1");
 
-                        cwlocation.UpdateLocation(toLct,false);
-                        cwlocation.UpdateLocation(frLct,false);
+                        cwlocation.UpdateLocation(toLct);
+                        cwlocation.UpdateLocation(frLct);
                     }
                 }
                 #endregion
@@ -920,9 +921,7 @@ namespace Parking.Core
                 etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                 etsk.SendDtime = DateTime.Now;
                 etsk.Distance = distance;
-                manager.Update(etsk,false);
-
-                manager.SaveChanges();
+                manager.Update(etsk);
             }
             catch (Exception ex)
             {
@@ -945,7 +944,7 @@ namespace Parking.Core
                 tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
                 tsk.SendDtime = DateTime.Now;
                 tsk.IsComplete = 0;
-                manager.Update(tsk,false);
+                manager.Update(tsk);
                 //生成卸载指令，加入队列
                 WorkTask queue = new WorkTask()
                 {
@@ -963,9 +962,7 @@ namespace Parking.Core
                     CarSize = tsk.CarSize,
                     CarWeight = tsk.CarWeight
                 };
-                manager_queue.Add(queue,false);
-
-                manager_queue.SaveChanges();
+                manager_queue.Add(queue);
             }
             catch(Exception ex)
             {
@@ -1001,7 +998,7 @@ namespace Parking.Core
                         toLct.WheelBase = etsk.Distance;
                         toLct.CarSize = etsk.CarSize;
 
-                        cwlocation.UpdateLocation(toLct,false);
+                        cwlocation.UpdateLocation(toLct);
                     }
                 }
                 else if (etsk.Type == EnmTaskType.GetCar ||
@@ -1023,20 +1020,29 @@ namespace Parking.Core
                             frLct.Status = EnmLocationStatus.Space;
                             frLct.InDate = DateTime.Parse("2017-1-1");
                         }
-                        cwlocation.UpdateLocation(frLct,false);
+                        cwlocation.UpdateLocation(frLct);
                     }
                     #endregion
                     #region 修改车厅作业状态
                     Device hall = cwdevice.Find(cd => cd.Warehouse == etsk.Warehouse && cd.DeviceCode == etsk.HallCode);
                     if (hall != null)
                     {
-                        ImplementTask halltask = Find(tt => tt.Warehouse == hall.Warehouse && tt.DeviceCode == hall.DeviceCode);
-                        if (halltask != null)
+                        ImplementTask halltask = Find(tt => tt.Warehouse == hall.Warehouse && tt.DeviceCode == hall.DeviceCode&&tt.IsComplete==0);
+                        if (halltask != null &&
+                           (halltask.Status == EnmTaskStatus.OEVDownFinishing ||
+                            halltask.Status == EnmTaskStatus.TempEVDownFinishing))
                         {
-                            halltask.Status = EnmTaskStatus.OWaitforEVUp;
+                            if (etsk.Type == EnmTaskType.GetCar)
+                            {
+                                halltask.Status = EnmTaskStatus.OWaitforEVUp;
+                            }
+                            else
+                            {
+                                halltask.Status = EnmTaskStatus.TempWaitforEVUp;
+                            }
                             halltask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                             halltask.SendDtime = DateTime.Now;
-                            manager.Update(halltask,false);
+                            manager.Update(halltask);
                         }
                     }
                     else
@@ -1062,19 +1068,18 @@ namespace Parking.Core
                             //暂不释放车位
                             frLct.Status = EnmLocationStatus.WillBack;
                         }
-                        cwlocation.UpdateLocation(frLct,false);
+                        cwlocation.UpdateLocation(frLct);
 
                         toLct.Status = EnmLocationStatus.Occupy;
-                        cwlocation.UpdateLocation(toLct,false);
+                        cwlocation.UpdateLocation(toLct);
                     }
                 }
 
                 etsk.Status = EnmTaskStatus.UnLoadFinishing;
                 etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                 etsk.SendDtime = DateTime.Now;
-                manager.Update(etsk,false);
-
-                manager.SaveChanges();
+                manager.Update(etsk);
+                
             }
             catch (Exception ex)
             {
@@ -1110,13 +1115,7 @@ namespace Parking.Core
         {
             Log log = LogFactory.GetLogger("CWTask.DealCompleteTask");
             try
-            {
-                tsk.Status = EnmTaskStatus.Finished;
-                tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
-                tsk.SendDtime = DateTime.Now;
-                tsk.IsComplete = 1;
-                manager.Update(tsk,false);
-
+            {               
                 CWDevice cwdevice = new CWDevice();
                 Device smg = cwdevice.Find(dd => dd.Warehouse == tsk.Warehouse && dd.DeviceCode == tsk.DeviceCode);
                 if (smg == null)
@@ -1149,7 +1148,7 @@ namespace Parking.Core
                 {
                     smg.SoonTaskID = 0;
                 }
-                cwdevice.Update(smg,false);
+                cwdevice.Update(smg);
 
                 if (smg.Type == EnmSMGType.Hall)
                 {
@@ -1166,12 +1165,17 @@ namespace Parking.Core
                             frLct.Status = EnmLocationStatus.Space;
                             frLct.InDate = DateTime.Parse("2017-1-1");
 
-                            cwlocation.UpdateLocation(frLct,false);
+                            cwlocation.UpdateLocation(frLct);
                         }
                     }
                 }
 
-                manager.SaveChanges();
+                tsk.Status = EnmTaskStatus.Finished;
+                tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
+                tsk.SendDtime = DateTime.Now;
+                tsk.IsComplete = 1;
+                //manager.Update(tsk);
+                manager.Delete(tsk.ID);
             }
             catch (Exception ex)
             {
@@ -1260,7 +1264,7 @@ namespace Parking.Core
                 }
 
                 lct.Status = EnmLocationStatus.Outing;
-                Response respo = new CWLocation().UpdateLocation(lct, false);
+                Response respo = new CWLocation().UpdateLocation(lct);
                 if (respo.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 取车更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
@@ -1282,7 +1286,7 @@ namespace Parking.Core
                     CarSize = lct.CarSize,
                     CarWeight = lct.CarWeight
                 };
-                respo = manager_queue.Add(queue, false);
+                respo = manager_queue.Add(queue);
                 if (respo.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  刷卡取车，添加取车队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
@@ -1290,8 +1294,7 @@ namespace Parking.Core
                     resp.Code = 1;
                     resp.Message = "正在为你取车，请稍后";
                 }
-
-                manager_queue.SaveChanges();              
+        
             }
             catch (Exception ex)
             {
@@ -1326,7 +1329,7 @@ namespace Parking.Core
                 }
 
                 lct.Status = EnmLocationStatus.Outing;
-                resp = new CWLocation().UpdateLocation(lct,false);
+                resp = new CWLocation().UpdateLocation(lct);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 手动出车更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
@@ -1348,14 +1351,13 @@ namespace Parking.Core
                     CarSize = lct.CarSize,
                     CarWeight = lct.CarWeight
                 };
-                resp = manager_queue.Add(queue,false);
+                resp = manager_queue.Add(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  手动出车，添加取车队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
                     resp.Message = "已经加入取车队列，请稍后！";
                 }
 
-                manager_queue.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -1392,7 +1394,7 @@ namespace Parking.Core
                 }
 
                 lct.Status = EnmLocationStatus.TempGet;
-                resp = new CWLocation().UpdateLocation(lct,false);
+                resp = new CWLocation().UpdateLocation(lct);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + " 取物更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
@@ -1414,13 +1416,13 @@ namespace Parking.Core
                     CarSize = lct.CarSize,
                     CarWeight = lct.CarWeight
                 };
-                resp = manager_queue.Add(queue,false);
+                resp = manager_queue.Add(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  取物操作，添加取物队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
                     resp.Message += " 已经加入取车队列，请稍后！";
                 }
-                manager_queue.SaveChanges();
+              
             }
             catch (Exception ex)
             {
@@ -1582,8 +1584,8 @@ namespace Parking.Core
 
                 frlct.Status = EnmLocationStatus.Outing;
                 tolct.Status = EnmLocationStatus.Entering;
-                cwloctation.UpdateLocation(frlct,false);
-                cwloctation.UpdateLocation(tolct,false);
+                cwloctation.UpdateLocation(frlct);
+                cwloctation.UpdateLocation(tolct);
 
                 WorkTask queue = new WorkTask()
                 {
@@ -1601,14 +1603,13 @@ namespace Parking.Core
                     CarSize = frlct.CarSize,
                     CarWeight = frlct.CarWeight
                 };
-                resp = manager_queue.Add(queue,false);
+                resp = manager_queue.Add(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  添加挪移入队列，源车位-" + frlct.Address + "，目的车位-" + tolct.Address);
                     resp.Message = "已经加入作业队列，请稍后！";
                 }
 
-                manager_queue.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -1695,15 +1696,15 @@ namespace Parking.Core
                     CarWeight = 0,
                     IsComplete = 0
                 };
-                resp = manager.Add(task, false);
+                resp = manager.Add(task);
                 if (resp.Code == 1)
                 {
                     smg.SoonTaskID = smg.TaskID;
                     smg.TaskID = task.ID;
-                    new CWDevice().Update(smg, false);
+                    new CWDevice().Update(smg);
                     resp.Message = "正在移动，请等待！";
                 }
-                manager.SaveChanges();
+               
                 #endregion
             }
             catch (Exception ex)
@@ -1738,7 +1739,7 @@ namespace Parking.Core
                 CarWeight=0,
                 IsComplete=0
             };
-            Response resp = manager.Add(subtask,false);
+            Response resp = manager.Add(subtask);
             if (resp.Code == 1)
             {
                 Device dev = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
@@ -1747,16 +1748,14 @@ namespace Parking.Core
                 //避让优先
                 dev.SoonTaskID = dev.TaskID;
                 dev.TaskID = subtask.ID;
-                resp= new CWDevice().Update(dev,false);
-                log.Info("生成避让，绑定作业，Message-"+resp.Message);
+                resp= new CWDevice().Update(dev);
+                log.Info("生成避让，绑定作业，devicecode-"+dev.DeviceCode+" ,TaskID-"+dev.TaskID+" ,SoonTaskID-"+dev.SoonTaskID);
                 //删除队列
-                resp = manager_queue.Delete(queue.ID,false);
+                resp = manager_queue.Delete(queue.ID);
                 log.Info("生成避让，删除队列，Message-" + resp.Message);
             }
-            resp.Message = "生成避让，绑定作业成功！DeviceCode-"+subtask.DeviceCode;
-
-            manager.SaveChanges();
-
+            resp.Message = "生成避让，绑定作业成功！DeviceCode-"+subtask.DeviceCode + " ,TaskID-" + subtask.ID;
+            
             return resp;
         }
 
@@ -1766,7 +1765,7 @@ namespace Parking.Core
         /// <param name="queue"></param>
         /// <param name="dev">要执行作业的设备</param>
         /// <returns></returns>
-        public Response CreateDeviceTaskByQueue(WorkTask queue,Device dev,bool isUnload)
+        public Response CreateDeviceTaskByQueue(WorkTask queue,Device dev)
         {
             Log log = LogFactory.GetLogger("CWTask.CreateDeviceTaskByQueue");
             CWLocation cwlctn = new CWLocation();
@@ -1784,11 +1783,7 @@ namespace Parking.Core
                 else if (queue.TelegramType == 11 && queue.SubTelegramType == 1)
                 {
                     state = EnmTaskStatus.TWaitforMove;
-                }
-                else if (queue.TelegramType == 14 && queue.SubTelegramType == 1)
-                {
-                    state = EnmTaskStatus.TWaitforUnload;
-                }
+                }               
             }
             else if (dev.Type == EnmSMGType.Hall)
             {
@@ -1837,12 +1832,7 @@ namespace Parking.Core
             {
                 #region 生成挪移作业
                 string toaddrs = "";
-                if (isUnload)
-                {
-                    toaddrs = queue.ToLctAddress;
-                }
-                else
-                {
+              
                     if (queue.MasterType == EnmTaskType.SaveCar)
                     {
                         toaddrs = queue.ToLctAddress;
@@ -1851,7 +1841,7 @@ namespace Parking.Core
                     {
                         toaddrs = queue.FromLctAddress;
                     }
-                }
+               
                 int wh = queue.Warehouse;
                 Location tolctn = cwlctn.FindLocation(lc => lc.Address == toaddrs && lc.Warehouse == wh);
                 if (tolctn != null)
@@ -1884,8 +1874,8 @@ namespace Parking.Core
                             transLctn.Status = EnmLocationStatus.Entering;
                             transLctn.ICCode = forwardLctn.ICCode;
 
-                            cwlctn.UpdateLocation(forwardLctn, false);
-                            cwlctn.UpdateLocation(transLctn, false);
+                            cwlctn.UpdateLocation(forwardLctn);
+                            cwlctn.UpdateLocation(transLctn);
                             #endregion
                             //生成挪移作业，绑定设备，当前作业暂不执行
                             ImplementTask transtask = new ImplementTask()
@@ -1896,6 +1886,7 @@ namespace Parking.Core
                                 Status = EnmTaskStatus.TWaitforLoad,
                                 SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                 SendDtime = DateTime.Now,
+                                CreateDate=DateTime.Now,
                                 HallCode = 11,
                                 FromLctAddress = forwardLctn.Address,
                                 ToLctAddress = transLctn.Address,
@@ -1910,8 +1901,8 @@ namespace Parking.Core
                             {
                                 dev.SoonTaskID = 0;
                                 dev.TaskID = transtask.ID;
-                                resp = new CWDevice().Update(dev,false);
-                                log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
+                                resp = new CWDevice().Update(dev);
+                                log.Info("转化为执行作业，绑定于设备，deviceCode-" + dev.DeviceCode+" ,TaskID-"+dev.TaskID);
 
                                 #region 判断是否生成回挪作业
                                 bool isBack = false;
@@ -1937,12 +1928,11 @@ namespace Parking.Core
                                         CarSize = forwardLctn.CarSize,
                                         CarWeight = forwardLctn.CarWeight
                                     };
-                                    manager_queue.Add(transback_queue,false);
+                                    manager_queue.Add(transback_queue);
                                 }
                                 #endregion
                             }
-                            manager_queue.SaveChanges();
-
+                           
                             return resp;
                             #endregion
                         }
@@ -1970,6 +1960,7 @@ namespace Parking.Core
                 Status = state,
                 SendStatusDetail = EnmTaskStatusDetail.NoSend,
                 SendDtime = DateTime.Now,
+                CreateDate = DateTime.Now,
                 HallCode = queue.HallCode,
                 FromLctAddress = queue.FromLctAddress,
                 ToLctAddress = queue.ToLctAddress,
@@ -1984,17 +1975,32 @@ namespace Parking.Core
             {               
                 dev.SoonTaskID = 0;
                 dev.TaskID = subtask.ID;
-                resp = new CWDevice().Update(dev,false);
-                log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
+                resp = new CWDevice().Update(dev);
+                log.Info("转化为执行作业，绑定于设备，devicode-" + dev.DeviceCode+" ,TaskID- "+dev.TaskID);
                 //删除队列
-                resp = manager_queue.Delete(queue.ID,false);
-                log.Info("转化为执行作业，删除队列，Message-" + resp.Message);
+                resp = manager_queue.Delete(queue.ID);
+                log.Info("转化为执行作业，删除队列，WorkQueue ID-" + queue.ID);
             }
-            resp.Message = "转化为执行作业，操作成功！DeviceCode-" + subtask.DeviceCode;
-
-            manager.SaveChanges();
-
+            resp.Message = "转化为执行作业，操作成功！DeviceCode-" + subtask.DeviceCode+ " ,TaskID- " + subtask.ID;
+            
             return resp;
+        }
+
+        /// <summary>
+        /// 处理ETV卸载作业,将队列中的卸载作业删除，
+        /// 将原来等待卸载的作业，变为执行作业
+        /// </summary>
+        /// <param name="unloadQueue"></param>
+        /// <param name="smg"></param>
+        /// <returns></returns>
+        public void DealTVUnloadTask(ImplementTask unloadtask, WorkTask unloadQueue)
+        {
+            unloadtask.Status = EnmTaskStatus.TWaitforUnload;
+            unloadtask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            unloadtask.SendDtime = DateTime.Now.AddMinutes(-1);
+            manager.Update(unloadtask);
+
+            manager_queue.Delete(unloadQueue.ID);
         }
 
         /// <summary>
@@ -2123,6 +2129,7 @@ namespace Parking.Core
                                 Status = EnmTaskStatus.TWaitforMove,
                                 SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                 SendDtime = DateTime.Now,
+                                CreateDate=DateTime.Now,
                                 HallCode = queue.HallCode,
                                 FromLctAddress = otherEtv.Address,
                                 ToLctAddress = toAddress,
@@ -2137,13 +2144,10 @@ namespace Parking.Core
                             {
                                 otherEtv.SoonTaskID = 0;
                                 otherEtv.TaskID = subtask.ID;
-                                resp = new CWDevice().Update(otherEtv,false);
-                                log.Info("生成避让作业，并绑定于设备 , 避让卡号- " + queue.ICCardCode + " , 目的车位-" + toAddress);
-
-                                manager.SaveChanges();
-                                return true;
+                                resp = new CWDevice().Update(otherEtv);
+                                log.Info("生成避让作业，并绑定于设备 , 避让卡号- " + queue.ICCardCode + " , 目的车位-" + toAddress);                               
                             }
-                            return false;
+                            return true;
                             #endregion
                         }
                         else
@@ -2241,6 +2245,7 @@ namespace Parking.Core
                                     Status = EnmTaskStatus.TWaitforMove,
                                     SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                     SendDtime = DateTime.Now,
+                                    CreateDate=DateTime.Now,
                                     HallCode = queue.HallCode,
                                     FromLctAddress = otherEtv.Address,
                                     ToLctAddress = toAddress,
@@ -2255,7 +2260,7 @@ namespace Parking.Core
                                 {
                                     otherEtv.SoonTaskID = othertak.ID;
                                     otherEtv.TaskID = subtask.ID;
-                                    resp = new CWDevice().Update(otherEtv,false);
+                                    resp = new CWDevice().Update(otherEtv);
                                     log.Info("生成避让作业，并绑定于设备 , 避让卡号- " + queue.ICCardCode + " , 目的车位-" + toAddress);
 
                                     manager.SaveChanges();
@@ -2385,6 +2390,7 @@ namespace Parking.Core
                 Status = state,
                 SendStatusDetail = EnmTaskStatusDetail.NoSend,
                 SendDtime = DateTime.Now,
+                CreateDate=DateTime.Now,
                 HallCode = master.HallCode,
                 FromLctAddress = master.FromLctAddress,
                 ToLctAddress = master.ToLctAddress,
@@ -2399,10 +2405,9 @@ namespace Parking.Core
             {
                 hall.TaskID = hallTask.ID;
                 hall.SoonTaskID = 0;
-                cwdevice.Update(hall,false);
+                cwdevice.Update(hall);
             }
-            manager.SaveChanges();
-
+           
             bool isAdd = false;
             if (tv.IsAble == 1 && tv.IsAvailabe == 1)
             {
@@ -2443,8 +2448,8 @@ namespace Parking.Core
                                 transLctn.Status = EnmLocationStatus.Entering;
                                 transLctn.ICCode = forwardLctn.ICCode;
 
-                                cwlctn.UpdateLocation(forwardLctn,false);
-                                cwlctn.UpdateLocation(transLctn,false);
+                                cwlctn.UpdateLocation(forwardLctn);
+                                cwlctn.UpdateLocation(transLctn);
                                 #endregion
                                 //生成挪移作业，绑定设备，生成当前TV装载作业，加入队列
                                 ImplementTask transtask = new ImplementTask()
@@ -2455,6 +2460,7 @@ namespace Parking.Core
                                     Status = EnmTaskStatus.TWaitforLoad,
                                     SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                     SendDtime = DateTime.Now,
+                                    CreateDate = DateTime.Now,
                                     HallCode = 11,
                                     FromLctAddress = forwardLctn.Address,
                                     ToLctAddress = transLctn.Address,
@@ -2469,7 +2475,7 @@ namespace Parking.Core
                                 {
                                     tv.SoonTaskID = 0;
                                     tv.TaskID = transtask.ID;
-                                    resp = new CWDevice().Update(tv,false);
+                                    resp = new CWDevice().Update(tv);
                                     log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
 
                                     #region 生成原来TV装载作业，同时删除该队列
@@ -2490,10 +2496,10 @@ namespace Parking.Core
                                         CarSize = master.CarSize,
                                         CarWeight = master.CarWeight
                                     };
-                                    manager_queue.Add(waitqueue,false);
+                                    manager_queue.Add(waitqueue);
 
                                     //删除队列
-                                    resp = manager_queue.Delete(master.ID,false);
+                                    resp = manager_queue.Delete(master.ID);
 
                                     #endregion
 
@@ -2522,7 +2528,7 @@ namespace Parking.Core
                                             CarSize = forwardLctn.CarSize,
                                             CarWeight = forwardLctn.CarWeight
                                         };
-                                        manager_queue.Add(transback_queue,false);
+                                        manager_queue.Add(transback_queue);
                                     }
                                     #endregion
                                 }
@@ -2530,8 +2536,6 @@ namespace Parking.Core
                                 {
                                     log.Info("提前装载时，生成执行作业，加入队列时异常，Message-" + resp.Message);
                                 }
-
-                                manager.SaveChanges();
 
                                 return resp;
                                 #endregion
@@ -2558,12 +2562,11 @@ namespace Parking.Core
                                     CarSize = master.CarSize,
                                     CarWeight = master.CarWeight
                                 };
-                                manager_queue.Add(waitqueue,false);
+                                manager_queue.Add(waitqueue);
 
                                 //删除队列
-                                resp = manager_queue.Delete(master.ID,false);
-
-                                manager_queue.SaveChanges();
+                                resp = manager_queue.Delete(master.ID);
+                                
                                 #endregion
 
                                 return resp;
@@ -2584,6 +2587,7 @@ namespace Parking.Core
                         Status = EnmTaskStatus.TWaitforLoad,
                         SendStatusDetail = EnmTaskStatusDetail.NoSend,
                         SendDtime = DateTime.Now,
+                        CreateDate = DateTime.Now,
                         HallCode = master.HallCode,
                         FromLctAddress = master.FromLctAddress,
                         ToLctAddress = master.ToLctAddress,
@@ -2598,7 +2602,7 @@ namespace Parking.Core
                     {
                         tv.TaskID = TvTask.ID;
                         tv.SoonTaskID = 0;
-                        cwdevice.Update(tv,false);
+                        cwdevice.Update(tv);
                     }
                 }
                 else
@@ -2629,15 +2633,12 @@ namespace Parking.Core
                     CarSize = master.CarSize,
                     CarWeight = master.CarWeight
                 };
-                manager_queue.Add(waitqueue, false);
+                manager_queue.Add(waitqueue);
             }
 
             //删除队列
-            resp = manager_queue.Delete(master.ID, false);
-
-            //提交，更新数据库
-            manager_queue.SaveChanges();
-
+            resp = manager_queue.Delete(master.ID);
+            
             #endregion
             return resp;
         }
@@ -2709,8 +2710,8 @@ namespace Parking.Core
                                     transLctn.Status = EnmLocationStatus.Entering;
                                     transLctn.ICCode = forwardLctn.ICCode;
 
-                                    cwlctn.UpdateLocation(forwardLctn,false);
-                                    cwlctn.UpdateLocation(transLctn,false);
+                                    cwlctn.UpdateLocation(forwardLctn);
+                                    cwlctn.UpdateLocation(transLctn);
                                     #endregion
                                     //生成挪移作业，绑定设备，生成当前TV装载作业，加入队列
                                     ImplementTask transtask = new ImplementTask()
@@ -2721,6 +2722,7 @@ namespace Parking.Core
                                         Status = EnmTaskStatus.TWaitforLoad,
                                         SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                         SendDtime = DateTime.Now,
+                                        CreateDate = DateTime.Now,
                                         HallCode = 11,
                                         FromLctAddress = forwardLctn.Address,
                                         ToLctAddress = transLctn.Address,
@@ -2735,7 +2737,7 @@ namespace Parking.Core
                                     {
                                         tv.SoonTaskID = 0;
                                         tv.TaskID = transtask.ID;
-                                        resp = new CWDevice().Update(tv,false);
+                                        resp = new CWDevice().Update(tv);
                                         log.Info("转化为执行作业，绑定于设备，Message-" + resp.Message);
 
                                         isCreateITask = false;
@@ -2756,7 +2758,7 @@ namespace Parking.Core
                                             CarSize = master.CarSize,
                                             CarWeight = master.CarWeight
                                         };
-                                        manager_queue.Add(waitqueue,false);
+                                        manager_queue.Add(waitqueue);
                                         #endregion
 
                                         #region 判断是否生成回挪作业
@@ -2784,7 +2786,7 @@ namespace Parking.Core
                                                 CarSize = forwardLctn.CarSize,
                                                 CarWeight = forwardLctn.CarWeight
                                             };
-                                            manager_queue.Add(transback_queue,false);
+                                            manager_queue.Add(transback_queue);
                                         }
                                         #endregion
                                     }
@@ -2820,6 +2822,7 @@ namespace Parking.Core
                                 Status = EnmTaskStatus.TWaitforLoad,
                                 SendStatusDetail = EnmTaskStatusDetail.NoSend,
                                 SendDtime = DateTime.Now,
+                                CreateDate = DateTime.Now,
                                 HallCode = master.HallCode,
                                 FromLctAddress = master.FromLctAddress,
                                 ToLctAddress = master.ToLctAddress,
@@ -2834,7 +2837,7 @@ namespace Parking.Core
                             {
                                 tv.TaskID = TvTask.ID;
                                 tv.SoonTaskID = 0;
-                                cwdevice.Update(tv,false);
+                                cwdevice.Update(tv);
                             }
                         }
                         //生成车厅作业，加入队列中
@@ -2871,12 +2874,11 @@ namespace Parking.Core
                             CarSize = master.CarSize,
                             CarWeight = master.CarWeight
                         };
-                        manager_queue.Add(waitHallQueue,false);
+                        manager_queue.Add(waitHallQueue);
 
                         //删除队列
-                        manager_queue.Delete(master.ID,false);
-
-                        manager_queue.SaveChanges();
+                        manager_queue.Delete(master.ID);
+                        
                     }
                 }
                 return resp;
@@ -2925,6 +2927,7 @@ namespace Parking.Core
                     Status = EnmTaskStatus.TWaitforLoad,
                     SendStatusDetail = EnmTaskStatusDetail.NoSend,
                     SendDtime = DateTime.Now,
+                    CreateDate = DateTime.Now,
                     HallCode = 11,
                     FromLctAddress = frLctn.Address,
                     ToLctAddress = toLctn.Address,
@@ -2939,7 +2942,7 @@ namespace Parking.Core
                 {
                     etv.TaskID = TvTask.ID;
                     etv.SoonTaskID = 0;
-                    new CWDevice().Update(etv,false);
+                    new CWDevice().Update(etv);
                 }
             }
             else
@@ -2961,17 +2964,16 @@ namespace Parking.Core
                     CarSize = frLctn.CarSize,
                     CarWeight = frLctn.CarWeight
                 };
-                manager_queue.Add(tvQueue,false);
+                manager_queue.Add(tvQueue);
             }
             //修改车位状态
             frLctn.Status = EnmLocationStatus.Outing;
             toLctn.Status = EnmLocationStatus.Entering;
             CWLocation cwlctn = new CWLocation();
-            cwlctn.UpdateLocation(frLctn,false);
-            cwlctn.UpdateLocation(toLctn,false);
+            cwlctn.UpdateLocation(frLctn);
+            cwlctn.UpdateLocation(toLctn);
             #endregion
-
-            manager.SaveChanges();
+            
         }
 
 
@@ -3070,7 +3072,7 @@ namespace Parking.Core
                 if (toLctn != null)
                 {
                     toLctn.Status = EnmLocationStatus.Occupy;
-                    cwlctn.UpdateLocation(toLctn,false);
+                    cwlctn.UpdateLocation(toLctn);
                 }
             }
             else if (queue.IsMaster == 1)
@@ -3084,7 +3086,7 @@ namespace Parking.Core
                         if (toLctn != null)
                         {
                             toLctn.Status = EnmLocationStatus.Occupy;
-                            cwlctn.UpdateLocation(toLctn,false);
+                            cwlctn.UpdateLocation(toLctn);
                         }
                     }
                     else if (queue.MasterType == EnmTaskType.GetCar)
@@ -3093,7 +3095,7 @@ namespace Parking.Core
                         if (frLctn != null)
                         {
                             frLctn.Status = EnmLocationStatus.Occupy;
-                            cwlctn.UpdateLocation(frLctn,false);
+                            cwlctn.UpdateLocation(frLctn);
                         }
                     }
                     else if(queue.MasterType == EnmTaskType.Transpose)
@@ -3103,9 +3105,10 @@ namespace Parking.Core
                         if (frLctn!=null&&toLctn != null)
                         {
                             frLctn.Status = EnmLocationStatus.Occupy;
-                            cwlctn.UpdateLocation(frLctn,false);
+                            cwlctn.UpdateLocation(frLctn);
+
                             toLctn.Status = EnmLocationStatus.Space;
-                            cwlctn.UpdateLocation(toLctn,false);
+                            cwlctn.UpdateLocation(toLctn);
                         }
                     }
                     #endregion
@@ -3117,9 +3120,8 @@ namespace Parking.Core
                     return resp;
                 }
             }
-            resp= manager_queue.Delete(ID,false);
-            manager_queue.SaveChanges();
-
+            resp= manager_queue.Delete(ID);
+           
             return resp;
         }
 

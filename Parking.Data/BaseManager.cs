@@ -11,17 +11,21 @@ namespace Parking.Data
 {
     public abstract class BaseManager<TEntity> where TEntity:class
     {
+
+        public BaseManager() :
+         this(ContextFactory.CurrentContext())
+        {
+
+        }
+
+        #region
         protected Repository<TEntity> _repository;
 
         public BaseManager(DbContext dbContext)
         {
             _repository = new Repository<TEntity>(dbContext);
         }
-
-        public BaseManager() : 
-            this(ContextFactory.CurrentContext())
-        {
-        }
+        #endregion
 
         /// <summary>
         /// 查找数据列表
@@ -39,7 +43,13 @@ namespace Parking.Data
         public Page<TEntity> FindPageList(Page<TEntity> paging,OrderParam param)
         {
             int Num = 0;
-            paging.ItemLists = _repository.FindPageList(paging.PageSize, paging.PageIndex, out Num, param).ToList();
+            IQueryable<TEntity> iqueryLst = _repository.FindPageList(paging.PageSize, paging.PageIndex, out Num, param);
+            List<TEntity> checkLst = new List<TEntity>();
+            foreach(TEntity en in iqueryLst)
+            {               
+                checkLst.Add(en);
+            }
+            paging.ItemLists = checkLst;
             paging.TotalNumber = Num;
             return paging;
         }

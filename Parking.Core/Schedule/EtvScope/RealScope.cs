@@ -102,7 +102,7 @@ namespace Parking.Core.Schedule
         /// <returns></returns>
         private int PhysicRightCol(int pLeft, int pRight)
         {
-            int rightCol = pLeft;
+            int rightCol = pRight;
             foreach (Device smg in cEtvLst)
             {
                 string addr = smg.Address;
