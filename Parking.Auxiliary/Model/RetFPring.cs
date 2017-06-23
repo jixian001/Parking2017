@@ -8,6 +8,7 @@ namespace Parking.Auxiliary
 {
     public class RetFPring
     {
+        public string SNNumber { get; set; }
         public string UserName { get; set; }
         public string Plate { get; set; }
         public string Warehouse { get; set; }

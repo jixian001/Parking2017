@@ -228,6 +228,12 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label for="fpoutLoc" class="col-md-2 control-label">指纹编号</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="fpcode" name="fpcode" />
+                                </div>
+                            </div>
+                            <div class="form-group">
                                 <div class="col-md-10 col-md-offset-2">
                                     <button type="button" id="btnFPrint" class="btn btn-default">采集指纹</button>
                                 </div>
@@ -501,6 +507,7 @@
 
             $("#btnFPrint").click(function () {
 
+                $("input[name='fpcode']").val("");
                 $("input[name='fpusername']").val("");
                 $("input[name='fpplate']").val("");
                 $("input[name='fpsavewh']").val("");
@@ -562,7 +569,8 @@
                         cache: false,
                         success: function (resp) {
                             if (resp.Code == 1) {
-                                var iRet = resp.Data;
+                                var iRet = resp.Data;                               
+                                $("input[name='fpcode']").val(iRet.SNNumber);
                                 $("input[name='fpusername']").val(iRet.UserName);
                                 $("input[name='fpplate']").val(iRet.Plate);
                                 $("input[name='fpsavewh']").val(iRet.Warehouse);

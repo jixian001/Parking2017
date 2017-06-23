@@ -363,6 +363,7 @@ namespace Parking.Core
                 {
                     resp.Code = 1;
                     RetFPring iRet = new RetFPring();
+                    iRet.SNNumber = origPrint.SN_Number.ToString();
                     Customer cust = new CWICCard().FindCust(origPrint.CustID);
                     if (cust != null)
                     {
