@@ -665,16 +665,23 @@ namespace Parking.Core
                 {
                     log.Debug("指纹-" + fp.FingerInfo + " ,转化为Byte失败！");
                 }
-                
+               
                 byte[] psMB = orig;
                 int nback = FiPrintMatch.FPIMatch(psMB, psTZ, iLevel);
+                //log.Warn("模块参数 ： " + byteToHexStr(psMB));
+                //log.Warn("对比参数 ： " + byteToHexStr(psTZ));
                 //比对成功
                 if (nback == 0)
                 {
                     log.Debug("指纹对比，成功，SN- " + fp.SN_Number);
+                    //log.Warn("指纹对比，成功，SN- " + fp.SN_Number);
                     print = fp;
                     break;
-                }               
+                }
+                else
+                {
+                    log.Warn("指纹对比失败！");
+                }              
             }
             
             if (moHall == null)
@@ -1230,6 +1237,24 @@ namespace Parking.Core
                 log.Error(ex.ToString());
             }
             return resp;
+        }
+
+        /// <summary>
+        /// 字节数组转16进制字符串
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string byteToHexStr(byte[] bytes)
+        {
+            string returnStr = "";
+            if (bytes != null)
+            {
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    returnStr += bytes[i].ToString("X") + " ";
+                }
+            }
+            return returnStr;
         }
 
 

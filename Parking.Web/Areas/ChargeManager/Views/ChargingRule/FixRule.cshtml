@@ -24,12 +24,12 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-md-2">卡类型</label>
+                        <label class="control-label col-md-2">用户类型</label>
                         <div class="col-md-4">
                             <select id="ccard" name="ccard" class="form-control">
                                 <option value="1">请选择</option>
-                                <option value="2">定期卡</option>
-                                <option value="3">固定卡</option>                               
+                                <option value="2">定期用户</option>
+                                <option value="3">固定用户</option>                               
                             </select>
                         </div>
                     </div>
@@ -114,16 +114,18 @@
                         visible: false
                     },
                     {
-                        title: "卡类型",
+                        title: "用户类型",
                         field: "ICType",
                         align: "center",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter:formatictype
                     },
                     {
                         title: "收费类型",
                         field: "Unit",
                         align: "center",
-                        valign: "middle"
+                        valign: "middle",
+                        formatter: formatfeetype
                     },
                     {
                         title: "金额",
@@ -164,6 +166,34 @@
 
             function queryParams(params) {
                 return params;
+            }
+
+            function formatictype(value)
+            {
+                var msg="";
+                if (value == 2)
+                {
+                    msg = "定期用户";
+                }
+                else if (value == 3) {
+                    msg = "固定用户";
+                }
+                return msg;
+            }
+
+            function formatfeetype(value)
+            {
+                var msg = "";
+                if (value == 1) {
+                    msg = "月";
+                }
+                else if (value == 2) {
+                    msg = "季";
+                }
+                else if (value == 3) {
+                    msg = "年";
+                }
+                return msg;
             }
 
             function operateFormatter(value, row, index) {

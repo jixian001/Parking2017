@@ -472,6 +472,8 @@ namespace Parking.Core
                     resp.Message = "找不到对应的任务,ID-" + tid;
                     return resp;
                 }
+                itask.Status = EnmTaskStatus.Finished;
+                itask.IsComplete = 1;
 
                 Device dev = cwdevice.Find(d => d.Warehouse == itask.Warehouse && d.DeviceCode == itask.DeviceCode);
                 if (dev != null)
@@ -587,8 +589,11 @@ namespace Parking.Core
                 //删除作业
                 if (relatetask != null)
                 {
+                    relatetask.Status = EnmTaskStatus.Finished;
+                    relatetask.IsComplete = 1;
                     manager.Delete(relatetask.ID);
                 }
+
                 resp = manager.Delete(tid);
                 if (resp.Code == 1)
                 {
@@ -623,6 +628,8 @@ namespace Parking.Core
                     resp.Message = "找不到对应的任务,ID-" + tid;
                     return resp;
                 }
+                itask.Status = EnmTaskStatus.Finished;
+                itask.IsComplete = 1;
 
                 Device dev = cwdevice.Find(d => d.Warehouse == itask.Warehouse && d.DeviceCode == itask.DeviceCode);
                 if (dev != null)
@@ -725,6 +732,8 @@ namespace Parking.Core
                 //删除作业
                 if (relatetask != null)
                 {
+                    relatetask.Status = EnmTaskStatus.Finished;
+                    relatetask.IsComplete = 1;
                     manager.Delete(relatetask.ID);
                 }
                 resp = manager.Delete(tid);
@@ -1170,9 +1179,7 @@ namespace Parking.Core
                     }
                 }
 
-                tsk.Status = EnmTaskStatus.Finished;
-                tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
-                tsk.SendDtime = DateTime.Now;
+                tsk.Status = EnmTaskStatus.Finished;              
                 tsk.IsComplete = 1;
                 //manager.Update(tsk);
                 manager.Delete(tsk.ID);

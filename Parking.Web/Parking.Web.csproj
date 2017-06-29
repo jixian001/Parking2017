@@ -176,6 +176,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Areas\ChargeManager\ChargeManagerAreaRegistration.cs" />
+    <Compile Include="Areas\ChargeManager\Controllers\ChargeTestController.cs" />
     <Compile Include="Areas\ChargeManager\Controllers\ChargingRuleController.cs" />
     <Compile Include="Areas\ChargeManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\ChargeManager\Models\FixCustInfo.cs" />
@@ -322,6 +323,8 @@
     <Content Include="Areas\CustomManager\Views\CustomerManager\ChangeDeadline.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\_PartialSideNav.cshtml" />
     <Content Include="Areas\SystemManager\Views\FaultSummary\ManageFaultInfo.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\ChargeTest\Index.cshtml" />
+    <Content Include="Areas\ChargeManager\Views\ChargeTest\_PartialSideNav.cshtml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />

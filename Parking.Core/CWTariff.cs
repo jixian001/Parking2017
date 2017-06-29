@@ -648,7 +648,7 @@ namespace Parking.Core
                     return resp;
                 }
                 TimeSpan ts = outdate - indate;
-                double totalMinutes = ts.TotalMinutes;
+                double totalMinutes =Math.Ceiling(ts.TotalMinutes);
                 TimeSpan span = TimeSpan.Parse(orderdetail.OrderFreeTime.Trim());
                 if (span.TotalMinutes > totalMinutes)
                 {
@@ -748,7 +748,7 @@ namespace Parking.Core
                     {
                         //入库时间落在时间段内
                         TimeSpan ts = Outdate - Indate;
-                        double totalMinutes = ts.TotalMinutes;
+                        double totalMinutes = Math.Ceiling(ts.TotalMinutes);
                         #region 停车时间小于免费时长的
                         if (isInit)
                         {
@@ -804,7 +804,7 @@ namespace Parking.Core
 
                             #region 本段时间内的时间 计算在本段内的费用
                             TimeSpan frontTS = end - Indate;
-                            int frontMinutes = (int)frontTS.TotalMinutes;
+                            int frontMinutes = (int)Math.Ceiling(frontTS.TotalMinutes);
                             float sectFee = 0;
                             if (frontMinutes <=TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
                             {
@@ -857,7 +857,7 @@ namespace Parking.Core
                     if (DateTime.Compare(st, newIndate) <= 0 && DateTime.Compare(nextEnd, newIndate) >= 0)
                     {
                         TimeSpan ts = newOutdate - newIndate;
-                        double totalMinutes = ts.TotalMinutes;
+                        double totalMinutes = Math.Ceiling(ts.TotalMinutes);
                         #region
                         //是从这个时间段开始入库的
                         if (isInit)
@@ -910,7 +910,7 @@ namespace Parking.Core
                             List<HourSectionInfo> strideTimeslotLst = timeslotLst.FindAll(ti => ti.StartTime != timeslot.StartTime);
                             //本段时间内的时间
                             TimeSpan frontTS = nextEnd - newIndate;
-                            int frontMinutes = (int)frontTS.TotalMinutes;
+                            int frontMinutes = (int)Math.Ceiling(frontTS.TotalMinutes);
 
                             float sectFee = 0;
                             if (frontMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
@@ -987,7 +987,7 @@ namespace Parking.Core
                 {
                     #region
                     TimeSpan ts = outdate - st;
-                    int minutes = (int)ts.TotalMinutes;
+                    int minutes = (int)Math.Ceiling(ts.TotalMinutes);
                     //整数部分
                     int integarPart = minutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                     //余数部分
@@ -1019,7 +1019,7 @@ namespace Parking.Core
                     
                     //计算本段内的停车费用，时起始时间及终点时间，以时间段的时间为段
                     TimeSpan ts = end - st;
-                    int minutes = (int)ts.TotalMinutes;
+                    int minutes = (int)Math.Ceiling(ts.TotalMinutes);
                     //整数部分
                     int integarPart = minutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
 
@@ -1047,7 +1047,7 @@ namespace Parking.Core
                 {
                     #region
                     TimeSpan ts = outdate - st;
-                    int minutes = (int)ts.TotalMinutes;
+                    int minutes = (int)Math.Ceiling(ts.TotalMinutes);
                     //整数部分
                     int integarPart = minutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                     //余数部分
@@ -1081,7 +1081,7 @@ namespace Parking.Core
                     }
                    
                     TimeSpan ts = nextEnd - st;
-                    int minutes = (int)ts.TotalMinutes;
+                    int minutes = (int)Math.Ceiling(ts.TotalMinutes);
                     //整数部分
                     int integarPart = minutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
 
@@ -1122,7 +1122,7 @@ namespace Parking.Core
                 #region
                 //本段时间内的时间
                 TimeSpan frontTS = timeslot.EndTime - timeslot.StartTime;
-                int frontMinutes = (int)frontTS.TotalMinutes;
+                int frontMinutes = (int)Math.Ceiling(frontTS.TotalMinutes);
 
                 float sectFee = 0;
                 if (frontMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)

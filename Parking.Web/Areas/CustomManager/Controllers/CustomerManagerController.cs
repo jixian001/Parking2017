@@ -132,7 +132,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 if (iccd != null)
                 {
                     iccd.CustID = addcust.ID;
-                    resp = cwiccd.Update(iccd,false);
+                    resp = cwiccd.Update(iccd);
                 }
 
                 #region 绑定指纹，更新指纹信息
@@ -144,7 +144,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger,false);
+                        fprint.Update(finger);
                     }
                 }
                 if (!string.IsNullOrEmpty(model.FingerPrint2))
@@ -154,7 +154,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger,false);
+                        fprint.Update(finger);
                     }
                 }
                 if (!string.IsNullOrEmpty(model.FingerPrint3))
@@ -164,13 +164,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (finger != null)
                     {
                         finger.CustID = addcust.ID;
-                        fprint.Update(finger,false);
+                        fprint.Update(finger);
                     }
                 }               
                 #endregion
             }
-            cwiccd.SaveChange();
-
+           
             #endregion
             return RedirectToAction("Index");
         }
@@ -541,7 +540,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 if (newIccd != null)
                 {
                     newIccd.CustID = cust.ID;
-                    cwiccd.Update(newIccd,false);
+                    cwiccd.Update(newIccd);
                 }
             }
             else
@@ -551,7 +550,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     //释放原来卡号
                     //释放旧卡                  
                     oriIccd.CustID = 0;
-                    cwiccd.Update(oriIccd,false);
+                    cwiccd.Update(oriIccd);
                 }
                 else //两卡都存在
                 {
@@ -576,10 +575,10 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                         #endregion
                         //释放旧卡                  
                         oriIccd.CustID = 0;
-                        cwiccd.Update(oriIccd,false);
+                        cwiccd.Update(oriIccd);
                         //绑定新卡                  
                         newIccd.CustID = cust.ID;
-                        cwiccd.Update(newIccd,false);
+                        cwiccd.Update(newIccd);
                     }
                 }
             }   
@@ -590,7 +589,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             cust.UserName = model.UserName;
             cust.FamilyAddress = model.FamilyAddress;
 
-            cwiccd.UpdateCust(cust,false);
+            cwiccd.UpdateCust(cust);
 
             #region 更新指纹
             CWFingerPrint cwfprint = new CWFingerPrint();
@@ -603,7 +602,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (fp.CustID == 0)
                     {
                         fp.CustID = cust.ID;
-                        cwfprint.Update(fp, false);
+                        cwfprint.Update(fp);
                     }
                 }
             }
@@ -616,7 +615,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (fp.CustID == 0)
                     {
                         fp.CustID = cust.ID;
-                        cwfprint.Update(fp, false);
+                        cwfprint.Update(fp);
                     }
                 }
             }
@@ -629,14 +628,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     if (fp.CustID == 0)
                     {
                         fp.CustID = cust.ID;
-                        cwfprint.Update(fp, false);
+                        cwfprint.Update(fp);
                     }
                 }
             }
             #endregion
-
-            cwiccd.SaveChange();
-
+            
             #endregion
             return RedirectToAction("Index");
         }

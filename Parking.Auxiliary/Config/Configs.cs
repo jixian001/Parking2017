@@ -25,7 +25,7 @@ namespace Parking.Auxiliary
         /// <param name="value">要修改为的值</param>
         public static void SetValue(string key, string value)
         {
-            Log log = LogFactory.GetLogger("XMLHelper.SetValue");
+            Log log = LogFactory.GetLogger("Configs.SetValue");
             try
             {
                 string path = "";

@@ -1,0 +1,100 @@
+﻿
+@{
+    ViewBag.Title = "收费测试";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li class="active">收费测试</li>
+        </ol>
+
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="txtInDtime" class="col-md-2 control-label">入库时间</label>
+                <div class="col-md-10">
+                    <input type="date" class="form-control form_datetime" id="txtInDtime" name="txtInDtime" placeholder="2017-04-01 00:00:00" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="txtInDtime" class="col-md-2 control-label">出库时间</label>
+                <div class="col-md-10">
+                    <input type="date" class="form-control form_datetime" id="txtOutDtime" name="txtOutDtime" placeholder="2017-04-01 00:00:00" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="txtInDtime" class="col-md-2 control-label">停车费用</label>
+                <div class="col-md-10">
+                    <input type="text" class="form-control" id="txtfee" name="txtfee" disabled/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2">
+                    <button type="button" id="btnIn" class="btn btn-default">计算停车费用</button>
+                </div>
+            </div>
+        </div>
+        <div>
+            累计停车时长：&nbsp;&nbsp;&nbsp;<span id="disp" class="text-success"></span>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+
+            $('.form_datetime').datetimepicker({
+                language: 'zh-CN',
+                weekStart: 1,
+                todayBtn: 1,
+                autoclose: 1,
+                todayHighlight: 1,
+                startView: 2,
+                forceParse: 0,
+                showMeridian: 1
+            });
+
+            $("#btnIn").click(function () {
+
+                $("#txtfee").val("");
+                $("#disp").val("");
+
+                var indtime = $("#txtInDtime").val();
+                var outdtime = $("#txtOutDtime").val();
+                if (indtime == "" || outdtime == "")
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请输入有效的时间"
+                    });
+                    return;
+                }
+
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("CalculateFee")",
+                    data: { "indtime": indtime, "outdtime": outdtime },
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#btnIn").text("查询费用中...");
+                    },
+                    success: function (nback) {
+                        $("#txtfee").val(nback.fee);
+                        $("#disp").html(nback.msg);                       
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#btnIn").text("计算停车费用");
+                    }
+                });
+
+            });
+
+        })
+    </script>
+    }

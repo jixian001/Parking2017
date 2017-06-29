@@ -12,7 +12,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
 {
     public class ManageController : Controller
     {
-        // GET: ChargeManager/
+       
         /// <summary>
         /// 临时卡缴费
         /// </summary>

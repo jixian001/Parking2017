@@ -36,6 +36,7 @@ namespace Parking.Web
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
             MainCallback<Alarm>.Instance().WatchEvent+= FileWatch_FaultWatchEvent;
             MainCallback<ImplementTask>.Instance().WatchEvent += FileWatch_IMPTaskWatchEvent;
+            MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
         }
 
         public IHubConnectionContext<dynamic> Clients
@@ -255,6 +256,15 @@ namespace Parking.Web
         {
 
 
+        }
+
+        /// <summary>
+        /// 队列信息回调
+        /// </summary>
+        /// <param name="entity"></param>
+        private void ParkingSingleton_WatchEvent(WorkTask entity)
+        {
+            Clients.All.feedbackWorkTask(entity);
         }
     }
 }
