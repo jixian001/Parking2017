@@ -394,7 +394,10 @@ namespace Parking.Web.Controllers
         [HttpPost]
         public JsonResult ZhiWen()
         {
+            int isGetCar = 0;
+            string plateNum = "";
             Response resp = new Response();
+           
             Log log = LogFactory.GetLogger("ZhiWen");
             try
             {
@@ -437,7 +440,7 @@ namespace Parking.Web.Controllers
                 log.Debug("接收到的指纹数量- "+psTZ.Length);
                 if (psTZ.Length > 380)
                 {
-                    resp = new CWTaskTransfer(hall,wh).DealFingerPrintMessage(psTZ);
+                    resp = new CWTaskTransfer(hall,wh).DealFingerPrintMessage(psTZ,out isGetCar,out plateNum);
                 }
                 else
                 {
@@ -454,8 +457,8 @@ namespace Parking.Web.Controllers
             {
                 status = resp.Code,
                 msg = resp.Message,
-                isTakeCar = 0,
-                carBrand = "",
+                isTakeCar = isGetCar,
+                carBrand = plateNum,
                 counter = 0,
                 sound = ""
             };
@@ -469,6 +472,9 @@ namespace Parking.Web.Controllers
         [HttpPost]
         public JsonResult IcCard()
         {
+            int isGetCar = 0;
+            string plateNum = "";
+
             Response resp = new Response();
             Log log = LogFactory.GetLogger("IcCard");
             try
@@ -501,7 +507,7 @@ namespace Parking.Web.Controllers
                     return Json(resp);
                 }
                 log.Debug("一体机刷卡信息中，warehouse - " + warehouse + " ,hallID - " + hall);
-                resp = new CWTaskTransfer(hall,wh).DealFingerICCardMessage(ccode);
+                resp = new CWTaskTransfer(hall,wh).DealFingerICCardMessage(ccode,out isGetCar,out plateNum);
             }
             catch (Exception ex)
             {
@@ -511,8 +517,8 @@ namespace Parking.Web.Controllers
             {
                 status = resp.Code,
                 msg = resp.Message,
-                isTakeCar = 0,
-                carBrand = "",
+                isTakeCar = isGetCar,
+                carBrand = plateNum,
                 counter = 0,
                 sound = ""
             };
@@ -530,7 +536,10 @@ namespace Parking.Web.Controllers
         {
             Response resp = new Response();
             byte[] psTZ = FPrintBase64.Base64FingerDataToHex(FPrint.Trim());
-            resp = new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ);
+
+            int isGetCar = 0;
+            string plate = "";
+            resp = new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ,out isGetCar,out plate);
             return Json(resp);
         }
 
@@ -539,7 +548,10 @@ namespace Parking.Web.Controllers
         public ActionResult TestSubmitICCard(int wh,int hall,string physcode)
         {
             Response resp = new Response();
-            resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(physcode);
+
+            int isGetCar = 0;
+            string plate = "";
+            resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(physcode,out isGetCar,out plate);
             return Json(resp);
         }
 

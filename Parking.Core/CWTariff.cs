@@ -736,6 +736,7 @@ namespace Parking.Core
         private float calcuteHoursFeeHasLimit(DateTime Indate,DateTime Outdate,List<HourSectionInfo> timeslotLst,bool isInit)
         {
             string onlydate = Indate.ToShortDateString();
+
             foreach(HourSectionInfo timeslot in timeslotLst)
             {
                 DateTime st = DateTime.Parse(onlydate + " " + timeslot.StartTime.ToLongTimeString());
@@ -955,6 +956,128 @@ namespace Parking.Core
                     #endregion
                 }
             }
+
+            //都没有办法找到相应的区间的，则说明入出库时间都在跨0点后的0点时间段中
+            foreach(HourSectionInfo timeslot in timeslotLst)
+            {
+                #region
+                DateTime st = DateTime.Parse(onlydate + " " + timeslot.StartTime.ToLongTimeString());
+                DateTime end = DateTime.Parse(onlydate + " " + (timeslot.EndTime.AddSeconds(-1)).ToLongTimeString());
+                //跨O点
+                if (DateTime.Compare(st, end) > 0)
+                {
+                    #region
+                    DateTime nextEnd = end.AddDays(1);
+                    //那这个入出库时间都应加上1天吧，不然基准点都不对了
+                    DateTime newIndate = Indate.AddDays(1);
+                    DateTime newOutdate = Outdate.AddDays(1);
+                    //如果落到跨0点的时段上时
+                    if (DateTime.Compare(st, newIndate) <= 0 && DateTime.Compare(nextEnd, newIndate) >= 0)
+                    {
+                        TimeSpan ts = newOutdate - newIndate;
+                        double totalMinutes = Math.Ceiling(ts.TotalMinutes);
+                        #region
+                        if (isInit)
+                        {
+                            TimeSpan freetime = TimeSpan.Parse(timeslot.SectionFreeTime.Trim());
+                            if (totalMinutes <= freetime.TotalMinutes)
+                            {
+                                return 0;
+                            }
+                        }
+                        //在时间段内停车
+                        if (DateTime.Compare(nextEnd, newOutdate) >= 0)
+                        {
+                            #region 出车时间也落在当前时间段内
+                            //如果在首段时间内，依首段时间计费
+                            if (totalMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
+                            {
+                                return timeslot.FirstVoidFee;
+                            }
+                            //减去首段时间，
+                            int remainMinutes = (int)totalMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
+                            //整数部分
+                            int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                            //余数部分
+                            int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                            //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
+                            if (remainer > 0)
+                            {
+                                ++integarPart;
+                            }
+                            //返回费用
+                            float sectFee = timeslot.FirstVoidFee + integarPart * timeslot.IntervalVoidFee;
+                            //本段是否有收费限额
+                            if (timeslot.SectionTopFee > 0)
+                            {
+                                if (sectFee > timeslot.SectionTopFee)
+                                {
+                                    return timeslot.SectionTopFee;
+                                }
+                            }
+                            return sectFee;
+                            #endregion
+                        }
+                        else //跨时间段停车
+                        {
+                            #region 出车时间出现跨时间段( 即 出现在下一个时间段)
+                            //获取剩余的时间段
+                            List<HourSectionInfo> strideTimeslotLst = timeslotLst.FindAll(tm => tm.ID != timeslot.ID);
+                            if (strideTimeslotLst.Count == 0)
+                            {
+                                strideTimeslotLst = timeslotLst;
+                            }
+
+                            #region 本段时间内的时间 计算在本段内的费用
+                            TimeSpan frontTS = nextEnd - newIndate;
+                            int frontMinutes = (int)Math.Ceiling(frontTS.TotalMinutes);
+                            float sectFee = 0;
+                            if (frontMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
+                            {
+                                sectFee = timeslot.FirstVoidFee;
+                            }
+                            else
+                            {
+                                //减去首段时间，
+                                int remainMinutes = (int)frontMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
+                                //整数部分
+                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                                //余数部分
+                                int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                                //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
+                                if (remainer > 0)
+                                {
+                                    ++integarPart;
+                                }
+                                sectFee = integarPart * timeslot.IntervalVoidFee;
+                            }
+
+                            if (timeslot.SectionTopFee > 0)
+                            {
+                                if (sectFee > timeslot.SectionTopFee)
+                                {
+                                    sectFee = timeslot.SectionTopFee;
+                                }
+                            }
+                            #endregion
+
+                            //起始时间从本段终点时间开始
+                            DateTime strideStart = nextEnd;
+
+                            //计算在另一段的费用
+                            return sectFee + calcuteStrideSection(strideStart, newOutdate, strideTimeslotLst, timeslotLst);
+                            #endregion
+                        }
+                        #endregion
+                    }
+
+
+                    #endregion
+                }
+
+                #endregion
+            }
+
             return 41000;
         }
 
@@ -1165,7 +1288,7 @@ namespace Parking.Core
                 newIndate = Indate.AddDays(ts.Days);
             }
 
-            return cyclefee + calcuteHoursFeeNoLimit(newIndate, Outdate, timeslotLst);
+            return cyclefee + calcuteHoursFeeHasLimit(newIndate, Outdate, timeslotLst,false);
             
         }
 

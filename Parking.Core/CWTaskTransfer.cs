@@ -647,8 +647,11 @@ namespace Parking.Core
         /// </summary>
         /// <param name="psTZ"></param>
         /// <returns></returns>
-        public Response DealFingerPrintMessage(byte[] psTZ)
+        public Response DealFingerPrintMessage(byte[] psTZ,out int isGetCar,out string brand)
         {
+            isGetCar = 0;
+            brand = "";
+
             Log log = LogFactory.GetLogger("CWTasksfer.DealFingerPrintMessage");
 
             Response resp = new Response();
@@ -697,7 +700,8 @@ namespace Parking.Core
                 resp.Message = "指纹库内未找到匹配模板";
                 log.Debug("指纹对比，失败，找不到对应模板！");
                 return resp;
-            }
+            }          
+
             if (moHall.Mode != EnmModel.Automatic)
             {
                 motsk.AddNofication(warehouse, code, "5.wav");
@@ -761,7 +765,19 @@ namespace Parking.Core
                 {                    
                     motsk.DealISwipedSecondCard(tsk, SNO);
                     resp.Code = 1;
-                    resp.Message = "指纹识别成功";                  
+                    resp.Message = "指纹识别成功";
+                    isGetCar = 0;
+                    #region 获取车厅内识别车牌
+                    PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == moHall.Warehouse && pt.DeviceCode == moHall.DeviceCode);
+                    if (device_plate != null)
+                    {
+                        if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
+                            DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(8)) < 0)
+                        {
+                            brand = device_plate.PlateNum;
+                        }
+                    }
+                    #endregion
                 }
                 else
                 {
@@ -798,6 +814,9 @@ namespace Parking.Core
                 motsk.DealOSwipedCard(moHall, lct);
                 resp.Code = 1;
                 resp.Message = "已经加入取车队列，请稍后";
+                isGetCar = 1;
+                brand = lct.PlateNum;
+
                 return resp;
             }
             #endregion
@@ -828,6 +847,18 @@ namespace Parking.Core
                         motsk.DealISwipedSecondCard(tsk, SNO);
                         resp.Code = 1;
                         resp.Message = "指纹识别成功";
+                        isGetCar = 0;
+                        #region 获取车厅内识别车牌
+                        PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == moHall.Warehouse && pt.DeviceCode == moHall.DeviceCode);
+                        if (device_plate != null)
+                        {
+                            if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
+                                DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(8)) < 0)
+                            {
+                                brand = device_plate.PlateNum;
+                            }
+                        }
+                        #endregion
                     }
                     else
                     {
@@ -857,6 +888,9 @@ namespace Parking.Core
                     motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
                     resp.Message = "已经加入取车队列，请稍后";
+                    isGetCar = 1;
+                    brand = lct.PlateNum;
+
                     return resp;
                 }
                 #endregion
@@ -871,8 +905,11 @@ namespace Parking.Core
         /// 处理指纹机刷卡动作
         /// </summary>
         /// <param name="physiccode"></param>
-        public Response DealFingerICCardMessage(string physiccode)
+        public Response DealFingerICCardMessage(string physiccode,out int isGetCar,out string brand)
         {
+            isGetCar = 0;
+            brand = "";
+
             Log log = LogFactory.GetLogger("CWTaskTransfer.DealFingerICCardMessage");
             Response resp = new Response();
             try
@@ -962,7 +999,7 @@ namespace Parking.Core
                         //处理刷第一次卡
                         motsk.DealISwipedFirstCard(tsk, iccd.UserCode);
                         resp.Code = 1;
-                        resp.Message = "刷卡成功";
+                        resp.Message = "刷第一次卡成功，请再次刷卡";
                         return resp;
                     }
                     else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
@@ -976,7 +1013,19 @@ namespace Parking.Core
                         }
                         motsk.DealISwipedSecondCard(tsk, iccd.UserCode);
                         resp.Code = 1;
-                        resp.Message = "刷卡成功";
+                        resp.Message = "刷卡成功，请稍后！";
+                        isGetCar = 0;
+                        #region 获取车厅内识别车牌
+                        PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == moHall.Warehouse && pt.DeviceCode == moHall.DeviceCode);
+                        if (device_plate != null)
+                        {
+                            if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
+                                DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(8)) < 0)
+                            {
+                                brand = device_plate.PlateNum;
+                            }
+                        }
+                        #endregion
                         return resp;
                     }
                     else
@@ -1063,6 +1112,8 @@ namespace Parking.Core
                     motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
                     resp.Message = "已加入取车队列，请稍后";
+                    isGetCar = 1;
+                    brand = lct.PlateNum;
                     return resp;
                 }
                 #endregion
@@ -1092,7 +1143,7 @@ namespace Parking.Core
                         {
                             //处理刷第一次卡
                             motsk.DealISwipedFirstCard(tsk, iccd.UserCode);
-                            resp.Message = "刷卡成功";
+                            resp.Message = "刷一次卡成功，请再次刷卡";
                             return resp;
                         }
                         else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
@@ -1106,7 +1157,19 @@ namespace Parking.Core
                             }
                             motsk.DealISwipedSecondCard(tsk, iccd.UserCode);
                             resp.Code = 1;
-                            resp.Message = "刷卡成功";
+                            resp.Message = "刷卡成功,请稍后再离开！";
+                            isGetCar = 0;
+                            #region 获取车厅内识别车牌
+                            PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == moHall.Warehouse && pt.DeviceCode == moHall.DeviceCode);
+                            if (device_plate != null)
+                            {
+                                if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
+                                    DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(8)) < 0)
+                                {
+                                    brand = device_plate.PlateNum;
+                                }
+                            }
+                            #endregion
                             return resp;
                         }
                         else
@@ -1186,6 +1249,8 @@ namespace Parking.Core
                         motsk.DealOSwipedCard(moHall, lct);
                         resp.Code = 1;
                         resp.Message = "已加入取车队列，请稍后";
+                        isGetCar = 1;
+                        brand = lct.PlateNum;
                         return resp;
 
                     }

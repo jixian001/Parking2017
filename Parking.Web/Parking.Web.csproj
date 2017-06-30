@@ -259,6 +259,7 @@
     <Content Include="Content\Site.css" />
     <Content Include="Image\add.jpg" />
     <Content Include="Image\loading.gif" />
+    <Content Include="Image\rule.jpg" />
     <Content Include="Image\scan.gif" />
     <Content Include="Image\fingerprint.jpg" />
     <Content Include="Image\first.jpg" />
