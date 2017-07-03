@@ -44,7 +44,7 @@
                     <div class="form-group">
                         @Html.LabelFor(model => model.PlateNum, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.EditorFor(model => model.PlateNum, new { htmlAttributes = new { @class = "form-control", placeholder = "必须、唯一的" } })
+                            @Html.EditorFor(model => model.PlateNum, new { htmlAttributes = new { @class = "form-control", value="粤B" } })
                             @Html.ValidationMessageFor(model => model.PlateNum, "", new { @class = "text-danger" })
                         </div>
                     </div>

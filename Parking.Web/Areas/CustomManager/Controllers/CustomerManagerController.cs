@@ -40,6 +40,21 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 ModelState.AddModelError("", "当前顾客名-  "+model.UserName+" 已被占用，其车牌号- "+other.PlateNum+" ，请输入唯一的用户名！");
                 return View(model);
             }
+            string plate = "";
+            foreach(char vl in model.PlateNum)
+            {
+                if (Char.IsLetter(vl))
+                {
+                    plate += char.ToUpper(vl);
+                }
+                else
+                {
+                    plate += vl;
+                }
+            }            
+
+            model.PlateNum = plate;          
+
             //车牌号码保证唯一的
             other = cwiccd.FindCust(cu => cu.PlateNum == model.PlateNum);
             if (other != null)

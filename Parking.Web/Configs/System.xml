@@ -2,6 +2,8 @@
 <root>
   <!--计费功能 -->
   <ChargeEnable>0</ChargeEnable>
+  <!--临时卡缴费后，超时出库时间( 以 分钟 为单位)-->
+  <OnlineChgOutTime>15</OnlineChgOutTime>
   <!-- 1、后台读卡 0、前端读卡-->
   <BackGroundRdCd>0</BackGroundRdCd>
   <!--主plc连接的数量-->

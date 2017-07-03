@@ -82,6 +82,7 @@
   <ItemGroup>
     <Compile Include="CWDevice.cs" />
     <Compile Include="CWFingerPrint.cs" />
+    <Compile Include="CWRemoteServer.cs" />
     <Compile Include="CWTariff.cs" />
     <Compile Include="CWTask.cs" />
     <Compile Include="CWICCard.cs" />

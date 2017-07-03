@@ -262,6 +262,20 @@ namespace Parking.Web.Migrations
                 .PrimaryKey(t => t.ID);
             
             CreateTable(
+                "dbo.RemotePayFeeRcds",
+                c => new
+                    {
+                        ID = c.Int(nullable: false, identity: true),
+                        orderCode = c.String(),
+                        strICCardID = c.String(),
+                        strPlateNum = c.String(),
+                        Warehouse = c.Int(nullable: false),
+                        LocAddress = c.String(),
+                        RecordDtime = c.DateTime(nullable: false),
+                    })
+                .PrimaryKey(t => t.ID);
+            
+            CreateTable(
                 "dbo.TelegramLogs",
                 c => new
                     {
@@ -339,6 +353,7 @@ namespace Parking.Web.Migrations
             DropTable("dbo.TempUserChargeLogs");
             DropTable("dbo.TempChargingRules");
             DropTable("dbo.TelegramLogs");
+            DropTable("dbo.RemotePayFeeRcds");
             DropTable("dbo.PreChargings");
             DropTable("dbo.PlateMappingDevs");
             DropTable("dbo.OrderChargeDetails");

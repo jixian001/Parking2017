@@ -92,6 +92,7 @@
     <Compile Include="BaseManager\Charging\HourSectionInfoManager.cs" />
     <Compile Include="BaseManager\Charging\OrderChargeDetailManager.cs" />
     <Compile Include="BaseManager\Charging\PreChargingManager.cs" />
+    <Compile Include="BaseManager\Charging\RemoteFeeRecordManager.cs" />
     <Compile Include="BaseManager\Charging\TempChargeLogManager.cs" />
     <Compile Include="BaseManager\Charging\TempChargingRuleManager.cs" />
     <Compile Include="BaseManager\FingerPrintManager.cs" />
@@ -112,6 +113,7 @@
     <Compile Include="Models\Charging\FixChargingRule.cs" />
     <Compile Include="Models\Charging\FixUserChargeLog.cs" />
     <Compile Include="Models\Charging\PreCharging.cs" />
+    <Compile Include="Models\Charging\RemotePayFeeRcd.cs" />
     <Compile Include="Models\Charging\TempChargingRule.cs" />
     <Compile Include="Models\Charging\TempUserChargeLog.cs" />
     <Compile Include="Models\Customer.cs" />

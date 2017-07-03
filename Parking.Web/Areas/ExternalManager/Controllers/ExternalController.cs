@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using Parking.Data;
 using Parking.Core;
 using Parking.Auxiliary;
+using Newtonsoft.Json;
 
 namespace Parking.Web.Areas.ExternalManager.Controllers
 {
@@ -14,97 +15,135 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         // GET: ExternalManager/External      
         public ActionResult GetCurrentSound(int warehouse, int devicecode)
         {
-            string sound = new CWTask().GetNotification(warehouse, devicecode);
-            return Content(sound);
-        }
-
-        /// <summary>
-        /// 接收指纹一体机上传上来的指纹信息
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        public JsonResult SubmitFingerPrint()
-        {
-            Response resp = new Response();
-            Log log = LogFactory.GetLogger("SubmitCardsInfo");
+            Log log = LogFactory.GetLogger("GetCurrentSound");
             try
             {
-                string warehouse = Request.Form["warehouse"];
-                string hallID = Request.Form["hallID"];
-                string fingerPrint = Request.Form["fingerInfo"];
-             
-                log.Info("Warehouse-" + warehouse + " ,Hall-" + hallID + " , FingerPrint Info- " + fingerPrint);
-                              
-                int wh = 1;
-                if (!string.IsNullOrEmpty(warehouse))
-                {
-                    wh = Convert.ToInt32(warehouse);
-                }
-                int hall = 0;
-                if (!string.IsNullOrEmpty(hallID))
-                {
-                    hall = Convert.ToInt32(hallID);
-                }
-                if (hall < 10)
-                {
-                    resp.Message = "车厅号不正确，hallID- " + hallID;
-                    return Json(resp);
-                }
-
-                string[] arrayFinger = fingerPrint.Trim().Split(' ');
-                byte[] psTZ = new byte[arrayFinger.Length];
-                for (int i = 0; i < arrayFinger.Length; i++)
-                {
-                    psTZ[i] = Convert.ToByte(arrayFinger[i]);
-                }
-
-                resp = new CWTaskTransfer(wh, hall).DealFingerPrintMessage(psTZ);
+                string sound = new CWTask().GetNotification(warehouse, devicecode);
+                return Content(sound);
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
+                log.Error(ex);
             }
-
-            return Json(resp);
+            return Content("null");
         }
 
         /// <summary>
-        /// 接收指纹一体机上传上来的刷卡信息
+        /// APP,扫码或其它存车,
         /// </summary>
         /// <returns></returns>
-        [HttpPost]
-        public JsonResult SubmitCardsInfo()
+        public Response SaveCarInterface()
         {
             Response resp = new Response();
-            Log log = LogFactory.GetLogger("SubmitCardsInfo");
+            #region
+            Log log = LogFactory.GetLogger("SaveCarInterface");
             try
             {
-                string warehouse = Request.Form["warehouse"];
-                string hallID = Request.Form["hallID"];
-                string ccode = Request.Form["physcode"];
+                string warehouse = Request.QueryString["warehouse"];
+                string hallID = Request.QueryString["hallID"];
+                string iccode = Request.QueryString["iccode"];
+                string plate = Request.QueryString["platenum"];
+                if (string.IsNullOrEmpty(warehouse) || string.IsNullOrEmpty(hallID))
+                {                    
+                    log.Error("APP存车，hallID为空或warehouse为空！");
+                    resp.Message = "参数错误";
+                    return resp;
+                }
+                int wh = Convert.ToInt32(warehouse);
+                int code = Convert.ToInt32(hallID);
 
-                int wh = 1;
-                if (!string.IsNullOrEmpty(warehouse))
+                CWDevice cwdevice = new CWDevice();
+                CWTask motsk = new CWTask();
+
+                Device moHall = cwdevice.Find(dev=>dev.Warehouse==wh&&dev.DeviceCode==code);
+                if (moHall == null)
                 {
-                    wh = Convert.ToInt32(warehouse);
+                    log.Error("APP存车时， 找不到车厅设备. warehouse - "+warehouse+" ,hallID - "+hallID);
+                    resp.Message = "找不到车厅";
+                    return resp;
                 }
-                int hall = 0;
-                if (!string.IsNullOrEmpty(hallID))
+                if (moHall.Mode != EnmModel.Automatic)
                 {
-                    hall = Convert.ToInt32(hallID);
+                    log.Error("APP存车时， 车厅不是全自动. warehouse - " + warehouse + " ,hallID - " + hallID);
+                    resp.Message = "车厅不是全自动";
+                    return resp;
                 }
-                if (hall < 10)
+                if (moHall.HallType == EnmHallType.Entrance ||
+                    moHall.HallType == EnmHallType.EnterOrExit)
                 {
-                    resp.Message = "车厅号不正确，hallID- " + hallID;
-                    return Json(resp);
+                    if (moHall.TaskID == 0)
+                    {
+                        //车厅无车，不能存车
+                        log.Error("APP存车时， 车厅无车，不能存车. ");
+                        resp.Message = "车厅无车，不能存车";
+                        return resp;
+                    }
+                    ImplementTask tsk = motsk.Find(moHall.TaskID);
+                    if (tsk == null)
+                    {
+                        log.Error("APP存车时， 依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
+                        //系统故障
+                        resp.Message = "系统异常，找不到作业";
+                        return resp;
+                    }
+                    if (tsk.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                    {
+                        log.Error("APP存车时，不是处于刷卡阶段");
+                        resp.Message = "不是处于刷卡阶段";
+                        return resp;
+                    }
+                    if (string.IsNullOrEmpty(iccode))
+                    {
+                        iccode = "444";
+                    }
+                    //更新作业状态为第二次刷卡，启动流程
+                    motsk.DealISwipedSecondCard(tsk, iccode);
+                    resp.Code = 1;
+                    resp.Message = "流程进行中";
+                    return resp;
                 }
-                resp = new CWTaskTransfer(wh, hall).DealFingerICCardMessage(ccode);
+                else
+                {
+                    log.Error("APP存车时，不是进（进出）车厅");
+                    resp.Message = "不是进（进出）车厅";
+                    return resp;
+                }
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
-            }          
-            return Json(resp);
+                log.Error(ex);
+                resp.Message = "系统异常";
+            }
+            #endregion
+            return resp;
+        }
+        
+        /// <summary>
+        /// APP,远程取车
+        /// </summary>
+        /// <returns></returns>
+        public Response RemoteGetCarInterface()
+        {
+            Response resp = new Response();
+            #region
+
+
+            #endregion
+            return resp;
+        }
+
+        /// <summary>
+        /// APP,预定、取消预定车位
+        /// </summary>
+        /// <returns></returns>
+        public Response RemoteBookLoc()
+        {
+            Response resp = new Response();
+            #region
+
+
+            #endregion
+            return resp;
         }
 
     }

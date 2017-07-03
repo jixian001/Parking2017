@@ -78,6 +78,7 @@ namespace Parking.Data
         Outing,    //正在出库-4
         TempGet,   //临时取物车位  -5
         Idleness,   //无效车位-6
-        WillBack   //待回挪 -7
+        WillBack,   //待回挪 -7
+        Book       //预定
     }
 }

@@ -237,56 +237,28 @@ namespace Parking.Core
                         motsk.AddNofication(warehouse, code, "65.wav");
                         return;
                     }
-                    string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
-                    bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
-                    if (isChargeEnable)
-                    {
-                        #region
-                        if (iccd.CustID == 0)
-                        {
-                            motsk.AddNofication(warehouse, code, "29.wav");
-                            return;
-                        }
-                        Customer cust = new CWICCard().FindCust(iccd.CustID);
-                        if (cust == null)
-                        {
-                            log.Error("系统异常，ICCard绑定的CustID-"+iccd.CustID+" ,找不到顾客，为空！");
-                            motsk.AddNofication(warehouse, code, "20.wav");
-
-                            //生成取车作业，加入队列
-                            motsk.DealOSwipedCard(moHall, lct);
-
-                            return;
-                        }
-
-                        if (cust.Type == EnmICCardType.Temp)
-                        {                           
-                            motsk.AddNofication(warehouse, code, "29.wav");
-                            return;
-                        }
-                        else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
-                        {
-                            if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "31.wav");
-                                return;
-                            }
-                            if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "67.wav");
-                            }
-                            else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "66.wav");
-                            }                            
-                        }
-                        #endregion
-                    }
+                   
                     if (getcarCount > mHallGetCount)
                     {
                         motsk.AddNofication(warehouse, code, "12.wav");
                         return;
                     }
+                    Customer cust = new CWICCard().FindCust(iccd.CustID);
+                    if (cust == null)
+                    {
+                        log.Info("刷卡时，当前卡号，没有绑定车主，iccode - "+iccd.UserCode);
+                        //临时用户
+                        cust = new Customer {
+                            Type=EnmICCardType.Temp,
+                            UserName="Temp"
+                        };
+                    }
+                    //判断是否已缴费
+                    if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                    {
+                        return;
+                    }
+
                     //生成取车作业，加入队列
                     motsk.DealOSwipedCard(moHall, lct);
                 }
@@ -367,56 +339,29 @@ namespace Parking.Core
                         }
                         #endregion
 
-                        string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
-                        bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
-                        if (isChargeEnable)
+                        Customer cust = new CWICCard().FindCust(iccd.CustID);
+                        if (cust == null)
                         {
-                            #region
-                            if (iccd.CustID == 0)
+                            log.Info("刷卡时，当前卡号，没有绑定车主，iccode - " + iccd.UserCode);
+                            cust = new Customer
                             {
-                                motsk.AddNofication(warehouse, code, "29.wav");
-                                return;
-                            }
-                            Customer cust = new CWICCard().FindCust(iccd.CustID);
-                            if (cust == null)
-                            {
-                                log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
-                                motsk.AddNofication(warehouse, code, "20.wav");
-
-                                //生成取车作业，加入队列
-                                motsk.DealOSwipedCard(moHall, lct);
-
-                                return;
-                            }
-
-                            if (cust.Type == EnmICCardType.Temp)
-                            {
-                                motsk.AddNofication(warehouse, code, "29.wav");
-                                return;
-                            }
-                            else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
-                            {
-                                if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "31.wav");
-                                    return;
-                                }
-                                if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "67.wav");
-                                }
-                                else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "66.wav");
-                                }
-                            }
-                            #endregion
-                        }
+                                Type = EnmICCardType.Temp,
+                                UserName = "Temp"
+                            };
+                        }                      
+                      
                         if (getcarCount > mHallGetCount)
                         {
                             motsk.AddNofication(warehouse, code, "12.wav");
                             return;
                         }
+
+                        //判断是否已缴费
+                        if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                        {
+                            return;
+                        }
+
                         //生成取车作业，加入队列
                         motsk.DealOSwipedCard(moHall, lct);
                     }
@@ -810,6 +755,23 @@ namespace Parking.Core
                     resp.Message = "取车队列已满，请稍后取车";
                     return resp;
                 }
+                #region
+                Customer cust = new CWICCard().FindCust(print.CustID);
+                if (cust == null)
+                {
+                    string nRet = "系统异常，刷指纹时没有找到车主，SN - " + print.SN_Number;
+                    log.Info(nRet);
+                    resp.Message = nRet;
+                    return resp;
+                }
+                //判断是否已缴费
+                if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                {
+                    resp.Message = "请确认缴费后出车";
+                    return resp;
+                }
+                #endregion
+
                 //生成取车作业，加入队列
                 motsk.DealOSwipedCard(moHall, lct);
                 resp.Code = 1;
@@ -884,6 +846,24 @@ namespace Parking.Core
                         resp.Message = "取车队列已满，请稍后取车";
                         return resp;
                     }
+
+                    #region 缴费出车判断
+                    Customer cust = new CWICCard().FindCust(print.CustID);
+                    if (cust == null)
+                    {
+                        string nRet = "系统异常，刷指纹时没有找到车主，SN - " + print.SN_Number;
+                        log.Info(nRet);
+                        resp.Message = nRet;
+                        return resp;
+                    }
+                    //判断是否已缴费
+                    if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                    {
+                        resp.Message = "请确认缴费后出车";
+                        return resp;
+                    }
+                    #endregion
+
                     //生成取车作业，加入队列
                     motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
@@ -1052,62 +1032,32 @@ namespace Parking.Core
                         motsk.AddNofication(warehouse, code, "65.wav");
                         resp.Message = "车位状态不是占用";
                         return resp;
-                    }
-                    string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
-                    bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
-                    if (isChargeEnable)
-                    {
-                        #region
-                        if (iccd.CustID == 0)
-                        {
-                            motsk.AddNofication(warehouse, code, "29.wav");
-                            resp.Message = "临时卡，请到管理室缴费出车";
-                            return resp;
-                        }
-                        Customer cust = new CWICCard().FindCust(iccd.CustID);
-                        if (cust == null)
-                        {
-                            log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
-                            motsk.AddNofication(warehouse, code, "20.wav");
-
-                            //生成取车作业，加入队列
-                            motsk.DealOSwipedCard(moHall, lct);
-
-                            resp.Message = "系统异常,找不到对应顾客";
-                            return resp;
-                        }
-
-                        if (cust.Type == EnmICCardType.Temp)
-                        {
-                            motsk.AddNofication(warehouse, code, "29.wav");
-                            resp.Message = "临时卡，请到管理室缴费出车";
-                            return resp;
-                        }
-                        else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
-                        {
-                            if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "31.wav");
-                                resp.Message = "卡已欠费，请缴费";
-                                return resp;
-                            }
-                            if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "67.wav");
-                            }
-                            else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "66.wav");
-                            }
-                        }
-                        #endregion
-                    }
+                    }                   
                     if (getcarCount > mHallGetCount)
                     {
                         motsk.AddNofication(warehouse, code, "12.wav");
                         resp.Message = "取车队列已满，请稍后取车";
                         return resp;
                     }
+                    #region
+                    Customer cust = new CWICCard().FindCust(iccd.CustID);
+                    if (cust == null)
+                    {
+                        log.Info("刷卡时，当前卡号，没有绑定车主，iccode - " + iccd.UserCode);
+                        //临时用户
+                        cust = new Customer
+                        {
+                            Type = EnmICCardType.Temp,
+                            UserName = "Temp"
+                        };
+                    }
+                    //判断是否已缴费
+                    if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                    {
+                        resp.Message = "请确认缴费后出车";
+                        return resp;
+                    }
+                    #endregion
                     //生成取车作业，加入队列
                     motsk.DealOSwipedCard(moHall, lct);
                     resp.Code = 1;
@@ -1190,61 +1140,33 @@ namespace Parking.Core
                             resp.Message = "车位状态不是占用";
                             return resp;
                         }
-                        string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
-                        bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
-                        if (isChargeEnable)
-                        {
-                            #region
-                            if (iccd.CustID == 0)
-                            {
-                                motsk.AddNofication(warehouse, code, "29.wav");
-                                resp.Message = "临时卡，请到管理室缴费出车";
-                                return resp;
-                            }
-                            Customer cust = new CWICCard().FindCust(iccd.CustID);
-                            if (cust == null)
-                            {
-                                log.Error("系统异常，ICCard绑定的CustID-" + iccd.CustID + " ,找不到顾客，为空！");
-                                motsk.AddNofication(warehouse, code, "20.wav");
-
-                                //生成取车作业，加入队列
-                                motsk.DealOSwipedCard(moHall, lct);
-
-                                resp.Message = "系统异常,找不到对应顾客";
-                                return resp;
-                            }
-
-                            if (cust.Type == EnmICCardType.Temp)
-                            {
-                                motsk.AddNofication(warehouse, code, "29.wav");
-                                resp.Message = "临时卡，请到管理室缴费出车";
-                                return resp;
-                            }
-                            else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
-                            {
-                                if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "31.wav");
-                                    resp.Message = "卡已欠费，请缴费";
-                                    return resp;
-                                }
-                                if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "67.wav");
-                                }
-                                else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
-                                {
-                                    motsk.AddNofication(warehouse, code, "66.wav");
-                                }
-                            }
-                            #endregion
-                        }
+                       
                         if (getcarCount > mHallGetCount)
                         {
                             motsk.AddNofication(warehouse, code, "12.wav");
                             resp.Message = "取车队列已满，请稍后取车";
                             return resp;
                         }
+                        #region
+                        Customer cust = new CWICCard().FindCust(iccd.CustID);
+                        if (cust == null)
+                        {
+                            log.Info("刷卡时，当前卡号，没有绑定车主，iccode - " + iccd.UserCode);
+                            //临时用户
+                            cust = new Customer
+                            {
+                                Type = EnmICCardType.Temp,
+                                UserName = "Temp"
+                            };
+                        }
+                        //判断是否已缴费
+                        if (!this.JudgeIsChargeAndAllowOut(cust, lct))
+                        {
+                            resp.Message = "请确认缴费后出车";
+                            return resp;
+                        }
+                        #endregion
+
                         //生成取车作业，加入队列
                         motsk.DealOSwipedCard(moHall, lct);
                         resp.Code = 1;
@@ -1322,6 +1244,86 @@ namespace Parking.Core
             return returnStr;
         }
 
+        /// <summary>
+        /// 判断是否缴费，
+        /// </summary>
+        /// <returns></returns>
+        private bool JudgeIsChargeAndAllowOut(Customer cust,Location loc)
+        {
+            Log log = LogFactory.GetLogger("JudgeIsChargeAndAllowOut");
+            try
+            {
+                int warehouse = moHall.Warehouse;
+                int code = moHall.DeviceCode;
+
+                string isCharge = XMLHelper.GetRootNodeValueByXpath("root", "ChargeEnable");
+                bool isChargeEnable = string.IsNullOrEmpty(isCharge) ? false : (isCharge == "1" ? true : false);
+                if (isChargeEnable)
+                {
+                    #region 
+                    if (cust.Type == EnmICCardType.Temp)
+                    {
+                        int oouttimeofmin = 15;
+                        string onlineChgOutTime= XMLHelper.GetRootNodeValueByXpath("root", "OnlineChgOutTime");
+                        if (!string.IsNullOrEmpty(onlineChgOutTime))
+                        {
+                            oouttimeofmin = Convert.ToInt32(onlineChgOutTime);
+                        }
+                        CWRemoteServer cwcrd = new CWRemoteServer();
+                        RemotePayFeeRcd rcd = cwcrd.Find(lc=>lc.Warehouse==warehouse&&lc.LocAddress==loc.Address);
+                        if (rcd == null)
+                        {
+                            motsk.AddNofication(warehouse, code, "29.wav");
+                            return false;
+                        }
+
+                        if (DateTime.Compare(DateTime.Now, rcd.RecordDtime.AddMinutes(oouttimeofmin)) > 0)
+                        {
+                            //网上缴费，允许出车时间已过期,请重新缴费
+                            motsk.AddNofication(warehouse, code, "29.wav");
+
+                            //再次修改车辆的存车时间
+                            loc.InDate = rcd.RecordDtime.AddMinutes(oouttimeofmin);
+                            new CWLocation().UpdateLocation(loc);
+
+                            //同时删除其记录
+                            cwcrd.Delete(rcd.ID);
+
+                            return false;
+                        }
+
+                        //允许出车后，删除保留的记录
+                        cwcrd.Delete(rcd.ID);
+
+                        return true;
+                    }
+                    else if (cust.Type == EnmICCardType.Periodical || cust.Type == EnmICCardType.FixedLocation)
+                    {
+                        if (DateTime.Compare(cust.Deadline, DateTime.Now) < 0)
+                        {
+                            motsk.AddNofication(warehouse, code, "31.wav");
+                            return false;
+                        }
+                        if (DateTime.Compare(cust.Deadline.AddDays(-2), DateTime.Now) < 0)
+                        {
+                            motsk.AddNofication(warehouse, code, "67.wav");
+                        }
+                        else if (DateTime.Compare(cust.Deadline.AddDays(-1), DateTime.Now) < 0)
+                        {
+                            motsk.AddNofication(warehouse, code, "66.wav");
+                        }
+                        return true;
+                    }
+                    #endregion
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+                return false;
+            }
+        }
 
     }
 }

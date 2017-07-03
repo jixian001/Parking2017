@@ -223,7 +223,7 @@ namespace Parking.Core
                 }
                 #endregion
                 Customer cust = null;
-                #region
+                #region 获取顾客信息
                 if (Convert.ToInt32(htsk.ICCardCode) >= 10000) //是指纹激活的
                 {
                     int prf = Convert.ToInt32(htsk.ICCardCode);
@@ -257,8 +257,41 @@ namespace Parking.Core
                     }
                 }
                 #endregion
-
                 Device hall = new CWDevice().SelectSMG(hallID, htsk.Warehouse);
+
+                string strPlateNum = "";
+                string strImgPath = "";
+                #region 获取车牌识别车牌信息
+                PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == hall.Warehouse && pt.DeviceCode == hall.DeviceCode);
+                if (device_plate != null)
+                {
+                    if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
+                        DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(3)) < 0)
+                    {
+                        strPlateNum = device_plate.PlateNum;
+                        strImgPath = device_plate.HeadImagePath;
+                    }
+                }
+                #endregion
+                #region 如果没有车牌识别，则从顾客登记的信息中给车牌号，以作为后续界面取车用
+                if (string.IsNullOrEmpty(strPlateNum))
+                {
+                    if (cust != null)
+                    {
+                        if (!string.IsNullOrEmpty(cust.PlateNum))
+                        {
+                            strPlateNum = cust.PlateNum;
+                        }
+                    }
+                }
+                #endregion
+                if (cust == null)
+                {
+                    cust = new Customer();
+                    cust.UserName = "TempAdd";
+                    cust.Type = EnmICCardType.Temp;
+                    cust.PlateNum = strPlateNum;
+                }
                 int tvID = 0;
                 Location lct = new AllocateLocation().IAllocateLocation(checkCode, cust, hall, out tvID);
                 if (lct == null)
@@ -284,30 +317,9 @@ namespace Parking.Core
                     this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "63.wav");
                     return;
                 }
-                #region 获取车牌识别车牌信息
-                PlateMappingDev device_plate = new CWDevice().FindPlateInfo(pt => pt.Warehouse == hall.Warehouse && pt.DeviceCode == hall.DeviceCode);
-                if (device_plate != null)
-                {
-                    if (!string.IsNullOrEmpty(device_plate.PlateNum) &&
-                        DateTime.Compare(DateTime.Now, device_plate.InDate.AddMinutes(3)) < 0)
-                    {
-                        lct.PlateNum = device_plate.PlateNum;
-                        lct.ImagePath = device_plate.HeadImagePath;
-                    }
-                }
-                #endregion
-                #region 如果没有车牌识别，则从顾客登记的信息中给车牌号，以作为后续界面取车用
-                if (string.IsNullOrEmpty(lct.PlateNum))
-                {
-                    if (cust != null)
-                    {
-                        if (!string.IsNullOrEmpty(cust.PlateNum))
-                        {
-                            lct.PlateNum = cust.PlateNum;
-                        }
-                    }
-                }
-                #endregion
+               
+                lct.PlateNum = strPlateNum;
+                lct.ImagePath = strImgPath;               
                 //补充车位信息
                 lct.WheelBase = distance;
                 lct.CarSize = checkCode;

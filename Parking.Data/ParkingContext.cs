@@ -36,6 +36,7 @@ namespace Parking.Data
         public DbSet<FingerPrint> FingerPrints { get; set; }
         public DbSet<TempUserChargeLog> TempUserChargeLogs { get; set; }
         public DbSet<FixUserChargeLog> FixUserChargeLogs { get; set; }
-
+        //云服务下发的付款成功
+        public DbSet<RemotePayFeeRcd> RemotePayFeeRcds { get; set; }
     }
 }

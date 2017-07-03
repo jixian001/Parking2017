@@ -19,7 +19,7 @@ namespace Parking.Core
         /// <param name="hall">车厅</param>       
         /// <param name="smg">ETV 设备号</param>
         /// <returns></returns>
-        public Location IAllocateLocation(string checkCode, Customer cust, Device hall, out int smg)
+        public Location IAllocateLocation(string checkCode,Customer cust, Device hall, out int smg)
         {
             Log log = LogFactory.GetLogger("AllocateLocation.IAllocateLocation");
 
@@ -31,15 +31,41 @@ namespace Parking.Core
 
             Location lct = null;
             CWTask cwtask = new CWTask();
-            if (cust == null)
+            CWLocation cwlctn = new CWLocation();
+
+            if (cust.Type == EnmICCardType.Temp ||
+                cust.Type == EnmICCardType.Periodical)
             {
-                //没有绑定用户的，依临时卡算
-                lct = this.PXDAllocate(hall, checkCode,out smg);
-            }
-            else if (cust.Type == EnmICCardType.Temp || 
-                     cust.Type == EnmICCardType.Periodical)
-            {
-                lct = this.PXDAllocate(hall, checkCode, out smg);
+                #region 判断是否是预定了车位
+                lct = cwlctn.FindLocation(cc => cc.Type == EnmLocationType.Normal && cc.Status == EnmLocationStatus.Book && cc.PlateNum == cust.PlateNum);
+                if (lct != null)
+                {
+                    log.Info("当前车牌已预定车位，address-" + lct.Address + " ,wh- " + lct.Warehouse + " ,plate- " + cust.PlateNum + " ,cust- " + cust.UserName);
+                    if (compareSize(lct.LocSize, checkCode) >= 0)
+                    {
+                        //分配ETV
+                        Device dev = PXDAllocateEtvOfFixLoc(hall, lct);
+                        if (dev != null)
+                        {
+                            smg = dev.DeviceCode;
+                        }
+                        return lct;
+                    }
+                    else
+                    {
+                        log.Info("当前预定车位，address-" + lct.Address + " ,wh- " + lct.Warehouse + " ,locsize- " + lct.LocSize + ",carsize- " + checkCode + " 尺寸不合适，按临时卡分配");
+                        //释放预定的车位
+                        lct.Status = EnmLocationStatus.Space;
+                        cwlctn.UpdateLocation(lct);
+                        //按临时车位处理
+                        lct = this.PXDAllocate(hall, checkCode, out smg);
+                    }
+                }
+                else  //没有预定车位，按临时车处理
+                {
+                    lct = this.PXDAllocate(hall, checkCode, out smg);
+                }
+                #endregion
             }
             else if (cust.Type == EnmICCardType.FixedLocation)
             {
@@ -63,7 +89,7 @@ namespace Parking.Core
                 if (lct.NeedBackup == 1)
                 {
                     string fwdaddrs = (lct.LocSide - 2).ToString() + lct.Address.Substring(1);
-                    Location forward = new CWLocation().FindLocation(l=>l.Address==fwdaddrs);
+                    Location forward = new CWLocation().FindLocation(l => l.Address == fwdaddrs);
                     if (forward != null)
                     {
                         if (forward.Type != EnmLocationType.Normal)
