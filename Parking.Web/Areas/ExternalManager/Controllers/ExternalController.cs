@@ -8,6 +8,7 @@ using Parking.Core;
 using Parking.Auxiliary;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Parking.Web.Areas.ExternalManager.Models;
 
 namespace Parking.Web.Areas.ExternalManager.Controllers
 {
@@ -51,7 +52,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string warehouse = jo["warehouse"].ToString();
                 string hallID = jo["hallID"].ToString();
                 string iccode = jo["iccode"].ToString();
-                string plate = jo["platenum"].ToString();
+                string plate = jo["plateNum"].ToString();
 
                 if (string.IsNullOrEmpty(warehouse) || string.IsNullOrEmpty(hallID))
                 {                    
@@ -222,6 +223,70 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             return Json(resp);
         }
 
+        /// <summary>
+        /// APP，取消取车
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult RemoteCancelGetCarIFace()
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("RemoteCancelGetCarIFace");
+            #region 取消取车
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                //显示，记录
+                log.Info(req);
+                JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+                string iccode = jo["iccode"].ToString();
+                string plate = jo["platenum"].ToString();
+
+                CWTask motask = new CWTask();
+                CWLocation cwlctn = new CWLocation();
+                if (!string.IsNullOrEmpty(iccode))
+                {
+                    WorkTask mtsk = motask.FindQueue(mt=>mt.ICCardCode==iccode);
+                    if (mtsk != null)
+                    {
+                        Location loc = cwlctn.FindLocation(lc=>lc.ICCode==iccode);
+                        loc.Status = EnmLocationStatus.Occupy;
+                        cwlctn.UpdateLocation(loc);
+
+                        resp= motask.DeleteQueue(mtsk);
+                        return Json(resp);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(plate))
+                {
+                    Location loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate);
+                    if (loc != null)
+                    {
+                        WorkTask mtsk = motask.FindQueue(mt=>mt.ICCardCode==loc.ICCode);
+                        if (mtsk != null)
+                        {
+                            loc.Status = EnmLocationStatus.Occupy;
+                            cwlctn.UpdateLocation(loc);
+
+                            resp = motask.DeleteQueue(mtsk);
+                            return Json(resp);
+                        }
+                    }
+                }
+
+                resp.Message = "没有找到取车记录";
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            #endregion
+            return Json(resp);
+        }
+
         [HttpPost]
         /// <summary>
         /// APP,预定、取消预定车位
@@ -244,6 +309,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string wh = jo["warehouse"].ToString();
                 string proof = jo["proof"].ToString();
                 string plate = jo["platenum"].ToString();
+
                 if (string.IsNullOrEmpty(proof) ||                   
                     string.IsNullOrEmpty(type))
                 {
@@ -343,5 +409,68 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             return Json(resp);
         }
 
+        /// <summary>
+        /// 查询停车费用
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult QueryParkingFee()
+        {
+            ParkingFeeInfo resp = new ParkingFeeInfo();
+            #region
+            Log log = LogFactory.GetLogger("QueryParkingFee");
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                //显示，记录
+                log.Info(req);
+                JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+                string iccode = jo["iccode"].ToString();
+                string plate = jo["plateNum"].ToString();
+
+                CWLocation cwlctn = new CWLocation();
+                Location loc = null;
+                if (!string.IsNullOrEmpty(plate))
+                {
+                    loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate);
+                }
+                if (loc == null)
+                {
+                    if (!string.IsNullOrEmpty(iccode))
+                    {
+                        loc = cwlctn.FindLocation(lc => lc.ICCode == iccode);
+                    }
+                }
+                if (loc == null)
+                {
+                    log.Error("APP查询费用时, 找不到取车位, plate - " + plate + " ,iccode-" + iccode);
+                    resp.Message = "没有存车";
+                    return Json(resp);
+                }
+                float fee = 0;
+                Response res = new CWTariff().CalculateTempFee(loc.InDate, DateTime.Now, out fee);
+                if (res.Code == 1)
+                {
+                    resp.Code = 1;
+                    resp.Message = "查询费用成功";
+                    resp.Fee = fee;
+                    resp.InDtime = loc.InDate.ToString();
+                    resp.OutDtime = DateTime.Now.ToString();                    
+                }
+                else
+                {
+                    log.Error("APP查询费用,系统异常- "+resp.Message);
+                } 
+            }
+            catch(Exception ex)
+            {
+                log.Error(ex.ToString());
+                resp.Message = "系统异常";
+            }
+            #endregion
+            return Json(resp);
+        }
     }
 }

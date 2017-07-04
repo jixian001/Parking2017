@@ -92,7 +92,7 @@ namespace Parking.Core
             {
                 clog.Error(ex.ToString());
             }
-            return null;
+            return "null";
         }
 
         /// <summary>

@@ -188,6 +188,7 @@
     <Compile Include="Areas\CustomManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ExternalManager\Controllers\ExternalController.cs" />
     <Compile Include="Areas\ExternalManager\ExternalManagerAreaRegistration.cs" />
+    <Compile Include="Areas\ExternalManager\Models\ParkingFeeInfo.cs" />
     <Compile Include="Areas\ReportManager\Controllers\ReportController.cs" />
     <Compile Include="Areas\ReportManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
@@ -376,7 +377,6 @@
     <Folder Include="App_Data\" />
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
-    <Folder Include="Areas\ExternalManager\Models\" />
     <Folder Include="Areas\ExternalManager\Views\External\" />
     <Folder Include="Areas\ExternalManager\Views\Shared\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
