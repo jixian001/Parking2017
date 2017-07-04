@@ -1313,6 +1313,10 @@ namespace Parking.Core
                     resp.Code = 1;
                     resp.Message = "正在为你取车，请稍后";
                 }
+                else
+                {
+                    resp.Message = "加入队列失败";
+                }
         
             }
             catch (Exception ex)
