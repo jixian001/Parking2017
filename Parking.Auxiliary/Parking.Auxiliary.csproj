@@ -117,6 +117,7 @@
     <Compile Include="Log\Log.cs" />
     <Compile Include="Log\LogFactory.cs" />
     <Compile Include="Model\RetFPring.cs" />
+    <Compile Include="Model\SMSInfo.cs" />
     <Compile Include="Model\TempUserInfo.cs" />
     <Compile Include="OrderParam.cs" />
     <Compile Include="Page.cs" />

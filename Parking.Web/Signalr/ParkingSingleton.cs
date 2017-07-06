@@ -247,6 +247,7 @@ namespace Parking.Web
             Clients.All.feedbackImpTask(detail);
         }
 
+        private static Dictionary<Device, SMSInfo> dicSMSInfo = new Dictionary<Device, SMSInfo>();
         /// <summary>
         /// 用于处理有报警时给主界面显示红色，
         /// 同时可用于云服务，发送错误短信
@@ -254,8 +255,91 @@ namespace Parking.Web
         /// <param name="fault"></param>
         public void FileWatch_FaultWatchEvent(Alarm fault)
         {
+            #region 用于报警画面更新
 
+            #endregion
+            #region 用于发送SMS用
+            if (fault.Color == EnmAlarmColor.Red)
+            {
+                //初步分析，跟当前保存上一个记录是不是重复
+                Device smg = new CWDevice().Find(d => d.Warehouse == fault.Warehouse && d.DeviceCode == fault.DeviceCode);
+                if (smg != null)
+                {
+                    bool isSend = true;
+                    if (dicSMSInfo.ContainsKey(smg))
+                    {
+                        SMSInfo lastSMS = dicSMSInfo[smg];
+                        if (lastSMS != null)
+                        {
+                            //自动步没有变化，则表示卡在这一步，则不会再次下发报警
+                            if (lastSMS.AutoStep == smg.RunStep)
+                            {
+                                isSend = false;
+                            }
+                            //上次发送时间距
+                            if (DateTime.Compare(DateTime.Now, lastSMS.RcdTime.AddMinutes(20)) < 0)
+                            {
+                                isSend = false;
+                            }
+                        }
+                        //非全自动下，也不发送
+                        if (smg.Mode != EnmModel.Automatic)
+                        {
+                            isSend = false;
+                        }
+                    }
 
+                    if (isSend)
+                    {
+                        //本次要报警的卡号，与原先发送的卡号一致的,时间差小的，则当前的也不发送
+                        CWTask cwtask = new CWTask();
+                        foreach (KeyValuePair<Device, SMSInfo> pair in dicSMSInfo)
+                        {
+                            SMSInfo sms = pair.Value;
+                            ImplementTask itask = cwtask.Find(smg.TaskID);
+                            if (itask != null)
+                            {
+                                if (sms.ICCode == itask.ICCardCode && DateTime.Compare(DateTime.Now, sms.RcdTime.AddMinutes(5)) < 0)
+                                {
+                                    isSend = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    //推送至接口中
+                    if (isSend)
+                    {
+                        string iccode = "";
+                        ImplementTask itask = new CWTask().Find(smg.TaskID);
+                        if (itask != null)
+                        {
+                            iccode = itask.ICCardCode;
+                        }
+                        SMSInfo currSMS = new SMSInfo {
+                            warehouse = smg.Warehouse,
+                            DeviceCode = smg.DeviceCode,
+                            AutoStep=smg.RunStep,
+                            Message=fault.Description,
+                            RcdTime=DateTime.Now
+                        };
+                        Clients.All.feedbackSMSInfo(currSMS);
+                        //更新数据字典
+                        lock (dicSMSInfo)
+                        {
+                            if (dicSMSInfo.ContainsKey(smg))
+                            {
+                                dicSMSInfo.Remove(smg);
+                            }
+                            dicSMSInfo.Add(smg, currSMS);
+                        }
+                    }
+
+                }
+
+            }
+            #endregion
         }
 
         /// <summary>

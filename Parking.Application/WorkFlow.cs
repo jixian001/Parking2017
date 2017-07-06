@@ -822,7 +822,7 @@ namespace Parking.Application
             Log log = LogFactory.GetLogger("WorkFlow.DealAlarmInfo");
             try
             {
-                List<Device> deviceLst =cwdevice.FindList(d => true);
+                List<Device> deviceLst =cwdevice.FindList(d => d.Warehouse==warehouse);
                 foreach(Device smg in deviceLst)
                 {
                     if (smg.Type == EnmSMGType.Hall)
@@ -927,6 +927,11 @@ namespace Parking.Application
                             {
                                 smg.InStep = inStepValue;
                                 isUpdate = true;
+
+                                if (inStepValue != 0)
+                                {
+                                    smg.RunStep = inStepValue;
+                                }
                             }
                         }
 
@@ -939,6 +944,11 @@ namespace Parking.Application
                             {
                                 smg.OutStep = outValue;
                                 isUpdate = true;
+
+                                if (outValue != 0)
+                                {
+                                    smg.RunStep = outValue;
+                                }
                             }
                         }
 
