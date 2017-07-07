@@ -1,4 +1,5 @@
-﻿using System;
+﻿#region
+using System;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,6 +11,8 @@ using Parking.Core;
 using Parking.Web.Models;
 using System.Threading.Tasks;
 using Parking.Auxiliary;
+using Newtonsoft.Json;
+#endregion
 
 namespace Parking.Web
 {
@@ -37,6 +40,8 @@ namespace Parking.Web
             MainCallback<Alarm>.Instance().WatchEvent+= FileWatch_FaultWatchEvent;
             MainCallback<ImplementTask>.Instance().WatchEvent += FileWatch_IMPTaskWatchEvent;
             MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
+
+            SingleCallback.Instance().ManualOprtEvent += ParkingSingleton_ManualOprtEvent;
         }
 
         public IHubConnectionContext<dynamic> Clients
@@ -141,7 +146,7 @@ namespace Parking.Web
         /// 推送车位信息
         /// </summary>
         /// <param name="loc"></param>
-        private void FileWatch_LctnWatchEvent(Location loca)
+        private void FileWatch_LctnWatchEvent(int type, Location loca)
         {
             #region
             int total = 0;
@@ -211,7 +216,7 @@ namespace Parking.Web
         /// 推送设备信息
         /// </summary>
         /// <param name="entity"></param>
-        private void FileWatch_DeviceWatchEvent(Device smg)
+        private void FileWatch_DeviceWatchEvent(int type, Device smg)
         {
             if (log != null)
             {
@@ -225,26 +230,30 @@ namespace Parking.Web
         /// 推送执行作业信息
         /// </summary>
         /// <param name="itask"></param>
-        private void FileWatch_IMPTaskWatchEvent(ImplementTask itask)
+        private void FileWatch_IMPTaskWatchEvent(int type, ImplementTask itask)
         {            
             string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
-            string type = PlusCvt.ConvertTaskType(itask.Type);
+            string ctype = PlusCvt.ConvertTaskType(itask.Type);
             string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
             DeviceTaskDetail detail = new DeviceTaskDetail
             {
                 DevDescp = desp,
-                TaskType = type,
+                TaskType = ctype,
                 Status = status,
                 Proof = itask.ICCardCode
             };
             //作业要删除时
-            if (itask.IsComplete == 1)
+            if (itask.IsComplete == 1||type==3)
             {
                 detail.TaskType = "";
                 detail.Status = "";
                 detail.Proof = "";
             }
+            //给界面用
             Clients.All.feedbackImpTask(detail);
+
+            //给云服务处理用
+            Clients.All.feedbackSubTask(itask);
         }
 
         private static Dictionary<Device, SMSInfo> dicSMSInfo = new Dictionary<Device, SMSInfo>();
@@ -253,7 +262,7 @@ namespace Parking.Web
         /// 同时可用于云服务，发送错误短信
         /// </summary>
         /// <param name="fault"></param>
-        public void FileWatch_FaultWatchEvent(Alarm fault)
+        public void FileWatch_FaultWatchEvent(int type, Alarm fault)
         {
             #region 用于报警画面更新
 
@@ -346,9 +355,35 @@ namespace Parking.Web
         /// 队列信息回调
         /// </summary>
         /// <param name="entity"></param>
-        private void ParkingSingleton_WatchEvent(WorkTask entity)
+        private void ParkingSingleton_WatchEvent(int type, WorkTask entity)
         {
-            Clients.All.feedbackWorkTask(entity);
+            List<WorkTask> mtskLst = new CWTask().FindQueueList(d => true);
+            //删除
+            if (type == 3)
+            {
+                if (mtskLst.Contains(entity))
+                {
+                    mtskLst.Remove(entity);
+                }
+            }
+            string jsonStr = JsonConvert.SerializeObject(mtskLst);
+
+            Clients.All.feedbackWorkTask(jsonStr);
         }
+
+        /// <summary>
+        /// 手动入出库时，上报车辆出入库信息
+        /// </summary>
+        /// <param name="loc"></param>
+        private void ParkingSingleton_ManualOprtEvent(int type, Location loc)
+        {            
+            var data = new {
+                Type=type,
+                Data=loc
+            };
+            string jsonstr = JsonConvert.SerializeObject(data); 
+            Clients.All.feedbackSinglePkRecord(jsonstr);
+        }
+
     }
 }

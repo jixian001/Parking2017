@@ -293,7 +293,8 @@ namespace Parking.Web.Controllers
         public ActionResult GetLocationList()
         {
             List<Location> locList = new CWLocation().FindLocList();
-            if (locList == null || locList.Count == 0)
+            if (locList == null || 
+                locList.Count == 0)
             {
                 var resp = new
                 {

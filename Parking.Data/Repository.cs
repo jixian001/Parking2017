@@ -165,7 +165,7 @@ namespace Parking.Data
 
         public int Add(TEntity entity,bool isSave)
         {
-            MainCallback<TEntity>.Instance().OnChange(entity);
+            MainCallback<TEntity>.Instance().OnChange(1,entity);
 
             _dbContext.Set<TEntity>().Add(entity);
             if (isSave)
@@ -179,7 +179,7 @@ namespace Parking.Data
         #region 更新实体 update
         public int Update(TEntity entity,bool isSave)
         {
-            MainCallback<TEntity>.Instance().OnChange(entity);
+            MainCallback<TEntity>.Instance().OnChange(2,entity);
 
             _dbContext.Set<TEntity>().Attach(entity);
             _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
@@ -200,7 +200,7 @@ namespace Parking.Data
         #region 删除
         public int Delete(TEntity entity,bool isSave)
         {
-            MainCallback<TEntity>.Instance().OnChange(entity);
+            MainCallback<TEntity>.Instance().OnChange(3,entity);
 
             _dbContext.Set<TEntity>().Attach(entity);
             _dbContext.Entry<TEntity>(entity).State = EntityState.Deleted;

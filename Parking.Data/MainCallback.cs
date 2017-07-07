@@ -6,16 +6,22 @@ using System.Threading.Tasks;
 
 namespace Parking.Data
 {
-    public delegate void WatchEventHandler<TEntity>(TEntity entity);
+    public delegate void WatchEventHandler<TEntity>(int type, TEntity entity);
+   
     public class MainCallback<TEntity>
     {
         public event WatchEventHandler<TEntity> WatchEvent;
 
-        public void OnChange(TEntity entity)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type">1-增，2-改，3-删</param>
+        /// <param name="entity"></param>
+        public void OnChange(int type, TEntity entity)
         {
             if (WatchEvent != null)
             {
-                WatchEvent(entity);
+                WatchEvent(type, entity);
             }
         }
 

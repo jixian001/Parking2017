@@ -8,6 +8,7 @@ using Parking.Data;
 using Parking.Core;
 using Parking.Web.Areas.SystemManager.Models;
 using Parking.Web.Models;
+using System.Text.RegularExpressions;
 
 namespace Parking.Web.Areas.SystemManager.Controllers
 {  
@@ -350,6 +351,14 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("找不到车位-" + Addrs);
             }
+            if (loc.Type != EnmLocationType.Normal)
+            {
+                return Content("车位不可用，请使用另一个");
+            }
+            if (loc.Status != EnmLocationStatus.Space)
+            {
+                return Content("当前车位不是空闲的，无法使用该车位！");
+            }
             string indate = Request.Form["txtInDtime"];
             if (string.IsNullOrEmpty(indate))
             {
@@ -361,6 +370,51 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("入库卡号为空，操作失败！");
             }
+            #region 验证下
+            Regex rex = new Regex(@"^\d+$");
+            if (!rex.IsMatch(iccd))
+            {
+                return Content("请输入有效的数字");
+            }
+            int proof = Convert.ToInt32(iccd);
+            if (proof >= 10000)
+            {
+                //是指纹时，找出是否注册了
+                FingerPrint fprint = new CWFingerPrint().Find(fp=>fp.SN_Number==proof);
+                if (fprint == null)
+                {
+                    return Content("当前凭证是指纹编号，但库里找不到注册的指纹");
+                }
+            }
+            else
+            {
+                ICCard iccode = new CWICCard().Find(ic=>ic.UserCode==iccd);
+                if (iccode == null)
+                {
+                    return Content("请先注册当前卡号，再使用！");
+                }
+                if (iccode.Status != EnmICCardStatus.Normal)
+                {
+                    return Content("该卡已注销或挂失！");
+                }
+            }
+            Location lctn = new CWLocation().FindLocation(l => l.ICCode == iccd);
+            if (lctn != null)
+            {
+                return Content("该卡已被使用，车位 - "+lctn.Address);
+            }
+            ImplementTask itask = new CWTask().Find(tsk=>tsk.ICCardCode==iccd);
+            if (itask != null)
+            {
+                return Content("该卡正在作业，无法使用");
+            }
+            WorkTask wtask = new CWTask().FindQueue(wk => wk.ICCardCode == iccd);
+            if (wtask != null)
+            {
+                return Content("该卡已加入队列，无法使用");
+            }
+           
+            #endregion
             string distance = Request.Form["txtInDist"];
             if (string.IsNullOrEmpty(distance))
             {
@@ -376,6 +430,11 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             loc.PlateNum = plate;
             loc.InDate = dt;           
             Response resp = new CWLocation().UpdateLocation(loc);
+            if (resp.Code == 1)
+            {
+                //推送一个车辆入库信息给到云服务端
+                SingleCallback.Instance().OnChange(1, loc);
+            }
             return Content(resp.Message);
         }
         /// <summary>
@@ -401,12 +460,15 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             {
                 return Content("找不到车位-" + Addrs);
             }
+            //推送一个车辆出库信息给到云服务端
+            SingleCallback.Instance().OnChange(2, loc);
+
             loc.Status = EnmLocationStatus.Space;
             loc.ICCode = "";
             loc.WheelBase = 0;
             loc.CarSize = "";
             loc.InDate = DateTime.Parse("2017-1-1");
-            Response resp = new CWLocation().UpdateLocation(loc);
+            Response resp = new CWLocation().UpdateLocation(loc);           
             return Content(resp.Message);
         }
 
