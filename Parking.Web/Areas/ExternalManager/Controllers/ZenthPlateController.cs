@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.IO;
 using System.Drawing;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Parking.Data;
@@ -26,7 +27,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         }
 
         [HttpPost]
-        public ActionResult PlateResult()
+        public async Task<JsonResult> PlateResult()
         {
             Log log = LogFactory.GetLogger("PlateResult");
             try
@@ -121,7 +122,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                         if (dicHallsInfo.ContainsKey(ipaddrs))
                         {
                             int hallID = dicHallsInfo[ipaddrs];
-                            new CWPlate().AddPlate(warehouse, hallID, plate,headpath,triggerType);
+                            await new CWPlate().AddPlateAsync(warehouse, hallID, plate,headpath,triggerType);
                         }
                         else
                         {
@@ -130,8 +131,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     }
                 }
                 catch (Exception ex)
-                {
-                    //log.Error("JSON格式数据 - "+req);
+                {                   
                     log.Error("解析数据异常 - " + ex.ToString());
                 }
                              

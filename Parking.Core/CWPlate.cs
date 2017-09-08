@@ -14,7 +14,7 @@ namespace Parking.Core
 
         private static string configpath = null;
 
-        public Response AddPlate(int warehouse, int hallID,string plateNum,string headimgpath,int trType)
+        public async Task<Response> AddPlateAsync(int warehouse, int hallID,string plateNum,string headimgpath,int trType)
         {
             Response resp = new Response();
             Log log = LogFactory.GetLogger("AddPlate");
@@ -41,7 +41,7 @@ namespace Parking.Core
                 log.Error(ex.ToString());
             }
 
-            PlateMappingDev mapping = FindPlate(warehouse, hallID);
+            PlateMappingDev mapping =await FindPlateAsync(warehouse, hallID);
             log.Warn("开始写车牌信息！");
             if (mapping == null)
             {
@@ -53,7 +53,7 @@ namespace Parking.Core
                     PlateImagePath=null,
                     InDate=DateTime.Now
                 };
-                resp = manager.Add(mp);                
+                resp =await manager.AddAsync(mp);                
             }
             else
             {
@@ -64,14 +64,14 @@ namespace Parking.Core
                     mapping.HeadImagePath = virtualPath;
                     mapping.InDate = DateTime.Now;
 
-                    resp= manager.Update(mapping);                    
+                    resp=await manager.UpdateAsync(mapping);                    
                 }
                 else
                 {
                     if (mapping.PlateNum != plateNum)
                     {
                         //车牌识别不一致，则先判断时间，当前步进
-                        Device hall = new CWDevice().Find(d=>d.Warehouse==warehouse&&d.DeviceCode==hallID);
+                        Device hall =await new CWDevice().FindAsync(d=>d.Warehouse==warehouse&&d.DeviceCode==hallID);
                         if (hall != null)
                         {
                             if (hall.InStep == 30)
@@ -91,7 +91,7 @@ namespace Parking.Core
                                 mapping.HeadImagePath = virtualPath;
                                 mapping.InDate = DateTime.Now;
 
-                                resp = manager.Update(mapping);
+                                resp =await manager.UpdateAsync(mapping);
                                 if (resp.Code == 1)
                                 {
                                     log.Info("更新车牌信息成功！");
@@ -132,6 +132,11 @@ namespace Parking.Core
         public PlateMappingDev FindPlate(int warehouse, int hallID)
         {
             return manager.Find(d => d.Warehouse == warehouse && d.DeviceCode == hallID);
+        }
+
+        public async Task<PlateMappingDev> FindPlateAsync(int warehouse, int hallID)
+        {
+            return await manager.FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == hallID);
         }
 
         public List<PlateMappingDev> FindList()
