@@ -42,7 +42,7 @@ namespace Parking.Core
                 Warehouse = smg.Warehouse,
                 DeviceCode = smg.DeviceCode,
                 RecordDtime = DateTime.Now,
-                Mode = smg.Mode.ToString(),
+                Mode =ConvertMode(smg.Mode),
                 IsAble = smg.IsAble,
                 IsAvailabe = smg.IsAvailabe,
                 RunStep = smg.RunStep,
@@ -362,6 +362,30 @@ namespace Parking.Core
         }
 
         #endregion
+
+        private string ConvertMode(EnmModel model)
+        {
+            string md = "";
+            switch (model)
+            {
+                case EnmModel.Automatic:
+                    md = "全自动";
+                    break;
+                case EnmModel.StandAlone:
+                    md = "单机";
+                    break;
+                case EnmModel.Manual:
+                    md = "手动";
+                    break;
+                case EnmModel.Maintance:
+                    md = "维修";
+                    break;
+                default:
+                    md = model.ToString();
+                    break;
+            }
+            return md;
+        }
 
     }
 }

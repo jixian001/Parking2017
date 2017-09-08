@@ -379,6 +379,13 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     #endregion
 
                     resp.Message = "缴费成功！";
+                   
+                    NBackInfo nback = new NBackInfo()
+                    {
+                        LastDeadline = oldInfo.LastDeadline,
+                        CurrDeadline = oldInfo.CurrDeadline
+                    };
+                    resp.Data = nback;
                 }
             }
             catch (Exception ex)

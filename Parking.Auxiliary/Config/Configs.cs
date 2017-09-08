@@ -87,11 +87,11 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 }
 
                 XmlDocument xmlDoc = new XmlDocument();
@@ -129,11 +129,11 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 }
 
                 XmlDocument xmlDoc = new XmlDocument();
@@ -182,11 +182,11 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 }
 
                 XmlDocument xmlDoc = new XmlDocument();
@@ -305,11 +305,11 @@ namespace Parking.Auxiliary
                 string path = "";
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 }
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(path);
@@ -345,11 +345,11 @@ namespace Parking.Auxiliary
                 string path = "";
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
                 }
 
                 XmlDocument xmlDoc = new XmlDocument();

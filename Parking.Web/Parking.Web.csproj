@@ -186,6 +186,7 @@
     <Compile Include="Areas\CustomManager\Controllers\ManageController.cs" />
     <Compile Include="Areas\CustomManager\CustomManagerAreaRegistration.cs" />
     <Compile Include="Areas\CustomManager\Models\CustomerModel.cs" />
+    <Compile Include="Areas\ChargeManager\Models\NBackInfo.cs" />
     <Compile Include="Areas\CustomManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ExternalManager\Controllers\ExternalController.cs" />
     <Compile Include="Areas\ExternalManager\Controllers\PLCController.cs" />
@@ -224,6 +225,10 @@
     <Compile Include="Migrations\201709081353189_updatecc.cs" />
     <Compile Include="Migrations\201709081353189_updatecc.Designer.cs">
       <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201709081406399_addcc.cs" />
+    <Compile Include="Migrations\201709081406399_addcc.Designer.cs">
+      <DependentUpon>201709081406399_addcc.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
@@ -449,6 +454,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201709081353189_updatecc.resx">
       <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201709081406399_addcc.resx">
+      <DependentUpon>201709081406399_addcc.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

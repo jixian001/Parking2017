@@ -81,7 +81,7 @@
                             <div class="form-group">
                                 <label for="txtTransWh" class="col-md-2 control-label">库区</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtTransWh" name="txtTransWh" />
+                                    <input type="text" class="form-control" id="txtTransWh" name="txtTransWh" value="1"/>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -111,7 +111,7 @@
                             <div class="form-group">
                                 <label for="txtDisWh" class="col-md-2 control-label">库区</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtDisWh" name="txtDisWh" />
+                                    <input type="text" class="form-control" id="txtDisWh" name="txtDisWh" value="1"/>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -190,7 +190,7 @@
                             <div class="form-group">
                                 <label for="txtOutWh" class="col-md-2 control-label">库区</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="txtOutWh" name="txtOutWh" />
+                                    <input type="text" class="form-control" id="txtOutWh" name="txtOutWh" value="1"/>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -271,7 +271,7 @@
                 startView: 2,
                 forceParse: 0,
                 showMeridian: 1
-            });
+            });           
 
             $("#btnFind").click(function () {
                 $("#txtFindWh").val("");
@@ -369,6 +369,8 @@
             $("#btnEnable").click(function () {
                 DisableLoc(false);
             });
+
+            $("#txtInDtime").val(getNowFormatDate(0));
 
             $("#btnIn").click(function () {
                 var $wh = $("#txtInWh");
@@ -602,6 +604,34 @@
 
             });
 
+
+            //获取当前时间
+            function getNowFormatDate(num) {
+                var date = new Date();
+                date.setMinutes(date.getMinutes() - num);
+                var seperator1 = "-";
+                var seperator2 = ":";
+                var month = date.getMonth() + 1;
+                var strDate = date.getDate();
+                if (month >= 1 && month <= 9) {
+                    month = "0" + month;
+                }
+                if (strDate >= 0 && strDate <= 9) {
+                    strDate = "0" + strDate;
+                }
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+
+                var currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
+                    + " " + hour + seperator2 + minute;
+                return currentdate;
+            }
 
         });
 

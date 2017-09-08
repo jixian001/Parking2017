@@ -23,17 +23,17 @@
                         </td>
                         <th class="formTitle text-danger">选择</th>
                         <td class="formValue">
-                           <div class="form-group" style="padding-top:10px">
-                               <label class="radio-inline">
-                                   <input class="radio" type="radio" value="1" name="genre" checked/>用户卡号
-                               </label>
-                               <label class="radio-inline">
-                                   <input class="radio" type="radio" value="2" name="genre" />车牌号码
-                               </label>
-                               <label class="radio-inline">
-                                   <input class="radio" type="radio" value="3" name="genre" />顾客姓名
-                               </label>
-                           </div>
+                            <div class="form-group" style="padding-top:10px">
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="1" name="genre" checked />用户卡号
+                                </label>
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="2" name="genre" />车牌号码
+                                </label>
+                                <label class="radio-inline">
+                                    <input class="radio" type="radio" value="3" name="genre" />顾客姓名
+                                </label>
+                            </div>
                         </td>
                     </tr>
 
@@ -76,13 +76,13 @@
                     <tr>
                         <th class="formTitle"><b>收费标准</b></th>
                         <td class="formValue">
-                            <input id="feeunit" name="feeunit" type="number" step="0.1" class="form-control  text-center" disabled/>
+                            <input id="feeunit" name="feeunit" type="number" step="0.1" class="form-control  text-center" disabled />
                         </td>
                         <th class="formTitle"><b>实收金额</b></th>
                         <td class="formValue">
                             <input id="actualfee" name="actualfee" type="number" step="0.1" class="form-control  text-center" />
                         </td>
-                    </tr>                   
+                    </tr>
                 </table>
             </form>
 
@@ -105,12 +105,12 @@
                                         <option value="0">请选择</option>
                                     </select>
                                 </td>
-                            </tr>                          
+                            </tr>
                         </table>
-                    </form>                   
+                    </form>
                 </div>
             </div>
-           
+
             <br />
             <div class="row">
                 <div class="form-group">
@@ -119,13 +119,13 @@
                     </div>
                     <div class="col-md-1 col-md-offset-1">
                         <button type="button" id="btnFixFee" name="btnFixFee" class="btn btn-default">确认缴费</button>
-                    </div>  
+                    </div>
                     <div class="col-md-1 col-md-offset-1">
                         <button type="button" id="btnOutCar" name="btnOutCar" class="btn btn-default">确认取车</button>
-                    </div>                 
+                    </div>
                 </div>
             </div>
-        </div>        
+        </div>
         <br />
         <div class="rdisplay text-info">
         </div>
@@ -207,14 +207,10 @@
                         if (nback.Code == 0)
                         {
                             $("input[name='season']:checked").attr("checked", false);
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: nback.Message
-                            });
                         }
                         else
                         {
-                            $("#feetunit").val(nback.Data);
+                            $("#feeunit").val(nback.Data);
                         }
                     }
                 });
@@ -251,7 +247,7 @@
                         $("#btnFind").text("查询中");
                     },
                     success: function (nback) {
-                        
+
                         if (nback.Code == 0)
                         {
                             BootstrapDialog.show({
@@ -263,7 +259,7 @@
                         {
                             var obj = nback.Data;
 
-                            $("#utype").val(obj.ICType);                          
+                            $("#utype").val(obj.ICType);
                             $("#newdeadline").val(obj.CurrDeadline);
 
                             $("input:input[value='1']").attr("checked", "checked");
@@ -283,6 +279,7 @@
             $("#btnFixFee").click(function () {
 
                 var ftype = $("input[name='season']:checked").val();
+
                 var feeuint = $("#feeunit").val();
                 var afee = $("#actualfee").val();
 
@@ -300,6 +297,17 @@
                     BootstrapDialog.show({
                         title: "温馨提示",
                         message: "请先 查询信息，再 确认缴费 ！"
+                    });
+                    return;
+                }
+
+                console.log(ftype);
+
+                if (ftype == 0 ||typeof(ftype) == "undefined")
+                {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "请选择 收费类型 ！"
                     });
                     return;
                 }
@@ -341,15 +349,12 @@
                                     title: "温馨提示",
                                     message: nback.Message
                                 });
-                               
+
                                 if (nback.Code == 1)
                                 {
                                     var obj = nback.Data;
                                     $("#lastdeadline").val(obj.LastDeadline);
-                                    $("#newdeadline").val(obj.CurrDeadline);
-                                    //清空收费标准
-                                    $("#feeunit").val("");
-                                    $("input[name='season']:checked").attr("checked", false);
+                                    $("#newdeadline").val(obj.CurrDeadline);                                    
                                 }
 
                             },
@@ -359,7 +364,7 @@
                         });
 
                     }
-                });              
+                });
 
             });
 
@@ -374,7 +379,7 @@
                     });
                     return;
                 }
-                
+
                 var wh = $("#wh").val();
                 if (wh == "")
                 {
@@ -397,6 +402,7 @@
 
                 var vtype = $("input[name='genre']:checked").val();
 
+
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("FixGUIOutCar")",
@@ -408,7 +414,10 @@
                     },
                     success: function (nback) {
 
-
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: nback.Message
+                        });
                     },
                     complete: function (XMLHttpRequest, textStatus) {
                         $("#btnOutCar").text("确认取车");
@@ -419,4 +428,4 @@
 
         });
     </script>
-    }
+}

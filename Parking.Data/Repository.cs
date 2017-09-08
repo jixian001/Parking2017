@@ -210,13 +210,13 @@ namespace Parking.Data
 
         public async Task<int> AddAsync(TEntity entity)
         {
-            using (var scope = new TransactionScope())
-            {
+            //using (var scope = new TransactionScope())
+            //{
                 _dbContext.Entry<TEntity>(entity).State = EntityState.Added;
                 int nback = await _dbContext.SaveChangesAsync();
-                scope.Complete();
+                //scope.Complete();
                 return nback;
-            }
+            //}
         }
 
         #endregion
@@ -236,13 +236,13 @@ namespace Parking.Data
 
         public async Task<int> UpdateAsync(TEntity entity)
         {
-            using (var scope = new TransactionScope())
-            {
+            //using (var scope = new TransactionScope())
+            //{
                 _dbContext.Set<TEntity>().Attach(entity);
                 _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
-                scope.Complete();
+                //scope.Complete();
                 return await _dbContext.SaveChangesAsync();
-            }            
+            //}            
         }
 
         #endregion
@@ -264,16 +264,16 @@ namespace Parking.Data
 
         public async Task<int> DeleteAsync(TEntity entity)
         {
-            using (var scope = new TransactionScope())
-            {
+            //using (var scope = new TransactionScope())
+            //{
                 _dbContext.Set<TEntity>().Attach(entity);
                 _dbContext.Entry<TEntity>(entity).State = EntityState.Deleted;
 
                 int nback =await _dbContext.SaveChangesAsync();
-                scope.Complete();
+                //scope.Complete();
 
                 return nback;
-            }
+            //}
         }
 
         public int Delete(IEnumerable<TEntity> entities)
