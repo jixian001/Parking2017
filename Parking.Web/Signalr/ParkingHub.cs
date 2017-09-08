@@ -34,20 +34,14 @@ namespace Parking.Web
             string connID = Context.ConnectionId;
             _instance.register(clientName, connID);
         }
-
-        public string getStatus()
-        {
-            return _instance.ServerState.ToString();
-        }
+        
 
         public void openServe()
-        {
-            _instance.openServe();
+        {           
         }
 
         public void closeServe()
-        {
-            _instance.closeServe();
+        {           
         }
 
         public override Task OnDisconnected(bool stopCalled)

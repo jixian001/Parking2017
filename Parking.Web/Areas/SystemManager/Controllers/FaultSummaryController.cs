@@ -12,52 +12,67 @@ namespace Parking.Web.Areas.SystemManager.Controllers
     public class FaultSummaryController : Controller
     {
         // GET: SystemManager/FaultSummary
+
+        //Hall1的信息
         public ActionResult Index()
         {
             return View();
         }
 
-        public JsonResult GetDeviceList()
+        //Hall2的信息
+        public ActionResult Hall2()
         {
-            List<Device> devlst = new CWDevice().FindList(dev => true);
-            return Json(devlst,JsonRequestBehavior.AllowGet);
+            return View();
         }
 
-        public JsonResult FindStateBitList(int wh,int smg)
+        //TV1的信息
+        public ActionResult TV1()
         {
-            List<Alarm> stateList = new CWDevice().FindAlarmList(state => state.Warehouse == wh &&
-                                                                          state.DeviceCode == smg &&
-                                                                          state.IsBackup == 0 &&
-                                                                          state.Value == 1 &&
-                                                                          state.Color == EnmAlarmColor.Green);
-            List<string> descList = new List<string>();
-            if (stateList != null && stateList.Count > 0)
-            {
-                foreach(Alarm alarm in stateList)
-                {
-                    descList.Add(alarm.Description);
-                }
-            }
-            return Json(descList,JsonRequestBehavior.AllowGet);
+            return View();
         }
 
-        public JsonResult FindFaultBitList(int wh,int smg)
+        //TV2的信息
+        public ActionResult TV2()
         {
-            List<Alarm> alarmList = new CWDevice().FindAlarmList(state => state.Warehouse == wh &&
-                                                                         state.DeviceCode == smg &&
-                                                                         state.IsBackup == 0 &&
-                                                                         state.Value == 1 &&
-                                                                         state.Color == EnmAlarmColor.Red);
-            List<string> descList = new List<string>();
-            if (alarmList != null && alarmList.Count > 0)
+            return View();
+        }              
+
+
+        public JsonResult FindAlarmsLst(int warehouse,int devicecode)
+        {
+            List<Alarm> stateList = new CWDevice().FindAlarmList(d => d.Warehouse == warehouse && d.DeviceCode == devicecode);
+            List<BackAlarm> dispLst = new List<BackAlarm>();
+            for(int i = 0; i < stateList.Count; i++)
             {
-                foreach (Alarm alarm in alarmList)
+                Alarm alarm = stateList[i];
+                if (alarm.Value == 1)
                 {
-                    descList.Add(alarm.Description);
+                    if (!alarm.Description.Contains("备用"))
+                    {
+                        if (alarm.Color == EnmAlarmColor.Green)
+                        {
+                            BackAlarm back = new BackAlarm {
+                                Type=1,
+                                Description=alarm.Description
+                            };
+                            dispLst.Add(back);
+                        }
+                        else if (alarm.Color == EnmAlarmColor.Red)
+                        {
+                            BackAlarm back = new BackAlarm
+                            {
+                                Type = 2,
+                                Description = alarm.Description
+                            };
+                            dispLst.Add(back);
+                        }
+                    }
                 }
             }
-            return Json(descList, JsonRequestBehavior.AllowGet);
+
+            return Json(dispLst,JsonRequestBehavior.AllowGet);
         }
+        
 
         /// <summary>
         /// 故障管理，显示故障信息，修改故障信息

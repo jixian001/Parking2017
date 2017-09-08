@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - 车库管理系统</title>
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/bootstrapplugin")
+    @Styles.Render("~/Content/bootstrapselect")
+    @Styles.Render("~/Content/rocket")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("应用程序", "index", "home", new { area = "" }, htmlAttributes: new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("主页", "index", "home", new { area = "" }, htmlAttributes: new { @class = "" })</li>                  
+                </ul>
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <div class="row">
+            <hr />
+            <footer class="text-center">
+                <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;深圳中集智能停车有限公司 &nbsp;&nbsp;&nbsp;版权所有</p>
+                <p>
+                    @Html.ActionLink("关于我们", "About", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })&nbsp;&nbsp;&nbsp;&nbsp;
+                    @Html.ActionLink("微信公众号", "WeChat", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })
+                </p>
+            </footer>
+        </div>
+    </div>
+
+    <div style="display:none" id="rocket-to-top">
+        <div style="opacity:0;display:block" class="level-2"></div>
+        <div class="level-3"></div>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/signalr")
+    @Scripts.Render("~/bundles/plugin")
+    @Scripts.Render("~/bundles/bootstrapselect")
+    @Scripts.Render("~/bundles/rocket")
+    <script src="~/signalr/hubs"></script>
+
+    @RenderSection("scripts", required: false)
+
+</body>
+</html>

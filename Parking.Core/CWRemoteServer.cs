@@ -14,7 +14,7 @@ namespace Parking.Core
     /// </summary>
     public class CWRemoteServer
     {
-        private static RemoteFeeRecordManager manager = new RemoteFeeRecordManager();
+        private RemoteFeeRecordManager manager = new RemoteFeeRecordManager();
 
         /// <summary>
         /// 添加，修改车位的入库时间,

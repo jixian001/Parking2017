@@ -3,27 +3,56 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Parking.Auxiliary;
 
 namespace Parking.Data
-{
-    public delegate void ManualEventHandler(int type, Location loc);
+{    
+    public delegate void ICCardEventHandler(string msg);
+    public delegate void FaultsEventHandler(int warehouse, int code,List<BackAlarm> alarmLst);
+    public delegate void PlateDisplayEventtHandler(PlateDisplay plate);
     /// <summary>
     /// 个推
     /// </summary>
     public class SingleCallback
-    {
-        public event ManualEventHandler ManualOprtEvent;
+    {       
+        public event ICCardEventHandler ICCardWatchEvent;
+        public event FaultsEventHandler FaultsWatchEvent;
+        public event PlateDisplayEventtHandler PlateWatchEvent;
+        /// <summary>
+        /// 读到卡号时，引发
+        /// </summary>
+        /// <param name="physc"></param>
+        public void WatchICCard(string physc)
+        {
+            if (ICCardWatchEvent != null)
+            {
+                ICCardWatchEvent(physc);
+            }
+        }
 
         /// <summary>
-        /// 手动入库、手动出库时，发送下入出库信息给到云服务
+        /// 更新设备状态或报警
         /// </summary>
-        /// <param name="type">1、手动入库。 2、手动出库</param>
-        /// <param name="loc"></param>
-        public void OnChange(int type, Location loc)
+        /// <param name="needUpdateLst"></param>
+        public void WatchFaults(int warehouse, int code, List<BackAlarm> alarmLst)
         {
-            if (ManualOprtEvent != null)
+            if (FaultsWatchEvent != null)
             {
-                ManualOprtEvent(type, loc);
+                FaultsWatchEvent(warehouse,code,alarmLst);
+            }
+        }
+
+        /// <summary>
+        /// 车牌识别识别到车牌时回调页面显示
+        /// </summary>
+        /// <param name="platenum"></param>
+        /// <param name="headpath">这个是虚拟路径+文件名</param>
+        /// <param name="dtime"></param>
+        public void WatchPlateInfo(PlateDisplay plate)
+        {
+            if (PlateWatchEvent != null)
+            {
+                PlateWatchEvent(plate);
             }
         }
 

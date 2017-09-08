@@ -1,186 +1,134 @@
-﻿
-@{
-    ViewBag.Title = "故障汇总";
+﻿@{
+    ViewBag.Title = "1厅故障信息";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <br />
 <div class="row">
-    <div class="col-md-2">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <div class="panel-title"><span class="glyphicon"></span>故障汇总</div>
-            </div>
-            <div class="panel-body">
-                <div class="list-group" id="sidenavlist">
-                    <div class="list-group-item"><span class="glyphicon glyphicon-home"></span>&nbsp;@Html.ActionLink("主 页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</div>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div class="list-group" id="sidenavlist">
-                    <div class="list-group-item"><span></span>&nbsp;@Html.ActionLink("内容管理", "ManageFaultInfo", "FaultSummary")</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
     <div class="col-md-10">
-        <div id="loading" class="text-center"><h3>尚未选择要显示的设备...</h3></div>
-        <div id="content" style="display:none">
-            <ol class="breadcrumb">
-                <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
-                <li>故障汇总</li>
-                <li class="active" id="breaditem"></li>
-            </ol>
-            <h4 id="paneltitle" class="text-center"></h4>
-            <hr />
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <div class="panel-title">状态位显示区</div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="list-group" id="statuslist">
-                            </div>
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>故障汇总</li>
+            <li class="active" id="breaditem">1号车厅</li>
+        </ol>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">状态位显示区</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="list-group" id="statuslist">
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <div class="panel-title">报警位显示区</div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="list-group" id="faultlist">
-                            </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">报警位显示区</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="list-group" id="faultlist">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-@* 用于保存当前所选的设备，用于定时刷新 *@
+</div>   
+
 <div>
-    <input type="hidden" value="" id="warehouse" name="warehouse" />
-    <input type="hidden" value="" id="devicecode" name="devicecode" />
+    <input type="hidden" value="1" id="warehouse" name="warehouse" />
+    <input type="hidden" value="11" id="devicecode" name="devicecode" />
 </div>
 
 @section scripts{
     <script>
         $(function () {
-            $.ajax({
-                type: "GET",
-                url: "@Url.Action("GetDeviceList", "FaultSummary")",
-                dataType: "json",
-                cache: false,
-                beforeSend: function (XMLHttpRequest) {
-                   //showloading
-                },
-                success: function (data) {
-                    var html = '';
-                    $.each(data, function (index, comment) {
-                        var wh=comment['Warehouse'];
-                        var code = comment['DeviceCode'];
-                        var smg = '';
-                        if (code > 10) {
-                            smg = (code - 10).toString() + '号厅';
-                        } else {
-                            smg = code + '号TV';
+            //第一次手动加载
+            var wh = $("#warehouse").val();
+            var code = $("#devicecode").val();
+            //显示状态信息位
+            updatealarm(wh, code);
+
+            //后面使用signalr更新
+
+            var hubs = $.connection.parkingHub;
+
+            $.extend(hubs.client, {
+
+                feedbackhall1alarm: function (data) {
+
+                    var htmlstate = '';
+                    var htmlfault = '';
+
+                    $.each(data, function (index, content) {
+
+                        if (content.Type == 1) {
+                            htmlstate += '<div class="list-group-item text-default text-center">' + content.Description + '</div>';
                         }
-                        var msg='sidenavClick('+wh+','+code+')';
-                        html += '<div class="list-group-item"><a href="javascript:void(0)" onclick="'+msg+'"><span class="text-danger">' + wh + '号库</span>&nbsp;&nbsp;' + smg + "</a></div>";
-                    });                   
-                    $("#sidenavlist").append(html);
-                },
-                complete:function(XMLHttpRequest,textStatus){
-                    //hideloading
-                },
-                error: function () {
-                    
+                        else if (content.Type == 2) {
+                            htmlfault += '<div class="list-group-item text-danger text-center">' + content.Description + '</div>';
+                        }
+
+                    });
+
+                    $("#faultlist").html(htmlfault);
+
+                    $("#statuslist").html(htmlstate);
                 }
-            });          
-            //后面还是用signal方式引发吧
-            //var timer=setInterval(getback, 1000);
+
+            });
+
+            //start the connection
+            $.connection.hub.start()
+                            .then(function () {
+                                //注册下
+                                hubs.server.register("hall1");
+
+                            })
+                            .done(function () {
+
+                            }
+                            );
+
+            //signalr 结束
+
         });
-        
-        function getback() {
-            var $wh = $("#warehouse").val();
-            var $code = $("#devicecode").val();
-            if ($wh != "" && $code != "")
-            {
-                console.log("timer appear: wh-" + $wh + " code-" + $code);
-                //显示状态信息位
-                updatestate($wh, $code);
-                //显示报警位
-                updatefault($wh, $code);
-            }
-        }
 
-        function sidenavClick(warehouse, code) {
-            $("#loading").css("display", "none");
-            $("#content").css("display", "block");
-
-            $("#warehouse").val(warehouse);
-            $("#devicecode").val(code);
-
-            var smg = '';
-            if (code > 10) {
-                smg = (code - 10).toString() + '号厅';
-            } else {
-                smg = code + '号TV';
-            }
-            $("#breaditem").text(warehouse+"号库 "+smg);
-            $("#paneltitle").html(warehouse + "#库 " + "&nbsp;&nbsp;<i>" + smg + "</i>");
-
-            //显示状态信息位
-            updatestate(warehouse, code);
-
-            //显示报警位
-            updatefault(warehouse, code);
-        }
-
-        function updatestate(warehouse, code) {
-            //显示状态信息位
+        function updatealarm(wh, code) {
+            //显示报警,状态位
             $.ajax({
                 type: "GET",
-                url: "@Url.Action("FindStateBitList", "FaultSummary")",
-                data: { wh: warehouse, smg: code },
+                url: "@Url.Action("FindAlarmsLst", "FaultSummary")",
+                data: { warehouse: wh, devicecode: code },
                 dataType: "json",
                 cache: false,
-                beforeSend: function (XMLHttpRequest) {
-                    //showloading
-                },
                 success: function (data) {
-                    var html = '';
+
+                    var htmlstate = '';
+                    var htmlfault = '';
+
                     $.each(data, function (index, content) {
-                        html += '<div class="list-group-item text-info text-center">' + content + '</div>'
+
+                        if (content.Type == 1)
+                        {
+                            htmlstate += '<div class="list-group-item text-default text-center">' + content.Description + '</div>';
+                        }
+                        else if (content.Type == 2)
+                        {
+                            htmlfault += '<div class="list-group-item text-danger text-center">' + content.Description + '</div>';
+                        }
+
                     });
-                    $("#statuslist").html(html);
+
+                    $("#faultlist").html(htmlfault);
+
+                    $("#statuslist").html(htmlstate);
                 }
             });
         }
-
-        function updatefault(warehouse, code) {
-            //显示报警位
-            $.ajax({
-                type: "GET",
-                url: "@Url.Action("FindFaultBitList", "FaultSummary")",
-                data: { wh: warehouse, smg: code },
-                dataType: "json",
-                cache: false,
-                beforeSend: function (XMLHttpRequest) {
-                    //showloading
-                },
-                success: function (data) {
-                    var html = '';
-                    $.each(data, function (index, content) {
-                        html += '<div class="list-group-item text-danger text-center">' + content + '</div>'
-                    });
-                    $("#faultlist").html(html);
-                }
-            });
-        }
-
     </script>
 
-    }
+}

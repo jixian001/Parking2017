@@ -19,7 +19,7 @@ namespace Parking.Core
         /// <param name="hall">车厅</param>       
         /// <param name="smg">ETV 设备号</param>
         /// <returns></returns>
-        public Location IAllocateLocation(string checkCode,Customer cust, Device hall, out int smg)
+        public Location IAllocateLocation(string checkCode, Customer cust, Device hall, out int smg)
         {
             Log log = LogFactory.GetLogger("AllocateLocation.IAllocateLocation");
 
@@ -75,7 +75,14 @@ namespace Parking.Core
                     cwtask.AddNofication(warehouse, hallCode, "16.wav");
                     return null;
                 }
-                lct = new CWLocation().SelectLocByAddress(cust.Warehouse, cust.LocAddress);
+                lct = new CWLocation().FindLocation(l => l.Warehouse == cust.Warehouse && l.Address == cust.LocAddress);
+                if (lct == null)
+                {
+                    cwtask.AddNofication(warehouse, hallCode, "20.wav");  
+                    log.Error("固定车位时，依地址找不到对应车位，address - "+cust.LocAddress);
+                    return null;
+                }
+
                 if (lct != null)
                 {
                     if (compareSize(lct.LocSize, checkCode) < 0)
@@ -84,6 +91,11 @@ namespace Parking.Core
                         cwtask.AddNofication(warehouse, hallCode, "61.wav");
                         return null;
                     }
+                }
+                if (lct.Type != EnmLocationType.Normal)
+                {
+                    cwtask.AddNofication(warehouse, hallCode, "69.wav");
+                    return null;
                 }
                 //如果是重列车位，判断前面车位是否是正常的
                 if (lct.NeedBackup == 1)
@@ -107,10 +119,11 @@ namespace Parking.Core
                 {
                     smg = dev.DeviceCode;
                 }
-            }              
+            }
             return lct;
         }
 
+        #region 巷道堆垛
         /// <summary>
         /// 巷道堆垛临时卡车位分配       
         /// </summary>
@@ -586,6 +599,354 @@ namespace Parking.Core
                 #endregion
             }
             #endregion
+            return null;
+        }
+        #endregion
+
+        /// <summary>
+        /// 平面移动临时卡车位分配
+        /// 由于这个项目只有一个车位尺寸，故车位尺寸判断没有细分
+        /// </summary>
+        /// <returns></returns>
+        public Location PPYAllocate(int warehouse, string checkCode, int hallCol)
+        {
+            CWICCard cwiccard = new CWICCard();
+            CWDevice cwdevice = new CWDevice();
+            CWLocation cwlctn = new CWLocation();
+
+            List<Location> allLocations = cwlctn.FindLocList();
+            List<Device> allTVs = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
+
+            List<Device> freeTvsLst = new List<Device>();
+            List<Device> availTvsLst = new List<Device>();
+            #region 有用、空闲的TV
+            foreach (Device dev in allTVs)
+            {
+                if (dev.IsAble == 1)
+                {
+                    availTvsLst.Add(dev);
+                    if (dev.TaskID == 0)
+                    {
+                        freeTvsLst.Add(dev);
+                    }
+                }
+            }
+            #endregion
+            if (availTvsLst.Count == 0)
+            {
+                return null;
+            }
+
+            //作业量最少的层           
+            #region 获取层中作业数量最少的
+            int totalLayer = 0;
+            #region
+            var query_layers = from dev in allTVs
+                               orderby dev.Layer descending
+                               select dev.Layer;
+            List<int> allLayers = query_layers.ToList();
+
+            if (allLayers.Count > 0)
+            {
+                totalLayer = allLayers.FirstOrDefault();
+            }
+            #endregion
+            Dictionary<int, int> dicLayerTasks = new Dictionary<int, int>();
+            for (int i = 1; i < totalLayer + 1; i++)
+            {
+                //不可用的层，不作为统计层
+                if (!availTvsLst.Exists(av => av.Region == i))
+                {
+                    continue;
+                }
+                var hasTask = from lct in allLocations
+                              where lct.Region == i &&
+                                  (lct.Status == EnmLocationStatus.Entering ||
+                                   lct.Status == EnmLocationStatus.Outing)
+                              select lct;
+                List<Location> locHasTaskLst = hasTask.ToList();
+
+                dicLayerTasks.Add(i, locHasTaskLst.Count);
+            }
+            Dictionary<int, int> dicLayerTaskOrderBy = dicLayerTasks.OrderBy(r => r.Value).ToDictionary(d => d.Key, t => t.Value);
+
+            #endregion
+            //车位占用数量的多少排列
+            Dictionary<int, int> dicLocOppLayerOrderBy = new Dictionary<int, int>();
+            #region
+            Dictionary<int, int> dicLayerOppucy = new Dictionary<int, int>();
+            for (int i = 1; i < totalLayer + 1; i++)
+            {
+                //不可用的层，不作为统计层
+                if (!availTvsLst.Exists(av => av.Region == i))
+                {
+                    continue;
+                }
+
+                var hasOppucy = from lt in allLocations
+                                where lt.Region == i && lt.Status == EnmLocationStatus.Occupy
+                                select lt;
+                List<Location> LayerOppucy = hasOppucy.ToList();
+
+                dicLayerOppucy.Add(i, LayerOppucy.Count);
+            }
+            dicLocOppLayerOrderBy = dicLayerOppucy.OrderBy(r => r.Value).ToDictionary(d => d.Key, t => t.Value);
+            #endregion
+
+            #region 车位优先顺序排列
+            //优先分配2、1边是空闲的车位,尺寸是一致的
+            var querysmall_21 = from loc in allLocations
+                                where loc.Type == EnmLocationType.Normal &&
+                                     loc.Status == EnmLocationStatus.Space &&
+                                     loc.LocSide != 3 &&
+                                     cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
+                                     string.Compare(loc.LocSize, checkCode) == 0
+                                orderby Math.Abs(loc.LocColumn - hallCol), loc.LocLayer descending
+                                select loc;
+
+            var querysmall_3 = from loc in allLocations
+                               where loc.Type == EnmLocationType.Normal &&
+                                    loc.Status == EnmLocationStatus.Space &&
+                                    loc.LocSide == 3 &&
+                                    cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
+                                    string.Compare(loc.LocSize, checkCode) == 0
+                               orderby Math.Abs(loc.LocColumn - hallCol), loc.LocLayer descending
+                               select loc;
+
+            var querybig_21 = from loc in allLocations
+                              where loc.Type == EnmLocationType.Normal &&
+                                   loc.Status == EnmLocationStatus.Space &&
+                                   loc.LocSide != 3 &&
+                                   cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
+                                   string.Compare(loc.LocSize, checkCode) > 0
+                              orderby Math.Abs(loc.LocColumn - hallCol), loc.LocLayer descending
+                              select loc;
+
+            var querybig_3 = from loc in allLocations
+                             where loc.Type == EnmLocationType.Normal &&
+                                  loc.Status == EnmLocationStatus.Space &&
+                                  loc.LocSide == 3 &&
+                                  cwiccard.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
+                                  string.Compare(loc.LocSize, checkCode) > 0
+                             orderby Math.Abs(loc.LocColumn - hallCol), loc.LocLayer descending
+                             select loc;
+            #endregion
+            List<Location> stdsmallLocsLst = new List<Location>();
+            stdsmallLocsLst.AddRange(querysmall_21.ToList());
+            stdsmallLocsLst.AddRange(querysmall_3.ToList());
+           
+            if (freeTvsLst.Count > 0)
+            {
+                #region 有空闲的ETV
+                foreach (Location loc in stdsmallLocsLst)
+                {
+                    if (freeTvsLst.Exists(tv => tv.Region == loc.Region))
+                    {
+                        if (loc.LocSide == 1)
+                        {
+                            string l3Addrs = "3" + loc.Address.Substring(1);
+                            Location l3lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l3Addrs);
+                            if (l3lctn != null)
+                            {
+                                if (l3lctn.Status == EnmLocationStatus.Space ||
+                                    l3lctn.Status == EnmLocationStatus.Occupy)
+                                {
+                                    return loc;
+                                }
+                            }
+                        }
+                        else if (loc.LocSide == 3)
+                        {
+                            string l1Addrs = "1" + loc.Address.Substring(1);
+                            Location l1lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l1Addrs);
+                            if (l1lctn != null && l1lctn.Type == EnmLocationType.Normal)
+                            {
+                                if (l1lctn.Status == EnmLocationStatus.Space ||
+                                    l1lctn.Status == EnmLocationStatus.Occupy)
+                                {
+                                    return loc;
+                                }
+                            }
+
+                        }
+                        else if (loc.LocSide == 2)
+                        {
+                            return loc;
+                        }
+                    }
+                }
+                #endregion
+            }
+
+            #region
+                       
+            //判断第一、第二个元素的作业是否一样，如果一样，则看占用车位少的层
+
+            //1、找出是合格的相同尺寸的层
+            Dictionary<int, int> dicSameLayerTaskOrder = new Dictionary<int, int>();
+            foreach (KeyValuePair<int, int> pair in dicLayerTaskOrderBy)
+            {
+                int layer = pair.Key;
+                if (stdsmallLocsLst.Exists(l => l.Region == layer))
+                {
+                    dicSameLayerTaskOrder.Add(layer,pair.Value);
+                }
+            }
+            //判断，第一，第二个元素的作业是否一样，
+            if (dicSameLayerTaskOrder.Count > 0)
+            {
+                #region
+                bool isNext = false;
+                //判断第一个，第二个的作业数量是否一致
+                KeyValuePair<int, int> firstVar = dicSameLayerTaskOrder.First();
+                foreach(KeyValuePair<int,int> pair in dicSameLayerTaskOrder)
+                {
+                    if (pair.Key != firstVar.Key)
+                    {
+                        if (pair.Value == firstVar.Value)
+                        {
+                            isNext = true;
+                        }
+                    }
+                }
+                if (!isNext)
+                {
+                    //可以取作业少的层
+                    int layer = firstVar.Key;
+                    //优先分配1、2边车位
+                    foreach(Location loc in stdsmallLocsLst)
+                    {
+                        if (availTvsLst.Exists(av => av.Region == loc.LocLayer))
+                        {
+                            if (loc.LocLayer == layer)
+                            {
+                                if (loc.LocSide == 3)
+                                {
+                                    string l1Addrs = "1" + loc.Address.Substring(1);
+                                    Location l1lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l1Addrs);
+                                    if (l1lctn != null && l1lctn.Type == EnmLocationType.Normal)
+                                    {
+                                        return loc;
+                                    }
+                                }
+                                else
+                                {
+                                    return loc;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                #endregion
+            }
+
+            //分配层中占用少的
+            foreach(KeyValuePair<int,int> pair in dicLocOppLayerOrderBy)
+            {
+                int layer = pair.Key;
+                foreach(Location loc in stdsmallLocsLst)
+                {
+                    if (loc.LocLayer == layer)
+                    {
+                        if (loc.LocSide == 3)
+                        {
+                            string l1Addrs = "1" + loc.Address.Substring(1);
+                            Location l1lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l1Addrs);
+                            if (l1lctn != null && l1lctn.Type == EnmLocationType.Normal)
+                            {
+                                return loc;
+                            }
+                        }
+                        else
+                        {
+                            return loc;
+                        }
+                    }
+                }
+            }
+
+            foreach(Location loc in stdsmallLocsLst)
+            {
+                if (availTvsLst.Exists(av => av.Region == loc.LocLayer))
+                {
+                    if (loc.LocSide == 3)
+                    {
+                        string l1Addrs = "1" + loc.Address.Substring(1);
+                        Location l1lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l1Addrs);
+
+                        if (l1lctn != null && l1lctn.Type == EnmLocationType.Normal)
+                        {
+
+                            return loc;
+                        }
+                    }
+                    else
+                    {
+                        return loc;
+                    }
+                }
+            }
+
+            List<Location> stdbigLocsLst = new List<Location>();
+            stdbigLocsLst.AddRange(querybig_21.ToList());
+            stdbigLocsLst.AddRange(querybig_3.ToList());
+
+            List<Location> remain = new List<Location>();
+            foreach (Location loc in stdbigLocsLst)
+            {
+                #region
+                if (availTvsLst.Exists(av => av.Region == loc.LocLayer))
+                {
+                    if (loc.LocSide == 3)
+                    {
+                        string l1Addrs = "1" + loc.Address.Substring(1);
+                        Location l1lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l1Addrs);
+
+                        if (l1lctn != null && l1lctn.Type == EnmLocationType.Normal)
+                        {
+                            if (l1lctn.Status == EnmLocationStatus.Space ||
+                                  l1lctn.Status == EnmLocationStatus.Occupy)
+                            {
+                                return loc;
+                            }
+                            else
+                            {
+                                remain.Add(loc);
+                            }                           
+                        }
+                    }
+                    else if (loc.LocSide == 1)
+                    {
+                        string l3Addrs = "3" + loc.Address.Substring(1);
+                        Location l3lctn = allLocations.Find(l => l.Warehouse == loc.Warehouse && l.Address == l3Addrs);
+                        if (l3lctn != null)
+                        {
+                            if (l3lctn.Status == EnmLocationStatus.Space ||
+                                 l3lctn.Status == EnmLocationStatus.Occupy)
+                            {
+                                return loc;
+                            }
+                            else
+                            {
+                                remain.Add(loc);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return loc;
+                    }
+                }
+                #endregion
+            }
+
+            if (remain.Count > 0)
+            {
+                return remain[0];
+            }
+            #endregion
+
             return null;
         }
 

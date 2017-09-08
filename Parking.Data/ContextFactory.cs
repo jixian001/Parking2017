@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Remoting.Messaging;
+using System.Data.Entity;
+using System.Web;
 
 namespace Parking.Data
 {

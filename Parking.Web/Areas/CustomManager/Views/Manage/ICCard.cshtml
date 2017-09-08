@@ -2,6 +2,7 @@
     ViewBag.Title = "IC卡管理";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 <br />
 <div class="row">
     <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
@@ -19,7 +20,8 @@
                         <label for="physiccode" class="col-md-2 control-label">物理卡号</label>
                         <div class="col-md-10">
                             <input type="text" class="form-control" id="physiccode" name="physiccode" disabled/>
-                        </div>
+                            <div class="text-danger" id="disp"></div>
+                        </div>                       
                     </div>                  
                     <div class="form-group">
                         <label for="iccode" class="control-label col-md-2">用户卡号</label>
@@ -95,7 +97,9 @@
         </div>
     </div>
 </div>
-
+<div>
+    <input type="hidden" id="ipaddrs" />
+</div>
 @section scripts{
     @Styles.Render("~/Content/defform")
     <script>       
@@ -121,11 +125,24 @@
                             $("#btnRead").css("display", "none");
                         }
                     }
+                });               
+
+                //绑定OCX所在目录
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetClientCardIP")",
+                    dataType: "text",
+                    cache: false,
+                    success: function (resp) {
+                        $("#ipaddrs").val(resp);
+                        console.log("ic ipaddrs - " + $("#ipaddrs").val());
+                    }
                 });
 
             }, 500);
             
             $(document).keydown(function (ev) {
+
                 if (isBlock)
                 {
                     return;
@@ -178,38 +195,16 @@
                 var $phys = $("#physiccode");
                 var $iccd = $("#iccode");
                 $phys.val("");
-                $iccd.val("");               
-                //暂时先使用后台读卡方式
+                $iccd.val("");
+                
                 $.ajax({
                     type: "GET",
                     url: "@Url.Action("ReadCard")",
-                    dataType: "json",
                     cache: false,
-                    beforeSend: function (XMLHttpRequest) {
-                        $("#btnRead").text("查询中...");
-                    },
-                    success: function (data) {
-                        if (data.code == 1)
-                        {
-                            $phys.val(data.physccode);
-                            $iccd.val(data.iccode);
-                        }
-                        else
-                        {
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: "读卡失败，请检查卡片是否放在卡机上或联系供应商！"
-                            });
-                        }
-                    },
-                    complete: function (XMLHttpRequest, textStatus) {
-                        $("#btnRead").text("读 卡");
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-
+                    success: function (msg) {                        
+                        $("#disp").html(msg);
                     }
                 });
-
 
             });
 
@@ -220,6 +215,13 @@
                     BootstrapDialog.show({
                         title: "温馨提示",
                         message: "请先读卡!"
+                    });
+                    return;
+                }
+                if ($phys.val().length< 10) {
+                    BootstrapDialog.show({
+                        title: "温馨提示",
+                        message: "物理卡号不是10位数，请重新读卡！"
                     });
                     return;
                 }
@@ -301,6 +303,7 @@
                     url: "@Url.Action("FindCardOfGUI")",
                     data: { "iccode": code, "isPhysc": isPhys },
                     dataType: "json",
+                    cache: false,
                     beforeSend: function (XMLHttpRequest) {
                         $("#btnFind").text("查询中...");
                     },
@@ -325,7 +328,7 @@
                             $("input[name='createtime']").val(formatDate(iccd.CreateDate));                          
                             $("input[name='losstime']").val(formatDate(iccd.LossDate));
                             $("input[name='status']").val(formatStatus(iccd.Status));
-                            $("input[name='disposetime']").val(formatDate(iccd.LogoutDate));                          
+                            $("input[name='LogoutDate']").val(formatDate(iccd.LogoutDate));                          
                         }
                     },
                     complete: function (XMLHttpRequest, textStatus) {
@@ -423,7 +426,7 @@
                         msg = "注销";
                         break;
                     default:
-                        msg = state;
+                        msg = "未注册";
                         break;
                 }
                 return msg;
@@ -453,6 +456,52 @@
                 return fmt;
             }
 
+            // signalr 开始
+
+            var hubs = $.connection.parkingHub;
+            $.extend(hubs.client, {
+
+                nowUsers: function (dicUsers) {
+                    console.log("register success!");
+                },
+
+                feedbackReadICCard: function (physc) {
+                    if (physc != 'null')
+                    {
+                        $("#disp").html("读卡成功");
+                        $("#physiccode").val(physc);
+
+                        $.ajax({
+                            type: "GET",
+                            url: "@Url.Action("FindCardOfGUI")",
+                            data: { "iccode": physc, "isPhysc": true },
+                            dataType: "json",
+                            cache: false,
+                            success: function (iccd) {
+                                $("#iccode").val(iccd.UserCode);
+                            },
+                            complete: function (XMLHttpRequest, textStatus) {
+                                $("#disp").empty();
+                            }
+                        });
+                    }
+                    else
+                    {
+                        $("#disp").html("读卡失败");
+                    }
+                }
+            });
+
+            $.connection.hub.start()
+                           .then(function () {
+                               //注册下
+                               hubs.server.register("iccard");
+                           })
+                           .done(function () {
+
+                           });
+
+            // signalr 结束
 
         });
 

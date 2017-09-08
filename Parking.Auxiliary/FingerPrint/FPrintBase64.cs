@@ -58,5 +58,26 @@ namespace Parking.Auxiliary
             return null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="MBBuf"></param>
+        /// <returns></returns>
+        public static string FingerDataBytesToBase64Str(byte[] psSrcBuf)
+        {
+            byte[] cpMBStr = new byte[1024];
+            int iMBStrLen = 0;
+            int iRet = FPIHexFingerDataToBase64(psSrcBuf, psSrcBuf.Length, cpMBStr, ref iMBStrLen);
+            if (iRet == 0)
+            {
+                byte[] psDesBuf = new byte[iMBStrLen];
+                Array.ConstrainedCopy(cpMBStr, 0, psDesBuf, 0, iMBStrLen);
+
+                string base64Str = Encoding.Default.GetString(psDesBuf);
+                return base64Str;
+            }
+            return null;
+        }
+
     }
 }

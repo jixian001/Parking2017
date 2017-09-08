@@ -58,6 +58,14 @@
                                     <input type="text" class="form-control" id="txtFindloc" name="txtFindloc" disabled/>
                                 </div>
                             </div>
+
+                            <div class="img_l form-group" style="display:none">
+                                <label class="col-md-2 control-label">车头图片</label>
+                                <div class="col-md-10">
+                                    <img id="headimg" alt="" src="" style="width:500px;height:350px;" />
+                                </div>                               
+                            </div>
+
                             <div class="form-group">
                                 <div class="col-md-10 col-md-offset-2">
                                     <button type="button" id="btnFind" class="btn btn-default">查 询</button>
@@ -268,6 +276,7 @@
             $("#btnFind").click(function () {
                 $("#txtFindWh").val("");
                 $("#txtFindloc").val("");
+                $(".img_l").css("display", "none");
 
                 var iccode = $("#txtIccd").val().trim();
                 if (iccode == "") {
@@ -292,7 +301,16 @@
                         if (resp.Code == 1) {
                             var data = resp.Data;
                             $("#txtFindWh").val(data.Warehouse);
-                            $("#txtFindloc").val(data.LocAddress);
+                            $("#txtFindloc").val(data.Address);
+
+                            if (data.PlateNum == "" || data.PlateNum == null) {
+                                return;
+                            }
+                            if (data.ImagePath == "" || data.ImagePath == null) {
+                                return;
+                            }
+                            $(".img_l").css("display","block");
+                            $("#headimg").attr({ "alt": data.PlateNum, "src": data.ImagePath });
                         }
                         else {
                             BootstrapDialog.warning("没有找到存车车位！");
@@ -566,6 +584,7 @@
                         dataType: "json",
                         cache: false,
                         success: function (resp) {
+                            alert(resp.Message);
                             if (resp.Code == 1) {
                                 var iRet = resp.Data;                               
                                 $("input[name='fpcode']").val(iRet.SNNumber);

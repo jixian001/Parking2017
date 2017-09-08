@@ -19,10 +19,12 @@ namespace Parking.Data
         /// 日志类型- 1：发送，2：接收
         /// </summary>
         public int Type { get; set; }
-        public int Warehouse { get; set; }
-        public string Telegram { get; set; }
+        public int Warehouse { get; set; }      
         public int DeviceCode { get; set; }
-        [StringLength(10)]
+        public string Telegram { get; set; }
+        /// <summary>
+        /// 车牌或卡号，不注册的，以车牌为准
+        /// </summary>
         public string ICCode { get; set; }
         public string CarInfo { get; set; }
         [StringLength(10)]

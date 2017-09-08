@@ -9,36 +9,30 @@ using System.Linq.Expressions;
 namespace Parking.Data
 {
     public class AlarmManager:BaseManager<Alarm>
-    {
-        public List<Alarm> FindList(Expression<Func<Alarm, bool>> where)
-        {
-            IQueryable<Alarm> alarmsLst= _repository.FindList(where);
-            List<Alarm> alarms = new List<Alarm>();
-            foreach(Alarm am in alarmsLst)
-            {
-                alarms.Add(am);
-            }
-            return alarms;
-        }
-
+    {  
         /// <summary>
         /// 批量更新
         /// </summary>
         /// <param name="alarmLst"></param>
         /// <returns></returns>
-        public Response UpdateAlarmList(List<Alarm> alarmLst)
+        public async Task<Response> UpdateAlarmListAsync(List<Alarm> alarmLst)
         {
-            foreach(Alarm ar in alarmLst)
+            for (int i = 0; i < alarmLst.Count; i++)
             {
-                _repository.Update(ar, false);
+                Alarm ar = alarmLst[i];
+                Alarm newAlarm =await FindAsync(d => d.Warehouse == ar.Warehouse && d.DeviceCode == ar.DeviceCode && d.Address == ar.Address);
+                if (newAlarm != null)
+                {
+                    newAlarm.Value = ar.Value;
+                    Update(newAlarm);
+                }
             }
-            int count= _repository.SaveChanges();
-            Response resp = new Response() {
-                Code=1,
-                Message="批量更新成功！Count-"+count
-            };
-            return resp;
-        }
+            Response resp = new Response();
+            resp.Code = 1;
+            resp.Message = "提交成功";
 
+            return resp;
+        }        
+        
     }
 }

@@ -164,6 +164,12 @@ namespace Parking.Web.Models
                 case EnmTaskStatus.WillWaitForUnload:
                     msg = "等待下发卸载";
                     break;
+                case EnmTaskStatus.TMUROWaitforLoad:
+                    msg = "MURO下发装载";
+                    break;
+                case EnmTaskStatus.TMUROWaitforUnload:
+                    msg = "MURO下发卸载";
+                    break;
                 default:
                     msg = status.ToString();
                     break;

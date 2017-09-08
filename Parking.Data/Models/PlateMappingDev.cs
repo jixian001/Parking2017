@@ -21,7 +21,7 @@ namespace Parking.Data
         /// </summary>
         public string HeadImagePath { get; set; }
         /// <summary>
-        /// 车牌图片路径(备用)
+        /// 车牌图片路径
         /// </summary>
         public string PlateImagePath { get; set; }
         public DateTime InDate { get; set; }

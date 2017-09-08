@@ -19,11 +19,7 @@ namespace Parking.Data
         public int Warehouse { get; set; }
         public int DeviceCode { get; set; }
         public EnmTaskType Type { get; set; }
-        public EnmTaskStatus Status { get; set; }
-        /// <summary>
-        /// 不要求写入数据库
-        /// </summary>
-        [NotMapped]
+        public EnmTaskStatus Status { get; set; }        
         public EnmTaskStatusDetail SendStatusDetail { get; set; }
         public DateTime CreateDate { get; set; }
         /// <summary>
@@ -46,7 +42,8 @@ namespace Parking.Data
         /// </summary>
         public int IsComplete { get; set; }
         //如果有其他报文需求信息，再增加
-        
+        public string LocSize { get; set; }
+        public string PlateNum { get; set; }
     }
 
     public enum EnmTaskType
@@ -102,9 +99,9 @@ namespace Parking.Data
         Finished,   //作业完成
       
         TMURO,    // 故障       
-        TMURORecoverNocar,// 故障人工确认继续
-        TMURORecoverHascar,// TV故障恢复       
-        TMUORWaitforUnload,
+        TMURORecoverNocar,  // 故障人工确认继续
+        TMURORecoverHascar, // TV故障恢复       
+        TMUROWaitforUnload, // 等待卸载
 
         //TV
         TWaitforLoad,//等待执行装载(等待下发13-1)
@@ -115,7 +112,8 @@ namespace Parking.Data
         UnLoadFinishing,//卸载完成
         MoveFinishing,//移动完成
 
-        WillWaitForUnload, //装载完成后，将其更新为等待卸载，同时生成卸载指令
+        WillWaitForUnload, // 装载完成后，将其更新为等待卸载，同时生成卸载指令
+        TMUROWaitforLoad   // 等待装载
     }
 
 }

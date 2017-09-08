@@ -22,22 +22,26 @@
     margin:1px;
 }
 
-.booking-details h3 {
-	margin: 5px 5px 0 0;
-	font-size: 14px;
+.booking-details h4 {
+	margin: 5px 5px 0 0;	
 }
 
 .lbl {
-    height: 40px;
-    width: 40px;
+    height: 30px;
+    width: 35px;
     float: left;
-    border-radius: 5px;
+    border-radius: 3px;
     margin: 5px;
     text-align: center;
     vertical-align: middle;
     font-size: 14px;
     color:white;
 }
+
+/*#selected-seats li{   
+    float:left; 
+    margin:0px 20px 10px;
+}*/
 
 /*自定义车位显示颜色，要注意与Style里面同步*/
 .lblhall{

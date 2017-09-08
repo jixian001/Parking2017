@@ -184,6 +184,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 }               
                 #endregion
             }
+
+            //if (addcust.Type == EnmICCardType.FixedLocation)
+            //{
+            //    //个推更新固定车位数
+            //    MainCallback<Location>.Instance().OnChange(1, null);
+            //}
            
             #endregion
             return RedirectToAction("Index");
@@ -404,7 +410,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 {
                     cwfinger.Delete(print.ID, false);
                 }
-                cwfinger.SaveChange();
+              
                 #endregion
             });
 
@@ -526,12 +532,14 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                         return View(model);
                     }
                 }
+                cust.Type = model.Type;
                 cust.Warehouse = (int)model.Warehouse;
                 cust.LocAddress = model.LocAddress;
                 #endregion
             }
             else
             {
+                cust.Type = model.Type;
                 cust.Warehouse = 0;
                 cust.LocAddress = "";
                 cust.StartDTime = DateTime.Parse("2017-1-1");
@@ -606,6 +614,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
 
             cwiccd.UpdateCust(cust);
 
+           
             #region 更新指纹
             CWFingerPrint cwfprint = new CWFingerPrint();
             if (model.FingerPrint1 != "")
@@ -648,7 +657,10 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 }
             }
             #endregion
-            
+
+            ////个推更新固定车位数
+            //MainCallback<Location>.Instance().OnChange(1, null);
+
             #endregion
             return RedirectToAction("Index");
         }
@@ -699,9 +711,9 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             };
             return Json(nback, JsonRequestBehavior.AllowGet);
         }
-        
+
         /// <summary>
-        /// 新增用户界面，增加指纹
+        /// 新增用户界面，增加指纹，不用后台读指纹
         /// </summary>
         /// <param name="custID"></param>
         /// <returns></returns>
@@ -714,7 +726,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         }
 
         /// <summary>
-        /// 修改用户界面，增加指纹
+        /// 修改用户界面，增加指纹，不用后台读指纹
         /// </summary>
         /// <param name="custID"></param>
         /// <returns></returns>
@@ -727,12 +739,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         }
 
         [HttpPost]
-        public ActionResult SubmitFPrint(int custID,string strMBBuf)
+        public async Task<JsonResult> SubmitFPrint(int custID,string strMBBuf)
         {
             Response resp = new Response();
             if (!string.IsNullOrEmpty(strMBBuf))
             {
-                resp = new CWFingerPrint().SubmitFingerTemplate(custID, strMBBuf);
+                resp =await new CWFingerPrint().SubmitFingerTemplateAsync(custID, strMBBuf);
             }
             else
             {
@@ -774,6 +786,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
+        [Authorize]
         /// <summary>
         /// 
         /// </summary>
@@ -795,32 +808,69 @@ namespace Parking.Web.Areas.CustomManager.Controllers
         }
 
         [HttpPost]
-        public ActionResult ChangeDeadline(ChangeDeadlineModel model)
+        public async Task<ActionResult> ChangeDeadline(ChangeDeadlineModel model)
         {
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "参数设置不正确");
                 return View(model);
             }
-            CWICCard cwiccd = new CWICCard();
-            Customer cust = cwiccd.FindCust(model.ID);
-            if (cust != null)
+            Log log = LogFactory.GetLogger("ChangeDeadline");
+            try
             {
-                if ((int)cust.Type < 2)
+                CWICCard cwiccd = new CWICCard();
+                Customer cust = await cwiccd.FindCustAsync(model.ID);
+                if (cust != null)
                 {
-                    ModelState.AddModelError("", "临时卡，无法设置使用期限");
-                    return View(model);
-                }
+                    if ((int)cust.Type < 2)
+                    {
+                        ModelState.AddModelError("", "临时卡，无法设置使用期限");
+                        return View(model);
+                    }
+                    string olddeadline = cust.Deadline.ToString();
 
-                cust.Deadline = model.NewDeadline;
-                Response resp = cwiccd.UpdateCust(cust);
-                if (resp.Code == 0)
-                {
-                    ModelState.AddModelError("", "更新数据库失败");
-                    return View(model);
+                    cust.Deadline = model.NewDeadline;
+                    Response resp = cwiccd.UpdateCust(cust);
+                    if (resp.Code == 1)
+                    {
+                        string oprtname = User.Identity.Name;
+                        string utype = "";
+                        if (cust.Type == EnmICCardType.FixedLocation)
+                        {
+                            utype = "固定";
+                        }
+                        else if (cust.Type == EnmICCardType.Periodical)
+                        {
+                            utype = "定期";
+                        }
+
+                        FixUserChargeLog fixlog = new FixUserChargeLog
+                        {
+                            UserName = cust.UserName,
+                            PlateNum = cust.PlateNum,
+                            UserType = utype,
+                            Proof = "手动",
+                            LastDeadline = olddeadline,
+                            CurrDeadline = cust.Deadline.ToString(),
+                            FeeType = "",
+                            FeeUnit = 0,
+                            CurrFee = 0,
+                            RecordDTime = DateTime.Now,
+                            OprtCode = oprtname
+                        };
+                        await new CWTariffLog().AddFixLogAsync(fixlog);
+                    }
                 }
+                return RedirectToAction("Index");
             }
-            return RedirectToAction("Index");
+            catch(Exception ex)
+            {
+                log.Error(ex.ToString());
+
+                ModelState.AddModelError("", "系统异常，请联系厂家！");
+                return View(model);
+            }
+            
         }
     }
 }

@@ -25,6 +25,7 @@
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -187,9 +188,19 @@
     <Compile Include="Areas\CustomManager\Models\CustomerModel.cs" />
     <Compile Include="Areas\CustomManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ExternalManager\Controllers\ExternalController.cs" />
+    <Compile Include="Areas\ExternalManager\Controllers\PLCController.cs" />
+    <Compile Include="Areas\ExternalManager\Controllers\TestController.cs" />
+    <Compile Include="Areas\ExternalManager\Controllers\ZenthPlateController.cs" />
     <Compile Include="Areas\ExternalManager\ExternalManagerAreaRegistration.cs" />
     <Compile Include="Areas\ExternalManager\Models\ParkingFeeInfo.cs" />
-    <Compile Include="Areas\ReportManager\Controllers\ReportController.cs" />
+    <Compile Include="Areas\ExternalManager\Models\TelegramRecord.cs" />
+    <Compile Include="Areas\ExternalManager\Models\ZenthPlate\Response_AlarmInfoPlate.cs" />
+    <Compile Include="Areas\ExternalManager\Models\ZenthPlate\ZenthPlateResult.cs" />
+    <Compile Include="Areas\PrivateManager\Controllers\DeadlineController.cs" />
+    <Compile Include="Areas\PrivateManager\PrivateManagerAreaRegistration.cs" />
+    <Compile Include="Areas\ReportManager\Controllers\DeviceInfoController.cs" />
+    <Compile Include="Areas\ReportManager\Controllers\TariffLogController.cs" />
+    <Compile Include="Areas\ReportManager\Controllers\TelegramController.cs" />
     <Compile Include="Areas\ReportManager\Models\SelectItem.cs" />
     <Compile Include="Areas\ReportManager\ReportManagerAreaRegistration.cs" />
     <Compile Include="Areas\SystemManager\Controllers\FaultSummaryController.cs" />
@@ -206,9 +217,13 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201707030600416_init.cs" />
-    <Compile Include="Migrations\201707030600416_init.Designer.cs">
-      <DependentUpon>201707030600416_init.cs</DependentUpon>
+    <Compile Include="Migrations\201709061416254_init.cs" />
+    <Compile Include="Migrations\201709061416254_init.Designer.cs">
+      <DependentUpon>201709061416254_init.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201709081353189_updatecc.cs" />
+    <Compile Include="Migrations\201709081353189_updatecc.Designer.cs">
+      <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
@@ -216,7 +231,6 @@
     <Compile Include="Models\AIOICCard.cs" />
     <Compile Include="Models\DeviceTaskDetail.cs" />
     <Compile Include="Models\IdentityModels.cs" />
-    <Compile Include="Models\StatisInfo.cs" />
     <Compile Include="Models\UserManager\AppUserManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Signalr\ParkingHub.cs" />
@@ -310,10 +324,6 @@
     <Content Include="Content\bootstrap-select\js\bootstrap-select.js.map" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Add.cshtml" />
     <Content Include="Areas\CustomManager\Views\CustomerManager\Edit.cshtml" />
-    <Content Include="Areas\ReportManager\Views\Report\_PartialSideNav.cshtml" />
-    <Content Include="Areas\ReportManager\Views\Report\TelegramReport.cshtml" />
-    <Content Include="Areas\ReportManager\Views\Report\OprtReport.cshtml" />
-    <Content Include="Areas\ReportManager\Views\Report\FaultReport.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\TempCardCharge.cshtml" />
     <Content Include="Areas\ChargeManager\Views\Manage\FixCardCharge.cshtml" />
     <Content Include="Areas\ChargeManager\Views\ChargingRule\Index.cshtml" />
@@ -327,6 +337,34 @@
     <Content Include="Areas\SystemManager\Views\FaultSummary\ManageFaultInfo.cshtml" />
     <Content Include="Areas\ChargeManager\Views\ChargeTest\Index.cshtml" />
     <Content Include="Areas\ChargeManager\Views\ChargeTest\_PartialSideNav.cshtml" />
+    <Content Include="Areas\PrivateManager\Views\web.config" />
+    <Content Include="Areas\PrivateManager\Views\Deadline\Index.cshtml" />
+    <Content Include="Areas\PrivateManager\Views\Deadline\Modify.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\_PartialSideNav.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\Hall2.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\TV1.cshtml" />
+    <Content Include="Areas\SystemManager\Views\FaultSummary\TV2.cshtml" />
+    <Content Include="Areas\ExternalManager\Views\Test\Index.cshtml" />
+    <Content Include="Areas\ExternalManager\Views\ZenthPlate\Index.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Telegram\TelegramReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Telegram\OprtReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\Telegram\_PartialSideNav.cshtml" />
+    <Content Include="Areas\ReportManager\Views\DeviceInfo\FaultReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\DeviceInfo\_PartialSideNav.cshtml" />
+    <Content Include="Areas\ReportManager\Views\DeviceInfo\StatusBitReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\DeviceInfo\DeviceInfoReport.cshtml" />
+    <Content Include="Areas\ReportManager\Views\TariffLog\FixChargeRecord.cshtml" />
+    <Content Include="Areas\ReportManager\Views\TariffLog\TempChargeRecord.cshtml" />
+    <Content Include="Areas\ReportManager\Views\TariffLog\_PartialSideNav.cshtml" />
+    <None Include="Properties\PublishProfiles\6174JQ.pubxml" />
+    <None Include="Properties\PublishProfiles\AutoParking.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile1.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile2.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile3.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile4.pubxml" />
+    <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
+    <None Include="Properties\PublishProfiles\FolderProfile1.pubxml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
     <None Include="Properties\PublishProfiles\test.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
@@ -372,13 +410,17 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Home\WeChat.cshtml" />
     <Content Include="Views\Home\AnalogFPrintSubmit.cshtml" />
+    <Content Include="Views\Shared\_SingleLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Areas\ChargeManager\Views\Shared\" />
     <Folder Include="Areas\CustomManager\Views\Shared\" />
     <Folder Include="Areas\ExternalManager\Views\External\" />
+    <Folder Include="Areas\ExternalManager\Views\PLC\" />
     <Folder Include="Areas\ExternalManager\Views\Shared\" />
+    <Folder Include="Areas\PrivateManager\Models\" />
+    <Folder Include="Areas\PrivateManager\Views\Shared\" />
     <Folder Include="Areas\ReportManager\Views\Shared\" />
     <Folder Include="Areas\SystemManager\Views\Shared\" />
   </ItemGroup>
@@ -388,10 +430,6 @@
     <Content Include="Scripts\jquery-1.10.2.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Parking.Application\Parking.Application.csproj">
-      <Project>{99fac956-4bc7-410b-b71c-9d16d1c37e5e}</Project>
-      <Name>Parking.Application</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Parking.Auxiliary\Parking.Auxiliary.csproj">
       <Project>{e3699d54-6a03-46a8-a82a-ff4590334012}</Project>
       <Name>Parking.Auxiliary</Name>
@@ -406,8 +444,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201707030600416_init.resx">
-      <DependentUpon>201707030600416_init.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201709061416254_init.resx">
+      <DependentUpon>201709061416254_init.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201709081353189_updatecc.resx">
+      <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -113,7 +113,8 @@
             </div>
             <div>
                 <button class="btn btn-default" id="btnFinish" style="margin-left:40px;margin-right:40px">手动完成</button>
-                <button class="btn btn-default" id="btnReset">手动复位</button>
+                <button class="btn btn-default" id="btnReset" style="margin-right:40px">手动复位</button>
+                <button class="btn btn-default" id="btnMURO" disabled>MURO 继续</button>
             </div>
         </div>        
         <div class="loading-content" style="display:none">数据加载中，请稍后…</div>        
@@ -163,6 +164,15 @@
                         $("#carsize").val(data.CarSize);
                         $("#sendStatusDetail").val(data.SendStatusDetail);
 
+                        if (data.DeviceCode < 10)
+                        {
+                            var cts = data.Status;                            
+                            if (cts=="故障中")
+                            {
+                                console.log("remove");
+                                $("#btnMURO").removeAttr("disabled");
+                            }
+                        }
                     }
                 });
             }
@@ -226,6 +236,39 @@
                         }
                     }]
                 });
+            });
+
+            //MURO继续
+            $("#btnMURO").click(function () {
+
+                if (id == "") {
+                    BootstrapDialog.show({
+                        title: "友情提示",
+                        message: "<b>ID值为空，系统错误，请返回重新请求！</b>",
+                    });
+                    return;
+                }
+
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message:"<b>确定要强制继续当前作业？ 如果搬运器上有车，则会下发卸载指令；如果搬运器上无车，则会下发装载指令。 ID-"+id+"</b>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            $.post("@Url.Action("MUROTask")", { ids: id }, function (msg) {
+                                alert(msg);
+                                window.location.href = "/SystemManager/Manage/TaskManager";
+                            });
+                            self.close();
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+
             });
 
             //设备号

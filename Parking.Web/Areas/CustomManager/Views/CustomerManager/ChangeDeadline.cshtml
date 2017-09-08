@@ -24,12 +24,12 @@
 
                 <div class="form-horizontal">
                     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                    @Html.HiddenFor(model => model.ID)                   
+                    @Html.HiddenFor(model => model.ID)
 
                     <div class="form-group">
                         @Html.LabelFor(model => model.UserCode, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.EditorFor(model => model.UserCode, new { htmlAttributes = new { @class = "form-control"} })                            
+                            @Html.EditorFor(model => model.UserCode, new { htmlAttributes = new { @class = "form-control" } })
                         </div>
                     </div>
 
@@ -44,7 +44,7 @@
                     <div class="form-group">
                         @Html.LabelFor(model => model.OldDeadline, htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.EditorFor(model => model.OldDeadline, new { htmlAttributes = new { @class = "form-control"} })
+                            @Html.EditorFor(model => model.OldDeadline, new { htmlAttributes = new { @class = "form-control" } })
                             @Html.ValidationMessageFor(model => model.OldDeadline, "", new { @class = "text-danger" })
                         </div>
                     </div>
@@ -69,17 +69,55 @@
 
 @section scripts{
     <script>
-       $(function () {
-           $('.form_datetime').datetimepicker({
-               language: 'zh-CN',
-               weekStart: 1,
-               todayBtn: 1,
-               autoclose: 1,
-               todayHighlight: 1,
-               startView: 2,
-               forceParse: 0,
-               showMeridian: 1
-           });
-       })
+        $(function () {
+            $('.form_datetime').datetimepicker({
+                language: 'zh-CN',
+                weekStart: 1,
+                todayBtn: 1,
+                autoclose: 1,
+                todayHighlight: 1,
+                startView: 2,
+                forceParse: 0,
+                showMeridian: 1
+            });
+
+            $("#OldDeadline").attr("readonly", "readonly");
+            $("#UserCode").attr("readonly", "readonly");
+
+
+            $("#NewDeadline").val(getNowFormatDate(0));
+
+            //获取当前时间
+            function getNowFormatDate(num) {
+                var date = new Date();
+                date.setMinutes(date.getMinutes() - num);
+                var seperator1 = "-";
+                var seperator2 = ":";
+                var month = date.getMonth() + 1;
+                var strDate = date.getDate();
+                if (month >= 1 && month <= 9) {
+                    month = "0" + month;
+                }
+                if (strDate >= 0 && strDate <= 9) {
+                    strDate = "0" + strDate;
+                }
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+                var second = date.getSeconds();
+                if (second >= 0 && second <= 9) {
+                    second = "0" + second;
+                }
+
+                var currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
+                    + " " + hour + seperator2 + minute + seperator2 + second;
+                return currentdate;
+            }
+        })
     </script>
 }

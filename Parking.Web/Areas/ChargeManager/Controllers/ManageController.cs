@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Threading.Tasks;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
@@ -10,9 +11,10 @@ using Parking.Web.Areas.ChargeManager.Models;
 
 namespace Parking.Web.Areas.ChargeManager.Controllers
 {
+    [Authorize]
     public class ManageController : Controller
     {
-       
+
         /// <summary>
         /// 临时卡缴费
         /// </summary>
@@ -59,17 +61,17 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         /// <param name="iccode">卡号或车牌号</param>
         /// <param name="isPlate"></param>
         /// <returns></returns>
-        public JsonResult TempUserFeeInfo(string iccode,bool isPlate)
-        {           
-            Response resp = new CWTariff().GetTempUserInfo(iccode, isPlate);            
-            return Json(resp,JsonRequestBehavior.AllowGet);
+        public JsonResult TempUserFeeInfo(string iccode, bool isPlate)
+        {
+            Response resp = new CWTariff().GetTempUserInfo(iccode, isPlate);
+            return Json(resp, JsonRequestBehavior.AllowGet);
         }
-
+       
         /// <summary>
         /// 临时用户缴费出车
         /// </summary>
-        [HttpPost]        
-        public JsonResult TempUserOutCar()
+        [HttpPost]
+        public async Task<JsonResult> TempUserOutCar()
         {
             Response resp = new Response();
             Log log = LogFactory.GetLogger("TempUserOutCar");
@@ -92,24 +94,26 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                 if (Convert.ToBoolean(isplate))
                 {
                     //是车牌号
-                    loc = cwlctn.FindLocation(l => l.PlateNum == iccd);
+                    loc =await cwlctn.FindLocationAsync(l => l.PlateNum == iccd);
                 }
                 else
                 {
-                    ICCard icard = new CWICCard().Find(ic=>ic.UserCode==iccd);
-                    if (icard == null)
-                    {
-                        resp.Message = "不是本系统用卡，ICCode - " + iccd;
-                        return Json(resp);
-                    }
-                    if(icard.Status==EnmICCardStatus.Lost||
-                        icard.Status == EnmICCardStatus.Disposed)
-                    {
-                        resp.Message = "卡已挂失或注销，ICCode - " + iccd;
-                        return Json(resp);
-                    }
+                    #region
+                    //ICCard icard = new CWICCard().Find(ic=>ic.UserCode==iccd);
+                    //if (icard == null)
+                    //{
+                    //    resp.Message = "不是本系统用卡，ICCode - " + iccd;
+                    //    return Json(resp);
+                    //}
+                    //if(icard.Status==EnmICCardStatus.Lost||
+                    //    icard.Status == EnmICCardStatus.Disposed)
+                    //{
+                    //    resp.Message = "卡已挂失或注销，ICCode - " + iccd;
+                    //    return Json(resp);
+                    //}
+                    #endregion
                     //是卡号
-                    loc = cwlctn.FindLocation(l => l.ICCode == iccd);
+                    loc =await cwlctn.FindLocationAsync(l => l.ICCode == iccd);
                 }
                 if (loc == null)
                 {
@@ -119,15 +123,16 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                 #endregion
                 int wh = Convert.ToInt16(warehouse);
                 int hcode = Convert.ToInt32(hallID);
-                Device hall = new CWDevice().Find(d => d.Warehouse == wh && d.DeviceCode == hcode);
+                Device hall =await new CWDevice().FindAsync(d => d.Warehouse == wh && d.DeviceCode == hcode);
                 if (hall == null)
                 {
                     resp.Message = "找不到出库车厅，wh - " + warehouse + " , code - " + hallID;
                     return Json(resp);
-                }               
+                }
                 resp = new CWTaskTransfer(hcode, wh).OCreateTempUserOfOutCar(loc);
                 if (resp.Code == 1)
                 {
+                    string oprt = User.Identity.Name;
                     //保存收费记录
                     TempUserChargeLog templog = new TempUserChargeLog
                     {
@@ -141,10 +146,10 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                         NeedFee = needfee,
                         ActualFee = actualfee,
                         CoinChange = coinfee,
-                        OprtCode = "",
-                        RecordDTime = DateTime.Now.ToString()
+                        OprtCode = oprt,
+                        RecordDTime = DateTime.Now
                     };
-                    new CWTariff().AddTempLog(templog);
+                    await new CWTariffLog().AddTempLogAsync(templog);
                 }
             }
             catch (Exception ex)
@@ -164,7 +169,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                 resp.Message = "系统异常, Unit- " + feeunit + " ,ictype- " + utype;
                 return Json(resp, JsonRequestBehavior.AllowGet);
             }
-            FixChargingRule rule = new CWTariff().FindFixCharge(fix=>fix.Unit==(EnmFeeUnit)feeunit&&fix.ICType==(EnmICCardType)utype);
+            FixChargingRule rule = new CWTariff().FindFixCharge(fix => fix.Unit == (EnmFeeUnit)feeunit && fix.ICType == (EnmICCardType)utype);
             if (rule == null)
             {
                 resp.Message = "找不到对应的收费规则记录, Unit- " + feeunit;
@@ -182,19 +187,19 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         /// <param name="type"></param>
         /// <param name="uiccd"></param>
         /// <returns></returns>
-        public ActionResult QueryCustInfo(int type,string uiccd)
+        public async Task<JsonResult> QueryCustInfo(int type, string uiccd)
         {
             Response resp = new Response();
             #region
-            CWICCard cwiccd = new CWICCard();          
+            CWICCard cwiccd = new CWICCard();
             Customer cust = null;
             if (type == 1)
             {
                 //是卡号
-                ICCard iccd = cwiccd.Find(ic=>ic.UserCode==uiccd);
+                ICCard iccd =await cwiccd.FindAsync(ic => ic.UserCode == uiccd);
                 if (iccd == null)
                 {
-                    resp.Message = "不是本系统用卡，iccode - "+uiccd;
+                    resp.Message = "不是本系统用卡，iccode - " + uiccd;
                     return Json(resp, JsonRequestBehavior.AllowGet);
                 }
                 if (iccd.CustID == 0)
@@ -207,12 +212,12 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             else if (type == 2)
             {
                 //是车牌
-                cust = cwiccd.FindCust(cc=>cc.PlateNum==uiccd);
+                cust =await cwiccd.FindCustAsync(cc => cc.PlateNum == uiccd);
             }
             else if (type == 3)
             {
                 //是车主姓名
-                cust = cwiccd.FindCust(cc => cc.UserName == uiccd);
+                cust = await cwiccd.FindCustAsync(cc => cc.UserName == uiccd);
             }
             if (cust == null)
             {
@@ -228,16 +233,17 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
             FixChargingRule rule = new CWTariff().FindFixCharge(fix => fix.Unit == EnmFeeUnit.Month && fix.ICType == cust.Type);
             if (rule == null)
             {
-                resp.Message = "找不到(月份)收费规则，ICType - "+cust.Type.ToString();
+                resp.Message = "找不到(月份)收费规则，ICType - " + cust.Type.ToString();
                 return Json(resp, JsonRequestBehavior.AllowGet);
             }
 
-            FixCustInfo info = new FixCustInfo {
-                CustID=cust.ID,
-                Proof=uiccd,
-                ICType=(int)cust.Type,
-                CurrDeadline=cust.Deadline.ToString(),
-                MonthFee=rule.Fee
+            FixCustInfo info = new FixCustInfo
+            {
+                CustID = cust.ID,
+                Proof = uiccd,
+                ICType = (int)cust.Type,
+                CurrDeadline = cust.Deadline.ToString(),
+                MonthFee = rule.Fee
             };
             resp.Code = 1;
             resp.Message = "查询成功";
@@ -245,7 +251,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
 
             TempData["CustInfo"] = info;
             #endregion
-            return Json(resp,JsonRequestBehavior.AllowGet);
+            return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>
@@ -253,7 +259,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public ActionResult SetFixUserFee()
+        public async Task<ActionResult> SetFixUserFee()
         {
             Log log = LogFactory.GetLogger("SetFixUserFee");
             Response resp = new Response();
@@ -281,8 +287,8 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     resp.Message = "查询条件已改变，请先点击< 查询信息 >，再 确认缴费 ！";
                     return Json(resp);
                 }
-                Customer cust = cwiccd.FindCust(oldInfo.CustID);
-               
+                Customer cust =await cwiccd.FindCustAsync(oldInfo.CustID);
+
                 float standard = Convert.ToSingle(feeStd);
                 float actual = Convert.ToSingle(actualfee);
                 int rnd = (int)(actual / standard);
@@ -352,20 +358,23 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                         default:
                             break;
                     }
-
-                    FixUserChargeLog fixlog = new FixUserChargeLog {
+                    string oprt = User.Identity.Name;
+                    FixUserChargeLog fixlog = new FixUserChargeLog
+                    {
                         UserName = cust.UserName,
-                        PlateNum=cust.PlateNum,
-                        UserType=uty,
-                        Proof=oldInfo.Proof,
-                        LastDeadline=oldInfo.LastDeadline,
-                        CurrDeadline=oldInfo.CurrDeadline,
-                        FeeType=umsg,
-                        FeeUnit=standard,
-                        CurrFee=actual
+                        PlateNum = cust.PlateNum,
+                        UserType = uty,
+                        Proof = oldInfo.Proof,
+                        LastDeadline = oldInfo.LastDeadline,
+                        CurrDeadline = oldInfo.CurrDeadline,
+                        FeeType = umsg,
+                        FeeUnit = standard,
+                        CurrFee = actual,
+                        OprtCode=oprt,
+                        RecordDTime=DateTime.Now
                     };
 
-                    new CWTariff().AddFixLog(fixlog);
+                    await new CWTariffLog().AddFixLogAsync(fixlog);
 
                     #endregion
 
@@ -384,7 +393,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
         /// 固定用户收费界面出车
         /// </summary>
         /// <returns></returns>        
-        public ActionResult FixGUIOutCar(int type,string uiccd,int warehouse,int hallID)
+        public ActionResult FixGUIOutCar(int type, string uiccd, int warehouse, int hallID)
         {
             Response resp = new Response();
             #region
@@ -398,35 +407,46 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                 Location loc = null;
                 if (type == 1)
                 {
-                    //是卡号
-                    ICCard iccd = cwiccd.Find(ic => ic.UserCode == uiccd);
-                    if (iccd == null)
-                    {
-                        resp.Message = "不是本系统用卡，iccode - " + uiccd;
-                        return Json(resp, JsonRequestBehavior.AllowGet);
-                    }
-                    if (iccd.CustID == 0)
-                    {
-                        resp.Message = "当前用卡为临时用卡，无法完成操作！ ICCode - " + uiccd;
-                        return Json(resp, JsonRequestBehavior.AllowGet);
-                    }
-                    cust = cwiccd.FindCust(iccd.CustID);
-
-                    loc = cwlctn.FindLocation(l=>l.ICCode==uiccd);                  
+                    #region
+                    ////是卡号
+                    //ICCard iccd = cwiccd.Find(ic => ic.UserCode == uiccd);
+                    //if (iccd == null)
+                    //{
+                    //    resp.Message = "不是本系统用卡，iccode - " + uiccd;
+                    //    return Json(resp, JsonRequestBehavior.AllowGet);
+                    //}
+                    //if (iccd.CustID == 0)
+                    //{
+                    //    resp.Message = "当前用卡为临时用卡，无法完成操作！ ICCode - " + uiccd;
+                    //    return Json(resp, JsonRequestBehavior.AllowGet);
+                    //}
+                    //cust = cwiccd.FindCust(iccd.CustID);
+                    #endregion
+                    loc = cwlctn.FindLocation(l => l.ICCode == uiccd);
                 }
                 else if (type == 2)
-                {
-                    //是车牌
-                    cust = cwiccd.FindCust(cc => cc.PlateNum == uiccd);
+                {                    
+                    loc = cwlctn.FindLocation(l => l.PlateNum == uiccd);
                 }
-                else if (type == 3)
+                if (loc == null)
+                {
+                    resp.Message = "当前用户没有存车！ Proof - " + uiccd;
+                    return Json(resp, JsonRequestBehavior.AllowGet);
+                }
+                int sno = Convert.ToInt32(loc.ICCode);
+                SaveCertificate scert = new CWSaveProof().Find(s => s.SNO == sno);
+                if (scert != null)
+                {
+                    cust = new CWICCard().FindCust(scert.CustID);                   
+                }
+                if (type == 3)
                 {
                     //是车主姓名
                     cust = cwiccd.FindCust(cc => cc.UserName == uiccd);
                 }
                 if (cust == null)
                 {
-                    resp.Message = "当前用户不存在，无法进行操作！iccode - " + uiccd;
+                    resp.Message = "不是注册用户，无法进行操作！iccode - " + uiccd;
                     return Json(resp, JsonRequestBehavior.AllowGet);
                 }
                 if (cust.Type == EnmICCardType.Temp)
@@ -439,27 +459,21 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                     resp.Message = "当前用户已欠费，请缴费后出车！ iccode - " + uiccd + " ,Deadline- " + cust.Deadline.ToString();
                     return Json(resp, JsonRequestBehavior.AllowGet);
                 }
-                //如果是以车牌或用户名取车，
-                if (type > 1)
-                {
-                    loc = cwlctn.FindLocation(lc=>lc.PlateNum==cust.PlateNum);
-                    //以车牌找不到存车车辆，则以卡号进行查询
-                    if (loc == null)
-                    {
-                        //以绑定的卡号查询
-                        ICCard iccd = cwiccd.Find(ic=>ic.CustID==cust.ID);
-                        if (iccd != null)
-                        {
-                            loc = cwlctn.FindLocation(l => l.ICCode == iccd.UserCode);
-                        }
-                    }
-                }
-                
-                if (loc == null)
-                {
-                    resp.Message = "当前用户没有存车！ Proof - " + uiccd;
-                    return Json(resp, JsonRequestBehavior.AllowGet);
-                }
+                ////如果是以车牌或用户名取车，
+                //if (type > 1)
+                //{
+                //    loc = cwlctn.FindLocation(lc => lc.PlateNum == cust.PlateNum);
+                //    //以车牌找不到存车车辆，则以卡号进行查询
+                //    if (loc == null)
+                //    {
+                //        //以绑定的卡号查询
+                //        ICCard iccd = cwiccd.Find(ic => ic.CustID == cust.ID);
+                //        if (iccd != null)
+                //        {
+                //            loc = cwlctn.FindLocation(l => l.ICCode == iccd.UserCode);
+                //        }
+                //    }
+                //}               
                 #endregion
                 resp = new CWTaskTransfer(hallID, warehouse).FixGUIGetCar(loc);
             }
@@ -468,7 +482,7 @@ namespace Parking.Web.Areas.ChargeManager.Controllers
                 log.Error(ex.ToString());
             }
             #endregion
-            return Json(resp,JsonRequestBehavior.AllowGet);
+            return Json(resp, JsonRequestBehavior.AllowGet);
         }
 
     }

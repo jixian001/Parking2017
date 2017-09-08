@@ -14,152 +14,7 @@ using System.Text;
 namespace Parking.Web.Controllers
 {   
     public class HomeController : Controller
-    {
-       
-        public HomeController()
-        { 
-        }
-
-        #region 不用的
-        /*
-        * signalr 推送调用
-        *  Task.Factory.StartNew(()=> {
-        *       var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-        *       hubs.Clients.All.getMessage(message);
-        *   });
-        *   
-        *   [HttpPost]
-        *    public ActionResult Send(string cid, string msg)
-        *    {
-        *        var context = GlobalHost.ConnectionManager.GetHubContext<CommHub>();
-        *        if (cid == "*") //對所有Client傳送
-        *            //注意: Clients是dynamic，故ShowMessage等方法名稱只要跟Client可以對應即可
-        *            context.Clients.ShowMessage(msg);
-        *        else 
-        *            //利用Clients[connection_id]指定特定的Client, 呼叫其ShowMessage()
-        *            context.Clients[cid].ShowMessage(msg);
-        *        return Content("OK");
-        *    }
-        *   
-        */
-
-        /// <summary>
-        /// 推送车位信息
-        /// </summary>
-        /// <param name="loc"></param>
-        //private void FileWatch_LctnWatchEvent(Location loca)
-        //{
-        //    #region
-        //    int total = 0;
-        //    int occupy = 0;
-        //    int space = 0;
-        //    int fix = 0;
-        //    int bspace = 0;
-        //    int sspace = 0;
-        //    List<Location> locLst = new CWLocation().FindLocationList(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall);
-        //    total = locLst.Count;
-        //    CWICCard cwiccd = new CWICCard();
-        //    foreach (Location loc in locLst)
-        //    {
-        //        #region
-        //        if (loc.Type == EnmLocationType.Normal)
-        //        {
-        //            if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
-        //            {
-        //                if (loc.Type == EnmLocationType.Normal)
-        //                {
-        //                    if (loc.Status == EnmLocationStatus.Space)
-        //                    {
-        //                        space++;
-        //                        if (loc.LocSize.Length == 3)
-        //                        {
-        //                            string last = loc.LocSize.Substring(2);
-        //                            if (last == "1")
-        //                            {
-        //                                sspace++;
-        //                            }
-        //                            else if (last == "2")
-        //                            {
-        //                                bspace++;
-        //                            }
-        //                        }
-        //                    }
-        //                    else if (loc.Status == EnmLocationStatus.Occupy)
-        //                    {
-        //                        occupy++;
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                fix++;
-        //            }
-        //        }
-        //        #endregion
-        //    }
-        //    StatisInfo info = new StatisInfo
-        //    {
-        //        Total = total,
-        //        Occupy = occupy,
-        //        Space = space,
-        //        SmallSpace = sspace,
-        //        BigSpace = bspace,
-        //        FixLoc = fix
-        //    };
-        //    #endregion
-
-        //    Task.Factory.StartNew(()=> {
-        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-        //        //推送车位信息变化
-        //        hubs.Clients.All.feedbackLocInfo(loca);
-        //        //推送统计信息
-        //        hubs.Clients.All.feedbackStatistInfo(info);
-        //    });
-        //}
-
-        /// <summary>
-        /// 推送设备信息
-        /// </summary>
-        /// <param name="entity"></param>
-        //private void FileWatch_DeviceWatchEvent(Device smg)
-        //{
-        //    if (log != null)
-        //    {
-        //        log.Debug("  warehouse- " + smg.Warehouse + " ,devicecode-" + smg.DeviceCode);
-        //    }
-        //    Task.Factory.StartNew(() =>
-        //    {
-        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-        //        hubs.Clients.All.feedbackDevice(smg);
-        //    });                      
-        //}
-
-        /// <summary>
-        /// 推送执行作业信息
-        /// </summary>
-        /// <param name="itask"></param>
-        //private void FileWatch_IMPTaskWatchEvent(ImplementTask itask)
-        //{
-        //    Task.Factory.StartNew(() => {
-        //        var hubs = GlobalHost.ConnectionManager.GetHubContext<ParkingHub>();
-
-        //        string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
-        //        string type = PlusCvt.ConvertTaskType(itask.Type);
-        //        string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
-        //        DeviceTaskDetail detail = new DeviceTaskDetail
-        //        {
-        //            DevDescp = desp,
-        //            TaskType = type,
-        //            Status = status,
-        //            Proof = itask.ICCardCode
-        //        };
-
-        //        hubs.Clients.All.feedbackImpTask(detail);
-        //    });
-        //}
-
-        #endregion
-
+    {       
         public ActionResult Index()
         {
             return View();
@@ -175,10 +30,9 @@ namespace Parking.Web.Controllers
             return View();
         }
 
-        public ActionResult GetDeviceList()
+        public async Task<JsonResult> GetDeviceList()
         {
-            List<Device> devices = new CWDevice().FindList(smg => true);
-           
+            List<Device> devices = await new CWDevice().FindListAsync();           
             return Json(devices, JsonRequestBehavior.AllowGet);
         }
 
@@ -186,39 +40,32 @@ namespace Parking.Web.Controllers
         /// 获取有作业的设备信息
         /// </summary>
         /// <returns></returns>
-        public ActionResult GetDeviceTaskLst()
+        public async Task<JsonResult> GetDeviceTaskLst()
         {
             List<DeviceTaskDetail> detailLst = new List<DeviceTaskDetail>();
-            try
-            {
-                List<Device> hasTask = new CWDevice().FindList(dv => dv.TaskID != 0);
-                CWTask cwtask = new CWTask();
-                foreach (Device dev in hasTask)
-                {
-                    ImplementTask itask = cwtask.Find(dev.TaskID);
-                    if (itask != null)
-                    {
-                        string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
-                        string type = PlusCvt.ConvertTaskType(itask.Type);
-                        string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
-                        DeviceTaskDetail detail = new DeviceTaskDetail
-                        {
-                            DevDescp = desp,
-                            TaskType = type,
-                            Status = status,
-                            Proof = itask.ICCardCode
-                        };
-                        detailLst.Add(detail);
-                    }
-                }
 
-            }
-            catch (Exception ex)
+            List<Device> hasTask =await new CWDevice().FindListAsync(dv => dv.TaskID != 0);
+            CWTask cwtask = new CWTask();
+            foreach (Device dev in hasTask)
             {
-                Log log = LogFactory.GetLogger("GetDeviceTaskLst");
-                log.Error(ex.ToString());
+                ImplementTask itask =await cwtask.FindAsync(dev.TaskID);
+                if (itask != null)
+                {
+                    string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
+                    string type = PlusCvt.ConvertTaskType(itask.Type);
+                    string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
+                    DeviceTaskDetail detail = new DeviceTaskDetail
+                    {
+                        DevDescp = desp,
+                        TaskType = type,
+                        Status = status,
+                        Proof = itask.ICCardCode
+                    };
+                    detailLst.Add(detail);
+                }
             }
-            return Json(detailLst,JsonRequestBehavior.AllowGet);
+
+            return Json(detailLst, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>
@@ -226,7 +73,7 @@ namespace Parking.Web.Controllers
         /// </summary>
         /// <param name="locinfo">库区_边_列_层</param>
         /// <returns></returns>
-        public JsonResult GetLocation(string locinfo)
+        public async Task<JsonResult> GetLocation(string locinfo)
         {
             string[] info = locinfo.Split('_');
             if (info.Length < 4)
@@ -242,7 +89,7 @@ namespace Parking.Web.Controllers
             {
                 int wh = Convert.ToInt32(info[0]);
                 string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2, '0');
-                lctn = new CWLocation().FindLocation(lc => lc.Address == address && lc.Warehouse == wh);
+                lctn = await new CWLocation().FindLocationAsync(lc => lc.Address == address && lc.Warehouse == wh);
             }
             catch (Exception ex)
             {
@@ -270,7 +117,7 @@ namespace Parking.Web.Controllers
         }        
         
         [HttpPost]
-        public JsonResult ManualDisLocation(string info,bool isdis)
+        public async Task<JsonResult> ManualDisLocation(string info,bool isdis)
         {
             Response _resp = new Response();
             string[] msg = info.Split('_');
@@ -282,7 +129,7 @@ namespace Parking.Web.Controllers
             }
             int wh = Convert.ToInt16(msg[0]);
             string address = msg[1] + msg[2].PadLeft(2, '0') + msg[3].PadLeft(2, '0');
-            _resp = new CWLocation().DisableLocation(wh, address, isdis);
+            _resp = await new CWLocation().DisableLocationAsync(wh, address, isdis);
             return Json(_resp);
         }
 
@@ -290,22 +137,11 @@ namespace Parking.Web.Controllers
         /// 初始化界面用
         /// </summary>
         /// <returns></returns>
-        public ActionResult GetLocationList()
+        public async Task<JsonResult> GetLocationList()
         {
-            List<Location> locList = new CWLocation().FindLocList();
-            if (locList == null || 
-                locList.Count == 0)
+            List<Location> locList = await new CWLocation().FindLocationListAsync();
+            if (locList.Count > 0)
             {
-                var resp = new
-                {
-                    code = 0,
-                    data = ""
-                };
-                return Json(resp, JsonRequestBehavior.AllowGet);
-            }
-            else
-            {
-                TempData["locations"] = locList;
                 var nback = new
                 {
                     code = 1,
@@ -313,74 +149,26 @@ namespace Parking.Web.Controllers
                 };
                 return Json(nback, JsonRequestBehavior.AllowGet);
             }
+            else
+            {
 
+                var bback = new
+                {
+                    code = 0,
+                    data = ""
+                };
+                return Json(bback, JsonRequestBehavior.AllowGet);
+            }
         }
 
         /// <summary>
         /// 查询车位统计信息
         /// </summary>
         /// <returns></returns>
-        public ActionResult GetLocStatInfo()
+        public async Task<JsonResult> GetLocStatInfo()
         {
-            StatisInfo info = new StatisInfo();
-            if (TempData["locations"] != null)
-            {
-                #region
-                int total = 0;
-                int occupy = 0;
-                int space = 0;
-                int fix = 0;
-                int bspace = 0;
-                int sspace = 0;
-                List<Location> locLst = ((List<Location>)TempData["locations"]).Where(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall).ToList();
-                total = locLst.Count;
-                CWICCard cwiccd = new CWICCard();
-                foreach (Location loc in locLst)
-                {
-                    #region
-                    if (loc.Type == EnmLocationType.Normal)
-                    {
-                        if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
-                        {
-                            if (loc.Type == EnmLocationType.Normal)
-                            {
-                                if (loc.Status == EnmLocationStatus.Space)
-                                {
-                                    space++;
-                                    if (loc.LocSize.Length == 3)
-                                    {
-                                        string last = loc.LocSize.Substring(2);
-                                        if (last == "1")
-                                        {
-                                            sspace++;
-                                        }
-                                        else if (last == "2")
-                                        {
-                                            bspace++;
-                                        }
-                                    }
-                                }
-                                else if (loc.Status == EnmLocationStatus.Occupy)
-                                {
-                                    occupy++;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            fix++;
-                        }
-                    }
-                    #endregion
-                }
-                info.Total = total;
-                info.Occupy = occupy;
-                info.Space = space;
-                info.SmallSpace = sspace;
-                info.BigSpace = bspace;              
-                #endregion
-            }
-            return Json(info,JsonRequestBehavior.AllowGet);
+            var info = await new CWLocation().GetLocStatisInfoAsync();
+            return Json(info, JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult Error()
@@ -393,19 +181,18 @@ namespace Parking.Web.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public JsonResult ZhiWen()
+        public async Task<JsonResult> ZhiWen()
         {
             int isGetCar = 0;
             string plateNum = "";
-            Response resp = new Response();
-           
+            Response resp = new Response();           
             Log log = LogFactory.GetLogger("ZhiWen");
             try
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
                 string req = System.Text.Encoding.Default.GetString(bytes);
-                log.Debug("有指纹信息上传！");
+                log.Debug("有指纹信息上传！");               
 
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 AIOFingerPrint fpring = js.Deserialize<AIOFingerPrint>(req);
@@ -441,7 +228,13 @@ namespace Parking.Web.Controllers
                 log.Debug("接收到的指纹数量- "+psTZ.Length);
                 if (psTZ.Length > 380)
                 {
-                    resp = new CWTaskTransfer(hall,wh).DealFingerPrintMessage(psTZ,out isGetCar,out plateNum);
+                    resp =await new CWTaskTransfer(hall,wh).DealFingerPrintMessageAsync(psTZ);
+                    if (resp.Code == 1)
+                    {
+                        ZhiWenResult result = resp.Data as ZhiWenResult;
+                        isGetCar = result.IsTakeCar;
+                        plateNum = result.PlateNum;
+                    }
                 }
                 else
                 {
@@ -453,7 +246,9 @@ namespace Parking.Web.Controllers
             catch (Exception ex)
             {
                 log.Error(ex.ToString());
+                resp.Message = "系统异常";
             }
+
             var json = new
             {
                 status = resp.Code,
@@ -471,10 +266,11 @@ namespace Parking.Web.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public JsonResult IcCard()
+        public async Task<JsonResult> IcCard()
         {
             int isGetCar = 0;
             string plateNum = "";
+            string sound = "";
 
             Response resp = new Response();
             Log log = LogFactory.GetLogger("IcCard");
@@ -508,7 +304,14 @@ namespace Parking.Web.Controllers
                     return Json(resp);
                 }
                 log.Debug("一体机刷卡信息中，warehouse - " + warehouse + " ,hallID - " + hall);
-                resp = new CWTaskTransfer(hall,wh).DealFingerICCardMessage(ccode,out isGetCar,out plateNum);
+                resp =await new CWTaskTransfer(hall,wh).DealFingerICCardMessageAsync(ccode);
+                if (resp.Code == 1)
+                {
+                    ZhiWenResult result = resp.Data as ZhiWenResult;
+                    isGetCar = result.IsTakeCar;
+                    plateNum = result.PlateNum;
+                    sound = result.Sound;
+                }
             }
             catch (Exception ex)
             {
@@ -521,7 +324,7 @@ namespace Parking.Web.Controllers
                 isTakeCar = isGetCar,
                 carBrand = plateNum,
                 counter = 0,
-                sound = ""
+                sound = sound
             };
             return Json(json);
         }
@@ -533,26 +336,32 @@ namespace Parking.Web.Controllers
         }
 
         [HttpPost]
-        public ActionResult TestSubmitFPrint(int wh,int hall,string FPrint)
+        public async Task<JsonResult> TestSubmitFPrint(int wh,int hall,string FPrint)
         {
             Response resp = new Response();
             byte[] psTZ = FPrintBase64.Base64FingerDataToHex(FPrint.Trim());
-
-            int isGetCar = 0;
-            string plate = "";
-            resp = new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ,out isGetCar,out plate);
+            resp =await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
             return Json(resp);
         }
 
 
         [HttpPost]
-        public ActionResult TestSubmitICCard(int wh,int hall,string physcode)
+        public async Task<JsonResult> TestSubmitICCard(int wh,int hall,string physcode)
+        {
+            Response resp = await new CWTaskTransfer(hall, wh).DealFingerICCardMessageAsync(physcode);
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 主页面加载时，更新下时间，
+        /// 同步系统时间，同时判断下是否设置了合同期限
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult UpdateLocalTime()
         {
             Response resp = new Response();
-
-            int isGetCar = 0;
-            string plate = "";
-            resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(physcode,out isGetCar,out plate);
+            //resp = new ContractLimit().UpdateLocalTime();
             return Json(resp);
         }
 

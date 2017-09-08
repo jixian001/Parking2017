@@ -13,6 +13,5 @@ namespace Parking.Auxiliary
         int GetPhyscard(ref uint physiccard);
         int ReadSectorMemory(Int16 nSector,Int16 nDBnum,ref byte[] breturn);
         int WriteSectorMemory(Int16 nSector,Int16 nDBNum,byte[] bWrite,ref int nback);
-
     }
 }

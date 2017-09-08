@@ -15,7 +15,7 @@ namespace Parking.Core
 {
     public class CWTelegramLog
     {
-        private static TelegramLogManager manager = new TelegramLogManager();
+        private TelegramLogManager manager = new TelegramLogManager();
         private Log log;
 
         public CWTelegramLog()
@@ -27,24 +27,22 @@ namespace Parking.Core
         /// </summary>
         /// <param name="data"></param>
         /// <param name="type">1：发送，2：接收</param>
-        public void AddRecord(Int16[] data, int type)
+        public async Task AddRecordAsync(Int16[] data, int type)
         {
             try
             {
                 #region 记录数据库
                 TelegramLog tlog = new TelegramLog();
-                string head = "";
+               
                 tlog.RecordDtime = DateTime.Now;
                 tlog.Type = type;
                 if (type == 1)
                 {
-                    tlog.Warehouse = data[0];
-                    head = "报文发送";
+                    tlog.Warehouse = data[0];                  
                 }
                 if (type == 2)
                 {
-                    tlog.Warehouse = data[1];
-                    head = "报文接收";
+                    tlog.Warehouse = data[1];                   
                 }
                 if (data[4] != 0)
                 {
@@ -56,27 +54,15 @@ namespace Parking.Core
                 }
                 tlog.DeviceCode = data[6];
                 tlog.ICCode = data[11].ToString();
-                tlog.CarInfo = data[23] + "," + data[25] + "," + data[47];
+                tlog.CarInfo = data[23] + "," + data[25] + "," + data[40] + "," + data[47];
                 string fromAddrs = data[30] + "边" + data[31] + "列" + data[32] + "层";
                 string toAddrs = data[35] + "边" + data[36] + "列" + data[37] + "层";
                 tlog.FromAddress = fromAddrs;
                 tlog.ToAddress = toAddrs;
                 tlog.TelegramID = data[48];
 
-                manager.Add(tlog);
-                #endregion
-                Task.Factory.StartNew(() =>
-                {
-                    #region 打印出来吧
-                    StringBuilder strBuild = new StringBuilder();
-                    strBuild.Append(head + Environment.NewLine);                
-                    foreach (Int16 by in data)
-                    {
-                        strBuild.Append("[" + by + "]");
-                    }
-                    log.Info(strBuild.ToString());
-                    #endregion
-                });
+                await manager.AddAsync(tlog);
+                #endregion               
             }
             catch (Exception ex)
             {
@@ -137,15 +123,18 @@ namespace Parking.Core
                     {
                         queryTelegram.AddRange(telegramLst.Where(lst => lst.FromAddress == queryContent || lst.ToAddress == queryContent));
                     }
-                    else if (queryName == "SaveNum")
+
+                }
+                else
+                {
+                    if (queryName == "SaveNum")
                     {
-                        queryTelegram.AddRange(telegramLst.Where(lst => lst.Telegram.Contains("(1,9)")));
+                        queryTelegram.AddRange(telegramLst.Where(lst => lst.Telegram.Contains("(1,1)")));
                     }
                     else if (queryName == "GetNum")
                     {
                         queryTelegram.AddRange(telegramLst.Where(lst => lst.Telegram.Contains("(2,1)") || lst.Telegram.Contains("(3,1)")));
-                    }                  
-
+                    }
                 }
                 #endregion
             }
@@ -163,7 +152,7 @@ namespace Parking.Core
 
     public class CWOperateRecordLog
     {
-        private static OperateLogManager manager = new OperateLogManager();
+        private OperateLogManager manager = new OperateLogManager();
 
         public List<OperateLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
         {
@@ -196,16 +185,22 @@ namespace Parking.Core
             }
             return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
         }
+
+        public Response AddOperateLog(OperateLog log)
+        {
+            return manager.Add(log);
+        }
+
     }
 
     public class CWFaultLog
     {
-        private static FaultLogManager manager = new FaultLogManager();
+        private FaultLogManager manager = new FaultLogManager();
 
         public List<FaultLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
         {
             totalCount = 0;
-            List<FaultLog> infoLst = manager.FindList(tl => tl.CreateDate >= start && tl.CreateDate <= end);
+            List<FaultLog> infoLst =manager.FindList(tl => tl.CreateDate >= start && tl.CreateDate <= end);
             List<FaultLog> queryInfo = new List<FaultLog>();
             if (queryName == "0")
             {
@@ -250,6 +245,159 @@ namespace Parking.Core
             return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
         }
+
+        public void AddFaultRecord(List<Alarm> alarmLst)
+        {
+            for (int i = 0; i < alarmLst.Count; i++)
+            {
+                Alarm ar = alarmLst[i];
+                Device smg = new CWDevice().Find(d => d.Warehouse == ar.Warehouse && d.DeviceCode == ar.DeviceCode);
+                if (smg != null)
+                {
+                    FaultLog log = new FaultLog
+                    {
+                        Warehouse = smg.Warehouse,
+                        DeviceCode = smg.DeviceCode,
+                        RunStep = smg.RunStep,
+                        InStep = smg.InStep,
+                        OutStep = smg.OutStep,
+                        Description = ar.Description,
+                        CreateDate = DateTime.Now
+                    };
+                    manager.Add(log);
+                }
+            }
+        }
+
     }
-   
+
+    public class CWStatusLog
+    {
+        private StatusInfoLogManager manager = new StatusInfoLogManager();
+
+        public CWStatusLog()
+        {
+        }
+
+        public List<StatusInfoLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
+        {
+            totalCount = 0;
+            List<StatusInfoLog> infoLst =manager.FindList(tl => tl.RcdDtime >= start && tl.RcdDtime <= end);
+            List<StatusInfoLog> queryInfo = new List<StatusInfoLog>();
+            if (queryName == "0")
+            {
+                queryInfo.AddRange(infoLst);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(queryContent))
+                {
+                    if (queryName == "Description")
+                    {
+
+                        queryInfo.AddRange(infoLst.Where(lst => lst.Description.Contains(queryContent)));
+
+                    }
+                    else if (queryName == "Warehouse")
+                    {
+                        queryInfo.AddRange(infoLst.Where(lst => queryContent.Contains(lst.Warehouse.ToString())));
+                    }
+                    else if (queryName == "DeviceCode")
+                    {
+                        //获取数字部分
+                        string result = Regex.Replace(queryContent, @"[^0-9]+", "");
+                        if (queryContent.Contains("厅"))
+                        {
+                            int hallcode = Convert.ToInt32(result) + 10;
+                            queryInfo.AddRange(infoLst.Where(lst => lst.DeviceCode == hallcode));
+                        }
+                        else
+                        {
+                            int tv = Convert.ToInt32(result);
+                            queryInfo.AddRange(infoLst.Where(lst => lst.DeviceCode == tv));
+                        }
+                    }
+                }
+            }
+            totalCount = queryInfo.Count;
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                return queryInfo;
+            }
+            return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+
+        }
+
+        public void AddStateRecord(List<Alarm> statusLst)
+        {
+            List<StatusInfoLog> slogLst = new List<StatusInfoLog>();
+            foreach (Alarm ar in statusLst)
+            {
+                StatusInfoLog slog = new StatusInfoLog
+                {
+                    Warehouse = ar.Warehouse,
+                    DeviceCode = ar.DeviceCode,
+                    Description = ar.Description,
+                    RcdDtime = DateTime.Now
+                };
+                slogLst.Add(slog);
+            }
+            manager.Add(slogLst);
+        }
+
+    }
+
+    public class CWDeviceStatusLog
+    {
+        private DeviceInfoLogManager manager = new DeviceInfoLogManager();
+
+        public Response AddLog(DeviceInfoLog log)
+        {
+            return manager.Add(log);
+        }
+
+        public List<DeviceInfoLog> FindPageList(int pageSize, int pageIndex, DateTime start, DateTime end, string queryName, string queryContent, out int totalCount)
+        {
+            totalCount = 0;
+            List<DeviceInfoLog> infoLst = manager.FindList(tl => tl.RecordDtime >= start && tl.RecordDtime <= end);
+            List<DeviceInfoLog> queryInfo = new List<DeviceInfoLog>();
+            if (queryName == "0")
+            {
+                queryInfo.AddRange(infoLst);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(queryContent))
+                {
+                    if (queryName == "Warehouse")
+                    {
+                        queryInfo.AddRange(infoLst.Where(lst => queryContent.Contains(lst.Warehouse.ToString())));
+                    }
+                    else if (queryName == "DeviceCode")
+                    {
+                        //获取数字部分
+                        string result = Regex.Replace(queryContent, @"[^0-9]+", "");
+                        if (queryContent.Contains("厅"))
+                        {
+                            int hallcode = Convert.ToInt32(result) + 10;
+                            queryInfo.AddRange(infoLst.Where(lst => lst.DeviceCode == hallcode));
+                        }
+                        else
+                        {
+                            int tv = Convert.ToInt32(result);
+                            queryInfo.AddRange(infoLst.Where(lst => lst.DeviceCode == tv));
+                        }
+                    }
+                }
+            }
+            totalCount = queryInfo.Count;
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                return queryInfo;
+            }
+            return queryInfo.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+        }
+
+
+    }
 }

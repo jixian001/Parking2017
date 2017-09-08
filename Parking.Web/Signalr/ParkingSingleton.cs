@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using Parking.Data;
-using Parking.Application;
 using Parking.Core;
 using Parking.Web.Models;
 using System.Threading.Tasks;
@@ -22,26 +21,27 @@ namespace Parking.Web
         private readonly static Lazy<ParkingSingleton> _instance = new Lazy<ParkingSingleton>(
             () => new ParkingSingleton(GlobalHost.ConnectionManager.GetHubContext<ParkingHub>().Clients));
 
-        private ServeStatus _state=ServeStatus.Close;
+        private Log log;
 
-        private EqpService service;
-        private Log log;      
-
-        private Dictionary<string, string> dicCurrClients = new Dictionary<string, string>();     
+        private Dictionary<string, string> dicCurrClients = new Dictionary<string, string>();
 
         private ParkingSingleton(IHubConnectionContext<dynamic> clients)
         {
-            Clients = clients;          
-            service = new EqpService();
+            Clients = clients;
+
             log = LogFactory.GetLogger("ParkingSingleton");
 
             MainCallback<Location>.Instance().WatchEvent += FileWatch_LctnWatchEvent;
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
-            MainCallback<Alarm>.Instance().WatchEvent+= FileWatch_FaultWatchEvent;
             MainCallback<ImplementTask>.Instance().WatchEvent += FileWatch_IMPTaskWatchEvent;
             MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
 
-            SingleCallback.Instance().ManualOprtEvent += ParkingSingleton_ManualOprtEvent;
+            SingleCallback.Instance().ICCardWatchEvent += ParkingSingleton_ICCardWatchEvent;
+            SingleCallback.Instance().FaultsWatchEvent += ParkingSingleton_FaultsWatchEvent;
+            SingleCallback.Instance().PlateWatchEvent += ParkingSingleton_PlateWatchEvent;
+
+            CloudCallback.Instance().ParkingRcdWatchEvent += ParkingSingleton_ParkingRcdWatchEvent;
+
         }
 
         public IHubConnectionContext<dynamic> Clients
@@ -59,51 +59,7 @@ namespace Parking.Web
             private set {; }
         }
 
-        public enum ServeStatus
-        {
-            Close=0,
-            Open
-        }
-
-        public ServeStatus ServerState
-        {
-            get
-            {
-                //去查询下状态，再给值
-                _state = service.RunState ? ServeStatus.Open : ServeStatus.Close;
-
-                return _state;
-            }
-            private set {; }
-        }       
-
-        public void openServe()
-        {
-            if (ServerState != ServeStatus.Open)
-            {
-                //这里要引用到application层
-                service.OnStart();
-
-                _state = ServeStatus.Open;              
-            }
-            else
-            {
-                //关闭再重新打开
-                service.OnStop();               
-            }
-            broadcastStateChange(_state);
-        }
-
-        public void closeServe()
-        {
-            //这里要引用到application层
-            service.OnStop();
-
-            _state = ServeStatus.Close;
-            broadcastStateChange(_state);
-        }
-
-        public void register(string client,string connID)
+        public void register(string client, string connID)
         {
             lock (dicCurrClients)
             {
@@ -127,89 +83,40 @@ namespace Parking.Web
             Clients.All.nowUsers(dicCurrClients);
         }
 
-        private void broadcastStateChange(ServeStatus marketState)
-        {
-            switch (marketState)
-            {
-                case ServeStatus.Open:
-                    Clients.All.serveOpened();
-                    break;
-                case ServeStatus.Close:
-                    Clients.All.serveClosed();
-                    break;
-                default:
-                    break;
-            }
-        }
-
         /// <summary>
         /// 推送车位信息
         /// </summary>
         /// <param name="loc"></param>
         private void FileWatch_LctnWatchEvent(int type, Location loca)
         {
-            #region
-            int total = 0;
-            int occupy = 0;
-            int space = 0;
-            int fix = 0;
-            int bspace = 0;
-            int sspace = 0;
-            List<Location> locLst = new CWLocation().FindLocationList(lc => lc.Type != EnmLocationType.Invalid && lc.Type != EnmLocationType.Hall);
-            total = locLst.Count;
-            CWICCard cwiccd = new CWICCard();
-            foreach (Location loc in locLst)
+            try
             {
-                #region
-                if (loc.Type == EnmLocationType.Normal)
+                #region 更新车位状态
+                if (loca != null)
                 {
-                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null)
-                    {
-                        if (loc.Type == EnmLocationType.Normal)
-                        {
-                            if (loc.Status == EnmLocationStatus.Space)
-                            {
-                                space++;
-                                if (loc.LocSize.Length == 3)
-                                {
-                                    string last = loc.LocSize.Substring(2);
-                                    if (last == "1")
-                                    {
-                                        sspace++;
-                                    }
-                                    else if (last == "2")
-                                    {
-                                        bspace++;
-                                    }
-                                }
-                            }
-                            else if (loc.Status == EnmLocationStatus.Occupy)
-                            {
-                                occupy++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        fix++;
-                    }
+                    Clients.All.feedbackLocInfo(loca);
                 }
                 #endregion
+                #region 更新统计信息
+                Task.Factory.StartNew(() =>
+                {
+                    var info = new CWLocation().GetLocStatisInfo();
+                    Clients.All.feedbackStatistInfo(info);
+
+                    var data = new
+                    {
+                        small = info.SmallSpace,
+                        big = info.BigSpace
+                    };
+                    string json = JsonConvert.SerializeObject(data);
+                    Clients.All.LocStateToLed(json);
+                });
+                #endregion
             }
-            StatisInfo info = new StatisInfo
+            catch (Exception ex)
             {
-                Total = total,
-                Occupy = occupy,
-                Space = space,
-                SmallSpace = sspace,
-                BigSpace = bspace,
-                FixLoc = fix
-            };
-            #endregion
-
-            Clients.All.feedbackLocInfo(loca);
-
-            Clients.All.feedbackStatistInfo(info);           
+                log.Error(ex.ToString());
+            }
         }
 
         /// <summary>
@@ -218,12 +125,131 @@ namespace Parking.Web
         /// <param name="entity"></param>
         private void FileWatch_DeviceWatchEvent(int type, Device smg)
         {
-            if (log != null)
+            try
             {
-                log.Debug("  warehouse- " + smg.Warehouse + " ,devicecode-" + smg.DeviceCode);
-            }
+                Clients.All.feedbackDevice(smg);
 
-            Clients.All.feedbackDevice(smg);          
+                #region 推送至LED显示
+                if (smg.Type != EnmSMGType.Hall)
+                {
+                    return;
+                }
+
+                int ttype = 0;
+                string iccode = "";
+                if (smg.TaskID != 0)
+                {
+                    ImplementTask itask = new CWTask().Find(smg.TaskID);
+                    if (itask != null)
+                    {
+                        ttype = (int)itask.Type;
+                        #region
+                        if (itask.Type == EnmTaskType.GetCar ||
+                            itask.Type == EnmTaskType.TempGet)
+                        {
+                            Location loc = new CWLocation().FindLocation(l => l.ICCode == itask.ICCardCode);
+                            if (loc != null)
+                            {
+                                if (!string.IsNullOrEmpty(loc.PlateNum))
+                                {
+                                    iccode = loc.PlateNum;
+                                }
+                                else
+                                {
+                                    if (loc.ICCode.Length == 4)
+                                    {
+                                        iccode = "卡号" + loc.ICCode;
+                                    }
+                                    else
+                                    {
+                                        iccode = "指纹" + loc.ICCode;
+                                    }
+                                }
+                            }
+                        }
+                        else if (itask.Type == EnmTaskType.SaveCar)
+                        {
+                            PlateMappingDev map = new CWPlate().FindPlate(smg.Warehouse, smg.DeviceCode);
+                            if (map != null)
+                            {
+                                if (!string.IsNullOrEmpty(map.PlateNum))
+                                {
+                                    iccode = map.PlateNum;
+                                }
+                                else
+                                {
+                                    string ccd = itask.ICCardCode;
+                                    Location loc = new CWLocation().FindLocation(d => d.ICCode == ccd);
+                                    if (loc != null)
+                                    {
+                                        if (!string.IsNullOrEmpty(loc.PlateNum))
+                                        {
+                                            iccode = loc.PlateNum;
+                                        }
+                                        else
+                                        {
+                                            if (!string.IsNullOrEmpty(ccd))
+                                            {
+                                                if (ccd.Length == 4)
+                                                {
+                                                    iccode = "卡号" + ccd;
+                                                }
+                                                else
+                                                {
+                                                    iccode = "指纹" + ccd;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                        #endregion
+                    }
+                }
+                else
+                {
+                    if (smg.InStep == 0 && smg.OutStep == 0)
+                    {
+                        iccode = "欢迎光临";
+                    }
+                }
+                if (smg.Mode != EnmModel.Automatic)
+                {
+                    ttype = 10;
+                    iccode = "欢迎光临";
+                }
+
+                var data = new
+                {
+                    Warehouse = smg.Warehouse,
+                    HallID = smg.DeviceCode,
+                    TaskType = ttype,
+                    ICCode = ""
+                };
+                string json = JsonConvert.SerializeObject(data);
+
+                Clients.All.DeviceStateToLed(json);
+
+                //需要发送时再发送
+                if (!string.IsNullOrEmpty(iccode))
+                {
+                    var iccd = new
+                    {
+                        Warehouse = smg.Warehouse,
+                        HallID = smg.DeviceCode,
+                        Message = iccode
+                    };
+                    string jsonIccd = JsonConvert.SerializeObject(iccd);
+                    Clients.All.ICCodeInfoToLed(jsonIccd);
+                }
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
         }
 
         /// <summary>
@@ -231,7 +257,8 @@ namespace Parking.Web
         /// </summary>
         /// <param name="itask"></param>
         private void FileWatch_IMPTaskWatchEvent(int type, ImplementTask itask)
-        {            
+        {
+            #region 给页面显示处理     
             string desp = itask.Warehouse.ToString() + itask.DeviceCode.ToString();
             string ctype = PlusCvt.ConvertTaskType(itask.Type);
             string status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail);
@@ -243,7 +270,7 @@ namespace Parking.Web
                 Proof = itask.ICCardCode
             };
             //作业要删除时
-            if (itask.IsComplete == 1||type==3)
+            if (type == 3)
             {
                 detail.TaskType = "";
                 detail.Status = "";
@@ -251,138 +278,156 @@ namespace Parking.Web
             }
             //给界面用
             Clients.All.feedbackImpTask(detail);
-
-            //给云服务处理用
-            Clients.All.feedbackSubTask(itask);
-        }
-
-        private static Dictionary<Device, SMSInfo> dicSMSInfo = new Dictionary<Device, SMSInfo>();
-        /// <summary>
-        /// 用于处理有报警时给主界面显示红色，
-        /// 同时可用于云服务，发送错误短信
-        /// </summary>
-        /// <param name="fault"></param>
-        public void FileWatch_FaultWatchEvent(int type, Alarm fault)
-        {
-            #region 用于报警画面更新
-
             #endregion
-            #region 用于发送SMS用
-            if (fault.Color == EnmAlarmColor.Red)
+
+            #region 上传执行业务给云服务
+            var iRet = new
             {
-                //初步分析，跟当前保存上一个记录是不是重复
-                Device smg = new CWDevice().Find(d => d.Warehouse == fault.Warehouse && d.DeviceCode == fault.DeviceCode);
-                if (smg != null)
-                {
-                    bool isSend = true;
-                    if (dicSMSInfo.ContainsKey(smg))
-                    {
-                        SMSInfo lastSMS = dicSMSInfo[smg];
-                        if (lastSMS != null)
-                        {
-                            //自动步没有变化，则表示卡在这一步，则不会再次下发报警
-                            if (lastSMS.AutoStep == smg.RunStep)
-                            {
-                                isSend = false;
-                            }
-                            //上次发送时间距
-                            if (DateTime.Compare(DateTime.Now, lastSMS.RcdTime.AddMinutes(20)) < 0)
-                            {
-                                isSend = false;
-                            }
-                        }
-                        //非全自动下，也不发送
-                        if (smg.Mode != EnmModel.Automatic)
-                        {
-                            isSend = false;
-                        }
-                    }
-
-                    if (isSend)
-                    {
-                        //本次要报警的卡号，与原先发送的卡号一致的,时间差小的，则当前的也不发送
-                        CWTask cwtask = new CWTask();
-                        foreach (KeyValuePair<Device, SMSInfo> pair in dicSMSInfo)
-                        {
-                            SMSInfo sms = pair.Value;
-                            ImplementTask itask = cwtask.Find(smg.TaskID);
-                            if (itask != null)
-                            {
-                                if (sms.ICCode == itask.ICCardCode && DateTime.Compare(DateTime.Now, sms.RcdTime.AddMinutes(5)) < 0)
-                                {
-                                    isSend = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    //推送至接口中
-                    if (isSend)
-                    {
-                        string iccode = "";
-                        ImplementTask itask = new CWTask().Find(smg.TaskID);
-                        if (itask != null)
-                        {
-                            iccode = itask.ICCardCode;
-                        }
-                        SMSInfo currSMS = new SMSInfo {
-                            warehouse = smg.Warehouse,
-                            DeviceCode = smg.DeviceCode,
-                            AutoStep=smg.RunStep,
-                            Message=fault.Description,
-                            RcdTime=DateTime.Now
-                        };
-                        Clients.All.feedbackSMSInfo(currSMS);
-                        //更新数据字典
-                        lock (dicSMSInfo)
-                        {
-                            if (dicSMSInfo.ContainsKey(smg))
-                            {
-                                dicSMSInfo.Remove(smg);
-                            }
-                            dicSMSInfo.Add(smg, currSMS);
-                        }
-                    }
-
-                }
-
-            }
-            #endregion
-        }
-
-        /// <summary>
-        /// 队列信息回调
-        /// </summary>
-        /// <param name="entity"></param>
-        private void ParkingSingleton_WatchEvent(int type, WorkTask entity)
-        {
-            List<WorkTask> mtskLst = new CWTask().FindQueueList(d => true);
-            //删除
-            if (type == 3)
-            {
-                if (mtskLst.Contains(entity))
-                {
-                    mtskLst.Remove(entity);
-                }
-            }
-            string jsonStr = JsonConvert.SerializeObject(mtskLst);
-
-            Clients.All.feedbackWorkTask(jsonStr);
-        }
-
-        /// <summary>
-        /// 手动入出库时，上报车辆出入库信息
-        /// </summary>
-        /// <param name="loc"></param>
-        private void ParkingSingleton_ManualOprtEvent(int type, Location loc)
-        {            
-            var data = new {
-                Type=type,
-                Data=loc
+                Type = type,
+                SubTask = itask
             };
-            string jsonstr = JsonConvert.SerializeObject(data); 
-            Clients.All.feedbackSinglePkRecord(jsonstr);
+            string jsonstr = JsonConvert.SerializeObject(iRet);
+            Clients.All.feedbackImpTaskToCloud(jsonstr);
+            #endregion
+        }
+
+        /// <summary>
+        /// 推送队列信息
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="entity"></param>
+        private void ParkingSingleton_WatchEvent(int type, WorkTask mtsk)
+        {
+            try
+            {
+                if (mtsk.IsMaster == 1)
+                {
+                    return;
+                }
+                #region 上传队列信息给云服务
+                var iRet = new
+                {
+                    Type = type,
+                    MasterTask = mtsk
+                };
+                string jsonstr = JsonConvert.SerializeObject(iRet);
+                Clients.All.feedbackWorkTaskToCloud(jsonstr);
+                #endregion
+
+                Task.Factory.StartNew(() =>
+                {
+                    #region 给LED的
+                    int count = 0;
+                    int wh = mtsk.Warehouse;
+                    int hallID = mtsk.DeviceCode;
+                    List<WorkTask> mtskLst = new CWTask().FindQueueList(d => d.Warehouse == wh && d.DeviceCode == hallID);
+                    count = mtskLst.Count;
+
+                    var data = new
+                    {
+                        Warehouse = wh,
+                        HallID = hallID,
+                        Count = count
+                    };
+                    string jsonStr = JsonConvert.SerializeObject(data);
+                    //推送
+                    Clients.All.QueueStateToLed(jsonStr);
+                    #endregion
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 客户端读卡时，回推卡号
+        /// </summary>
+        /// <param name="msg"></param>
+        private void ParkingSingleton_ICCardWatchEvent(string msg)
+        {
+            Clients.All.feedbackReadICCard(msg);
+        }
+
+        /// <summary>
+        /// 处理故障信息上报
+        /// </summary>
+        /// <param name="alarmLst"></param>
+        private void ParkingSingleton_FaultsWatchEvent(int warehouse, int code, List<BackAlarm> alarmLst)
+        {
+            #region 更新报警页面
+            if (code == 11)
+            {
+                Clients.All.feedbackhall1alarm(alarmLst);
+            }
+            else if (code == 12)
+            {
+                Clients.All.feedbackhall2alarm(alarmLst);
+            }
+            else if (code == 1)
+            {
+                Clients.All.feedbacktv1alarm(alarmLst);
+            }
+            else if (code == 2)
+            {
+                Clients.All.feedbacktv2alarm(alarmLst);
+            }
+            else if (code == 2)
+            {
+                Clients.All.feedbacktv3alarm(alarmLst);
+            }
+            #endregion
+
+            #region 主页面的红色显示
+            int isRed = 0;
+            if (alarmLst.Exists(t => t.Type == 2))
+            {
+                isRed = 1;
+            }
+            var data = new
+            {
+                Warehouse = warehouse,
+                DeviceCode = code,
+                IsRed = isRed
+            };
+            Clients.All.feedbackDeviceFaultStat(data);
+            #endregion
+        }       
+
+        /// <summary>
+        /// 回调车牌识别给LED、车牌识别页面
+        /// </summary>
+        /// <param name="platenum"></param>
+        /// <param name="headpath"></param>
+        /// <param name="dtime"></param>
+        private void ParkingSingleton_PlateWatchEvent(PlateDisplay zresult)
+        {
+            #region 显示给页面
+            Clients.All.feedbackPlateInfo(zresult);
+            #endregion
+
+            #region LED
+            var iccd = new
+            {
+                Warehouse = zresult.Warehouse,
+                HallID = zresult.DeviceCode,
+                Message = zresult.PlateNum
+            };
+            string jsonIccd = JsonConvert.SerializeObject(iccd);
+            Clients.All.ICCodeInfoToLed(jsonIccd);
+            #endregion
+
+        }
+
+        /// <summary>
+        /// 停车记录推送到云平台
+        /// </summary>
+        /// <param name="record"></param>
+        private void ParkingSingleton_ParkingRcdWatchEvent(ParkingRecord record)
+        {
+            string jsonstr = JsonConvert.SerializeObject(record);
+            Clients.All.feedbackParkingRecordToCloud(jsonstr);
         }
 
     }

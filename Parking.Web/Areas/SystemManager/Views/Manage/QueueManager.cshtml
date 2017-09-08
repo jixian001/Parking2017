@@ -96,6 +96,7 @@
                 showFooter: false,
                 pagination: true,
                 striped: true,              //是否显示行间隔色
+                singleSelect: true,   //单选
                 sidePagination: "server",
                 //clickToSelect: true,
                 pageNumber: 1,              //初始化加载第一页，默认第一页
@@ -250,10 +251,10 @@
                 if ($(selected).length > 0) {
                     BootstrapDialog.confirm("确定要删除所选队列？作用域-" + $(selected).length, function (result) {
                         if (result) {
-                            var _list = [];
-                            $.each(selected, function (index, value) {
-                                _list[index] = value.ID;
-                            });
+                            var _list = selected[0].ID;
+                            //$.each(selected, function (index, value) {
+                            //    _list[index] = value.ID;
+                            //});
                             $.ajax({
                                 url: "@Url.Action("DeleteQueueList")",
                                 type: "GET",

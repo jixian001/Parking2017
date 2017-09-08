@@ -43,9 +43,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         [HttpPost]
         public ActionResult GetCar(int warehouse,string address,int hallID)
         {
-
             Response resp = new CWTaskTransfer(hallID, warehouse).ManualGetCar(warehouse, address);
-
             ReturnModel ret = new ReturnModel
             {
                 code=resp.Code,

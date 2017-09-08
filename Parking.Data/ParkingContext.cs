@@ -9,11 +9,12 @@ namespace Parking.Data
 {
     public class ParkingContext:DbContext
     {
-        public ParkingContext() : 
+        public ParkingContext() :
             base("DefaultConnection")
         {
             Database.SetInitializer<ParkingContext>(new CreateDatabaseIfNotExists<ParkingContext>());
         }
+
         //添加各表的Dbset<TEntity>
         public DbSet<Alarm> Alarms { get; set; }
         public DbSet<Customer> Customers { get; set; }
@@ -38,5 +39,11 @@ namespace Parking.Data
         public DbSet<FixUserChargeLog> FixUserChargeLogs { get; set; }
         //云服务下发的付款成功
         public DbSet<RemotePayFeeRcd> RemotePayFeeRcds { get; set; }
+
+        //存车指纹库
+        public DbSet<SaveCertificate> SaveCertificates { get; set; }
+
+        public DbSet<StatusInfoLog> StatusInfoLogs { get; set; }
+        public DbSet<DeviceInfoLog> DeviceInfoLog { get; set; }
     }
 }

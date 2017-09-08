@@ -14,7 +14,7 @@ namespace Parking.Core
     /// </summary>
     public class CWICCard
     {
-        private static ICCardManager manager = new ICCardManager();
+        private ICCardManager manager = new ICCardManager();
 
         public CWICCard()
         {
@@ -25,14 +25,24 @@ namespace Parking.Core
             return manager.Find(id);
         }
 
+        public async Task<ICCard> FindAsync(int id)
+        {
+            return await manager.FindAsync(id);
+        }
+
         public ICCard Find(Expression<Func<ICCard, bool>> where)
         {
             return manager.Find(where);
         }
 
+        public async Task<ICCard> FindAsync(Expression<Func<ICCard, bool>> where)
+        {
+            return await manager.FindAsync(where);
+        }
+
         public Response Update(ICCard iccd,bool isSave)
         {
-            return manager.Update(iccd,isSave);
+            return manager.Update(iccd);
         }
 
         public Response Update(ICCard iccd)
@@ -43,6 +53,11 @@ namespace Parking.Core
         public List<ICCard> FindIccdList(Expression<Func<ICCard, bool>> where)
         {
             return manager.FindList(where);
+        }
+
+        public async Task<List<ICCard>> FindIccdListAsync(Expression<Func<ICCard, bool>> where)
+        {
+            return await manager.FindListAsync(where);
         }
 
         /// <summary>
@@ -127,7 +142,7 @@ namespace Parking.Core
 
         public Response AddCust(Customer cust,bool isSave)
         {
-            return manager_cust.Add(cust, isSave);
+            return manager_cust.Add(cust);
         }
 
         public Response AddCust(Customer cust)
@@ -137,7 +152,7 @@ namespace Parking.Core
 
         public Response UpdateCust(Customer cust, bool isSave)
         {
-            return manager_cust.Update(cust,isSave);
+            return manager_cust.Update(cust);
         }
 
         public Response UpdateCust(Customer cust)
@@ -147,18 +162,12 @@ namespace Parking.Core
 
         public Response Delete(int ID, bool isSave)
         {
-            return manager_cust.Delete(ID,isSave);
+            return manager_cust.Delete(ID);
         }
 
         public Response Delete(int ID)
         {
-
             return manager_cust.Delete(ID);
-        }
-
-        public Response SaveChange()
-        {
-            return manager_cust.SaveChanges();
         }
 
         public Customer FindCust(int ID)
@@ -166,15 +175,31 @@ namespace Parking.Core
             return manager_cust.Find(ID);
         }
 
+        public async Task<Customer> FindCustAsync(int ID)
+        {
+            return await manager_cust.FindAsync(ID);
+        }
+
         public Customer FindCust(Expression<Func<Customer, bool>> where)
         {
             return manager_cust.Find(where);
+        }
+
+        public async Task<Customer> FindCustAsync(Expression<Func<Customer, bool>> where)
+        {
+            return await manager_cust.FindAsync(where);
         }
 
         public List<Customer> FindCustList(Expression<Func<Customer, bool>> where)
         {
             return manager_cust.FindList(where);
         }
+
+        public async Task<List<Customer>> FindCustListAsync(Expression<Func<Customer, bool>> where)
+        {
+            return await manager_cust.FindListAsync(where);
+        }
+
 
         /// <summary>
         /// 依车位地址查找是否被绑定

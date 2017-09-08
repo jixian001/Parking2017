@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Threading.Tasks;
 using Parking.Auxiliary;
 using Parking.Data;
 using Parking.Core;
@@ -59,31 +60,28 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             Page<ImplementTask> pageTask = new CWTask().FindPageList(page, orderParam);
 
             List<DisplayITask> dispTaskLst = new List<DisplayITask>();
-           
-            foreach(ImplementTask itask in pageTask.ItemLists)
+
+            foreach (ImplementTask itask in pageTask.ItemLists)
             {
-                if (itask.IsComplete == 0)
+                DisplayITask dtask = new DisplayITask
                 {
-                    DisplayITask dtask = new DisplayITask
-                    {
-                        ID = itask.ID,
-                        Warehouse = itask.Warehouse,
-                        DeviceCode = itask.DeviceCode,
-                        Type = PlusCvt.ConvertTaskType(itask.Type),
-                        Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
-                        SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
-                        CreateDate = itask.CreateDate.ToString(),
-                        SendDtime = itask.SendDtime.ToString(),
-                        HallCode = itask.HallCode,
-                        FromLctAddress = itask.FromLctAddress,
-                        ToLctAddress = itask.ToLctAddress,
-                        ICCardCode = itask.ICCardCode,
-                        Distance = itask.Distance,
-                        CarSize = itask.CarSize,
-                        CarWeight = itask.CarWeight
-                    };
-                    dispTaskLst.Add(dtask);
-                }
+                    ID = itask.ID,
+                    Warehouse = itask.Warehouse,
+                    DeviceCode = itask.DeviceCode,
+                    Type = PlusCvt.ConvertTaskType(itask.Type),
+                    Status = PlusCvt.ConvertTaskStatus(itask.Status, itask.SendStatusDetail),
+                    SendStatusDetail = PlusCvt.ConvertSendStateDetail(itask.SendStatusDetail),
+                    CreateDate = itask.CreateDate.ToString(),
+                    SendDtime = itask.SendDtime.ToString(),
+                    HallCode = itask.HallCode,
+                    FromLctAddress = itask.FromLctAddress,
+                    ToLctAddress = itask.ToLctAddress,
+                    ICCardCode = itask.ICCardCode,
+                    Distance = itask.Distance,
+                    CarSize = itask.CarSize,
+                    CarWeight = itask.CarWeight
+                };
+                dispTaskLst.Add(dtask);
             }
             int rcdNum = pageTask.TotalNumber;
             var data = new
@@ -242,6 +240,18 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             return Content("操作失败！");
         }
 
+        [HttpPost]
+        /// <summary>
+        /// MURO继续
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public ActionResult MUROTask(int ids)
+        {
+            Response resp = new CWTask().MUROTask(ids);
+            return Content(resp.Message);
+        }
+
         /// <summary>
         /// 查询存车车位
         /// </summary>
@@ -249,31 +259,39 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         public ActionResult FindLocByICCard()
         {
             Response resp = new Response();
-            string iccd = Request.QueryString["txtIccd"];
-            string isPlate = Request.QueryString["isplate"];
-            bool frplate = false;
-            if (!string.IsNullOrEmpty(isPlate))
+            Log log = LogFactory.GetLogger("FindLocByICCard");
+            try
             {
-                frplate = Convert.ToBoolean(isPlate);
-            }
-            if (!frplate)
-            {
-                Location loc = new CWLocation().FindLocation(lc => lc.ICCode == iccd);
-                if (loc != null && loc.Status != EnmLocationStatus.Space)
+                string iccd = Request.QueryString["txtIccd"];
+                string isPlate = Request.QueryString["isplate"];
+                bool frplate = false;
+                if (!string.IsNullOrEmpty(isPlate))
                 {
-                    resp.Code = 1;
-                    resp.Data = loc;
+                    frplate = Convert.ToBoolean(isPlate);
+                }
+                if (!frplate)
+                {
+                    Location loc = new CWLocation().FindLocation(lc => lc.ICCode == iccd);
+                    if (loc != null && loc.Status != EnmLocationStatus.Space)
+                    {
+                        resp.Code = 1;
+                        resp.Data = loc;
+                    }
+                }
+                else
+                {
+                    //依车牌号查询存车位
+                    Location loc = new CWLocation().FindLocation(lc => lc.PlateNum == iccd);
+                    if (loc != null && loc.Status != EnmLocationStatus.Space)
+                    {
+                        resp.Code = 1;
+                        resp.Data = loc;
+                    }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                //依车牌号查询存车位
-                Location loc = new CWLocation().FindLocation(lc=>lc.PlateNum==iccd);
-                if (loc != null && loc.Status != EnmLocationStatus.Space)
-                {
-                    resp.Code = 1;
-                    resp.Data = loc;
-                }
+                log.Error(ex.ToString());
             }
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
@@ -317,14 +335,14 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// 车位禁用
         /// </summary>
         /// <returns></returns>
-        public ActionResult DisableLocation(string txtDisWh, string txtDisLoc, bool isDis)
+        public async Task<ContentResult> DisableLocation(string txtDisWh, string txtDisLoc, bool isDis)
         {
             if (string.IsNullOrEmpty(txtDisWh))
             {
                 return Content("库区为空，传输数据丢失！");
             }
             int wh = Convert.ToInt32(txtDisWh);           
-            Response resp = new CWLocation().DisableLocation(wh,txtDisLoc, isDis);
+            Response resp =await new CWLocation().DisableLocationAsync(wh,txtDisLoc, isDis);
             return Content(resp.Message);
         }
 
@@ -345,20 +363,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             if (string.IsNullOrEmpty(Addrs))
             {
                 return Content("入库车位为空，传输数据丢失！");
-            }
-            Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == warehouse && lc.Address == Addrs);
-            if (loc == null)
-            {
-                return Content("找不到车位-" + Addrs);
-            }
-            if (loc.Type != EnmLocationType.Normal)
-            {
-                return Content("车位不可用，请使用另一个");
-            }
-            if (loc.Status != EnmLocationStatus.Space)
-            {
-                return Content("当前车位不是空闲的，无法使用该车位！");
-            }
+            }           
             string indate = Request.Form["txtInDtime"];
             if (string.IsNullOrEmpty(indate))
             {
@@ -375,45 +380,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             if (!rex.IsMatch(iccd))
             {
                 return Content("请输入有效的数字");
-            }
-            int proof = Convert.ToInt32(iccd);
-            if (proof >= 10000)
-            {
-                //是指纹时，找出是否注册了
-                FingerPrint fprint = new CWFingerPrint().Find(fp=>fp.SN_Number==proof);
-                if (fprint == null)
-                {
-                    return Content("当前凭证是指纹编号，但库里找不到注册的指纹");
-                }
-            }
-            else
-            {
-                ICCard iccode = new CWICCard().Find(ic=>ic.UserCode==iccd);
-                if (iccode == null)
-                {
-                    return Content("请先注册当前卡号，再使用！");
-                }
-                if (iccode.Status != EnmICCardStatus.Normal)
-                {
-                    return Content("该卡已注销或挂失！");
-                }
-            }
-            Location lctn = new CWLocation().FindLocation(l => l.ICCode == iccd);
-            if (lctn != null)
-            {
-                return Content("该卡已被使用，车位 - "+lctn.Address);
-            }
-            ImplementTask itask = new CWTask().Find(tsk=>tsk.ICCardCode==iccd);
-            if (itask != null)
-            {
-                return Content("该卡正在作业，无法使用");
-            }
-            WorkTask wtask = new CWTask().FindQueue(wk => wk.ICCardCode == iccd);
-            if (wtask != null)
-            {
-                return Content("该卡已加入队列，无法使用");
-            }
-           
+            }                     
             #endregion
             string distance = Request.Form["txtInDist"];
             if (string.IsNullOrEmpty(distance))
@@ -422,19 +389,16 @@ namespace Parking.Web.Areas.SystemManager.Controllers
             }
             string carsize = Request.Form["txtInSize"];
             string plate = Request.Form["txtInPlate"];
-
-            loc.Status = EnmLocationStatus.Occupy;
-            loc.ICCode = iccd;
-            loc.WheelBase = Convert.ToInt32(distance);
-            loc.CarSize = carsize;
-            loc.PlateNum = plate;
-            loc.InDate = dt;           
-            Response resp = new CWLocation().UpdateLocation(loc);
-            if (resp.Code == 1)
-            {
-                //推送一个车辆入库信息给到云服务端
-                SingleCallback.Instance().OnChange(1, loc);
-            }
+            Location orig = new Location() {
+                Warehouse=warehouse,
+                Address=Addrs,
+                ICCode=iccd,
+                InDate=dt,
+                WheelBase=Convert.ToInt32(distance),
+                CarSize=carsize,
+                PlateNum=plate
+            };
+            Response resp = new CWLocation().LocationIn(orig);
             return Content(resp.Message);
         }
         /// <summary>
@@ -444,32 +408,30 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         [HttpPost]
         public ActionResult LocationOut()
         {
-            string wh = Request.Form["txtOutWh"];
-            if (string.IsNullOrEmpty(wh))
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("locationout");
+            try
             {
-                return Content("库区为空，传输数据丢失！");
+                string wh = Request.Form["txtOutWh"];
+                if (string.IsNullOrEmpty(wh))
+                {
+                    return Content("库区为空，传输数据丢失！");
+                }
+                int warehouse = Convert.ToInt32(wh);
+                string Addrs = Request.Form["txtOutLoc"];
+                if (string.IsNullOrEmpty(Addrs))
+                {
+                    return Content("车位为空，传输数据丢失！");
+                }
+                resp = new CWLocation().LocationOut(warehouse, Addrs);
+                return Content(resp.Message);
             }
-            int warehouse = Convert.ToInt32(wh);
-            string Addrs = Request.Form["txtOutLoc"];
-            if (string.IsNullOrEmpty(Addrs))
+            catch (Exception ex)
             {
-                return Content("车位为空，传输数据丢失！");
+                log.Error(ex.ToString());
+                return Content("系统异常");
             }
-            Location loc = new CWLocation().FindLocation(lc => lc.Warehouse == warehouse && lc.Address == Addrs);
-            if (loc == null)
-            {
-                return Content("找不到车位-" + Addrs);
-            }
-            //推送一个车辆出库信息给到云服务端
-            SingleCallback.Instance().OnChange(2, loc);
 
-            loc.Status = EnmLocationStatus.Space;
-            loc.ICCode = "";
-            loc.WheelBase = 0;
-            loc.CarSize = "";
-            loc.InDate = DateTime.Parse("2017-1-1");
-            Response resp = new CWLocation().UpdateLocation(loc);           
-            return Content(resp.Message);
         }
 
         /// <summary>
@@ -529,7 +491,7 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         [HttpPost]
         public ActionResult DeleteQueue(int ID)
         {
-            Response rsp = new CWTask().DeleteQueue(ID);
+            Response rsp = new CWTask().ManualDeleteQueue(ID);
             return Content(rsp.Message);
         }
 
@@ -538,24 +500,12 @@ namespace Parking.Web.Areas.SystemManager.Controllers
         /// </summary>
         /// <param name="ids"></param>
         /// <returns></returns>
-        public ActionResult DeleteQueueList(List<int> ids)
+        public ActionResult DeleteQueueList(int ids)
         {
-            if (ids == null)
-            {
-                return Content("ids为空，操作失败！");
-            }
+           
             CWTask cwtask = new CWTask();
-            int count = 0;
-            foreach(int id in ids)
-            {
-                Response rsp = cwtask.DeleteQueue(id);
-                if (rsp.Code == 1)
-                {
-                    count++;
-                }
-            }
-
-            return Content("删除队列成功，数量-" + count);
+            Response rsp = new CWTask().ManualDeleteQueue(ids);           
+            return Content(rsp.Message);
         }
 
         [HttpGet]

@@ -56,6 +56,7 @@ namespace Parking.Data
         /// <summary>
         /// 记录时间
         /// </summary>
-        public string RecordDTime { get; set; }
+        public DateTime RecordDTime { get; set; }
+
     }
 }

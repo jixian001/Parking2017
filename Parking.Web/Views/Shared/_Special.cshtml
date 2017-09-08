@@ -19,7 +19,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>               
-                <a class="navbar-brand" href="javascript:void(0)" data-toggle="modal" data-target="#svcModal">应用程序</a>
+                <a class="navbar-brand" href="javascript:void(0)">应用程序</a>
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
@@ -31,7 +31,9 @@
                                 <a href="" data-toggle="dropdown" class="dropdown-toggle">系统维护</a>
                                 <ul class="dropdown-menu" id="threemenu" role="menu">
                                     <li><a href="@Url.Action("TaskManager", "Manage",new { area="SystemManager"})">故障处理</a></li>
+                                    <li class="divider"></li>
                                     <li><a href="@Url.Action("CarpotManager", "Manage",new { area="SystemManager"})">车位维护</a></li>
+                                    <li class="divider"></li>
                                     <li><a href="@Url.Action("QueueManager", "Manage",new { area="SystemManager"})">队列维护</a></li>
                                 </ul>
                             </li>                        
@@ -39,6 +41,8 @@
                             <li class="divider"></li>
                             <li><a href="@Url.Action("Index", "FaultSummary",new { area="SystemManager"})">故障汇总</a></li>
                             <li><a href="@Url.Action("Index", "ManualOprt",new { area="SystemManager"})">手动指令</a></li>
+                            <li class="divider"></li>
+                            <li><a href="@Url.Action("Index", "ZenthPlate",new { area="ExternalManager"})">车牌识别</a></li>
                         </ul>
                     </li>
                     <li class="dropdown">
@@ -59,45 +63,24 @@
                         </ul>
                     </li>
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">统计报表<strong class="caret"></strong></a>
+                        <a class="dropdown-toggle" data-toggle="dropdown">统计报表<strong class="caret"></strong></a>
                         <ul class="dropdown-menu">
-                            <li><a href="@Url.Action("TelegramReport", "Report",new { area="ReportManager"})">报文日志查询</a></li>                           
-                            <li><a href="@Url.Action("OprtReport", "Report",new { area="ReportManager"})">操作日志查询</a></li>                           
-                            <li><a href="@Url.Action("FaultReport", "Report",new { area="ReportManager"})">故障日志查询</a></li>  
+                            <li><a href="@Url.Action("TelegramReport", "Telegram",new { area="ReportManager"})">报文日志查询</a></li>
+                            <li><a href="@Url.Action("OprtReport", "Telegram",new { area="ReportManager"})">操作日志查询</a></li>
+                            <li class="divider"></li>
+                            <li><a href="@Url.Action("FaultReport", "DeviceInfo",new { area="ReportManager"})">故障日志查询</a></li>
+                            <li><a href="@Url.Action("StatusBitReport", "DeviceInfo",new { area="ReportManager"})">状态日志查询</a></li>
+                            <li><a href="@Url.Action("DeviceInfoReport", "DeviceInfo",new { area="ReportManager"})">设备日志查询</a></li>
+                            <li class="divider"></li>
+                            <li><a href="@Url.Action("TempChargeRecord", "TariffLog",new { area="ReportManager"})">临时用户缴费日志</a></li>
+                            <li><a href="@Url.Action("FixChargeRecord", "TariffLog",new { area="ReportManager"})">固定用户缴费日志</a></li>
                         </ul>
-                    </li>
+                    </li>   
                 </ul>
                 @Html.Partial("_LoginPartial")
             </div>
         </div>
-    </div>
-    <div class="container">
-        <div class="modal fade" id="svcModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            @* 窗口声明层 *@
-            <div class="modal-dialog">
-                @* 内容层 *@
-                <div class="modal-content">
-                    @* 头部 *@
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                        <h4 class="modal-title" id="myModalLabel">服务管理</h4>
-                    </div>
-                    @* 内容 *@
-                    <div class="modal-body">
-                        <p>当前服务线程状态：</p>
-                        <p id="svcStatus" class="text-center text-primary">...</p>
-                        <p id="realStatus"></p>
-                    </div>
-                    @* 注脚 *@
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" id="svcRun">运 行</button>&nbsp;&nbsp;&nbsp;
-                        <button type="button" class="btn btn-default" id="svcStop">停 止</button>&nbsp;&nbsp;&nbsp;                       
-                        <button type="button" class="btn btn-default" data-dismiss="modal">取 消</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </div>    
     <div class="container body-content">
         @RenderBody()
         <hr />
@@ -106,16 +89,15 @@
                 总车位：<span id="total" style="color:red"></span>&nbsp;&nbsp;&nbsp;<span style="color:green">|</span>
                 &nbsp;占用车位：<span id="occupy" style="color:red"></span>&nbsp;&nbsp;&nbsp;<span style="color:green">|</span>
                 &nbsp;空闲车位：<span id="space" style="color:red"></span>&nbsp;
-                (&nbsp;大车位：<span id="big" style="color:red"></span>&nbsp;&brvbar;
-                 &nbsp;小车位：<span id="small" style="color:red"></span> &nbsp;)&nbsp;&nbsp;&nbsp;<span style="color:green">|</span>
-                &nbsp;固定用户：<span id="fix" style="color:red"></span>&nbsp;&nbsp;&nbsp;<span style="color:green">|</span>
-                &nbsp;服务：<span id="svc" style="color:yellowgreen"></span>
+               <span>(&nbsp;大车位：<span id="big" style="color:red"></span>&nbsp;&brvbar;
+                 &nbsp;小车位：<span id="small" style="color:red"></span> &nbsp;)</span>&nbsp;&nbsp;&nbsp;<span style="color:green">|</span>
+                &nbsp;固定用户：<span id="fix" style="color:red"></span>&nbsp;&nbsp;&nbsp;<span style="color:green"></span>
             </p>
             <p>
                 @Html.ActionLink("关于我们", "About", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })&nbsp;&nbsp;&nbsp;&nbsp;
                 @Html.ActionLink("微信公众号", "WeChat", "home", new { area = "" }, htmlAttributes: new { @class = "", target = "_blank" })
             </p> 
-            <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;深圳中集智能停车有限公司 &nbsp;&nbsp;&nbsp;版权所有</p>          
+            <p>@DateTime.Now.Year&nbsp;&nbsp;&nbsp;&copy;&nbsp;<span id="company" title="company">深圳中集智能停车有限公司</span> &nbsp;&nbsp;&nbsp;版权所有</p>          
         </footer>
     </div>
 

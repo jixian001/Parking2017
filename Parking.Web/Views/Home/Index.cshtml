@@ -2,6 +2,7 @@
     Layout = "~/Views/Shared/_Special.cshtml";
     ViewBag.Title = "主页";
 }
+
 <div class="row">
     <div id="myCarousel" class="carousel slide">
         <ol class="carousel-indicators">
@@ -37,25 +38,23 @@
                     @* 1号库 *@
                     <input type="hidden" value="1" id="wh1" name="wh1" />
                     <div id="L2-map" style="width:100%">
-                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;二&nbsp;层</p>                       
+                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;二&nbsp;层</p>
                     </div>
                     <div id="L1-map" style="width:100%">
-                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;一&nbsp;层</p>                        
+                        <p style="margin-bottom:7px;margin-top:5px" class="text-danger">&nbsp;&nbsp;一&nbsp;层</p>
                     </div>
-                </div>               
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-2 bger">
-        <div class="booking-details" id="details" style="height:100%">
-            <br />
+        <div class="booking-details" id="details" style="height:100%">            
             <input type="hidden" id="lctn" name="lctn" />
-            <h3 class="text-center">已选中的车位(<span id="addr">0</span>)：</h3>
-            <ul id="selected-seats"></ul>
-            <br />
+            <h4 class="text-center">已选中的车位(<span id="addr">0</span>)：</h4>
+            <ul id="selected-seats"></ul>           
             <div id="oprt" class="text-center" style="display:none">
-                <button class="checkout-button" id="btnenable">启用</button>
-                <button class="checkout-button" id="btndisable">禁用</button>
+                <button type="button" id="btnenable">启用</button>
+                <button type="button" id="btndisable">禁用</button>
             </div>
             <br />
             <div style="border:1px solid #808080">
@@ -74,14 +73,14 @@
                     <div class="lbl lblspace">空闲</div>
                 </div>
             </div>
-        </div> 
-    </div>
+        </div>
+    </div> 
 </div>
-
 <div class="row">
     <span class="text-primary">设备信息</span>
 </div>
 <div id="devices" class="row bger"></div>
+
 
 @section scripts{
     @Styles.Render("~/Content/loccharts")
@@ -89,31 +88,30 @@
     @Styles.Render("~/Content/common")
     @Styles.Render("~/Content/devform")
     <script>
+        
         $(function () {
-
-            //加载车位信息         
+            //加载车位信息
             var side = 3, column = 18, layer = 2;
             var warehouse = $("input[name='wh1']").val();
             //计算，固定div及设置cell宽度
-            var width = $('#seat').width() - 20;
+            var width = $('#seat').width() - 20;  //-20
+
             //先设置map
-            var l3_map = [];
-            for (var i = 0; i < side + 1; i++)
-            {
+            var def_map = [];
+            for (var i = 0; i < side + 1; i++) {
                 var row = '';
-                for (var j = 0; j < column; j++)
-                {
-                    if (i == side-1) {
+                for (var j = 0; j < column; j++) {
+                    if (i == side - 1) {
                         row += '_';
                         continue;
                     }
                     row += 'e';
                 }
-                l3_map.push(row);
-            }           
-          
-            var l2_sc = $('#L2-map').seatCharts({
-                map: l3_map,
+                def_map.push(row);
+            }
+
+            var l2_sc = $('#L2-map').seatCharts(2,{
+                map: def_map,
                 seats: {
                     e: {
                         classes: 'economy-class', //your custom CSS class
@@ -123,35 +121,35 @@
                 naming: {
                     top: false,
                     left: false,
+                    //rows:['3','1','','2'],
                     getLabel: function (character, row, column) {
                         var rw = row;
                         if (row == 1) {
-                            rw = 3;
+                            rw = 4;
                         } else if (row == 2) {
-                            rw = 1;
-                        } else if (row == 4) {
                             rw = 2;
+                        } else if (row == 4) {
+                            rw = 1;
                         }
                         return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
                         if (row == 1) {
-                            rw = 3;
+                            rw = 4;
                         } else if (row == 2) {
-                            rw = 1;
-                        } else if (row == 4) {
                             rw = 2;
+                        } else if (row == 4) {
+                            rw = 1;
                         }
                         return warehouse + '_' + rw + '_' + column + '_' + 2;
                     }
                 },
                 click: function () {
-                    $('#cart-item-' + this.settings.id).remove();
+                    //$('#cart-item-' + this.settings.id).remove();
                     var msg = this.settings.id;
                     var arr = msg.split("_");
-                    if (arr.length < 4)
-                    {
+                    if (arr.length < 4) {
                         alert(this.settings.id + " 数组长度不对！");
                         return;
                     }
@@ -163,8 +161,8 @@
                 }
             });
 
-            var l1_sc = $('#L1-map').seatCharts({
-                map: l3_map,
+            var l1_sc = $('#L1-map').seatCharts(1,{
+                map: def_map,
                 seats: {
                     e: {
                         classes: 'economy-class', //your custom CSS class
@@ -174,35 +172,35 @@
                 naming: {
                     top: false,
                     left: false,
+                    //rows: ['3', '1', '', '2'],
                     getLabel: function (character, row, column) {
                         var rw = row;
                         if (row == 1) {
-                            rw = 3;
+                            rw = 4;
                         } else if (row == 2) {
-                            rw = 1;
-                        } else if (row == 4) {
                             rw = 2;
+                        } else if (row == 4) {
+                            rw = 1;
                         }
                         return rw + '_' + column;
                     },
                     getId: function (character, row, column) {
                         var rw = row;
                         if (row == 1) {
-                            rw = 3;
+                            rw = 4;
                         } else if (row == 2) {
-                            rw = 1;
-                        } else if (row == 4) {
                             rw = 2;
+                        } else if (row == 4) {
+                            rw = 1;
                         }
                         return warehouse + '_' + rw + '_' + column + '_' + 1;
                     }
                 },
                 click: function () {
-                    
+
                     var msg = this.settings.id;
                     var arr = msg.split("_");
-                    if (arr.length < 4)
-                    {
+                    if (arr.length < 4) {
                         alert(this.settings.id + " 数组长度不对！");
                         return;
                     }
@@ -213,23 +211,24 @@
                     return this.status();
                 }
             });
-
+           
             //动态修改单元格宽高
             $('div .seatCharts-container').width(width);
             var $seatcell = $('div .seatCharts-cell');
             var cellMargin = 3;
             var cell = (width - column * (cellMargin * 2)) / column;
-            $('div .seatCharts-cell').width(cell);
-            $('div .seatCharts-cell').height(cell);
+            $('div .seatCharts-cell').width(cell).height(cell);
 
             //单击单元格时，显示车位信息
             function displayInfo(msg) {
+
                 console.log("selected location :" + msg);
                 $("input[name='lctn']").val(msg);
                 var $disp = $("#selected-seats");
                 var $addrs = $("#addr");
                 var $btn = $("#oprt");
                 $addrs.text('');
+
                 $.ajax({
                     type: "GET",
                     url: "@Url.Action("GetLocation")",
@@ -239,14 +238,14 @@
                     beforeSend: function (XMLHttpRequest) {
                         $addrs.text('0');
                         $disp.html('<li>加载中...</li>');
-                        $btn.css("display","none");
+                        $btn.css("display", "none");
                     },
-                    success: function (nback) {                        
+                    success: function (nback) {
                         if (nback.code == 1)
                         {
                             var obj = nback.data;
                             $addrs.text(obj.Address);
-                            var html = '<li>库区：' + obj.Warehouse + '</li>';
+                            var html = '<li class="">库区：' + obj.Warehouse + '</li>';
                             $disp.html(html);
                             html = '<li>地址：' + obj.LocSide + '边' + obj.LocColumn + '列' + obj.LocLayer + '层</li>';
                             $disp.append(html);
@@ -264,7 +263,7 @@
                             $disp.append(html);
                             html = '<li>车牌：<span class="text-info">' + obj.PlateNum + '</span></li>';
                             $disp.append(html);
-                            html = '<li>入库时间：<br/><span class="text-info">' +formatDate(obj.InDate) + '</span></li>';
+                            html = '<li>入库时间：<span class="text-info"><br>' +formatDate(obj.InDate) + '</span></li>';
                             $disp.append(html);
 
                             $btn.css("display", "block");
@@ -273,18 +272,14 @@
                         {
                             $disp.html('<li>' + nback.data + '</li>');
                         }
-                    },
-                    complete: function (XMLHttpRequest, textStatus) {
-                        
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-
                     }
                 });
 
+                //$("html,body").animate({ scrollTop: ($("#area").offset().top)-60 }, 1500);
+
                 return 'selected';
-            }            
-          
+            }
+
             //加载设备信息
             setTimeout(function () {
 
@@ -322,7 +317,7 @@
                             info += '<td class="formValue"><input type="text" class="form-control" id="mode"  value="' + formatMode(obj.Mode) + '" disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "是否可用" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="able" value="' + formatAble(obj.IsAble) + '" disabled/></td></tr>';
-                            info += '<tr><th class="formTitle">' + "接收指令" + '</th>';
+                            info += '<tr><th class="formTitle"><a href="javascript:void(0)" onclick="hrefAlarm(' + obj.DeviceCode + ')">接收指令</a></th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="accept" value="' + formatAvaible(obj.IsAvailabe) + '" disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "自动步" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="step" value="' + obj.RunStep + '"  disabled/></td></tr>';
@@ -343,7 +338,7 @@
 
                             info += '<tr><th class="formTitle">' + "作业类型" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="' +"type-"+ obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
-                            info += '<tr><th class="formTitle">' + "作业卡号" + '</th>';
+                            info += '<tr><th class="formTitle">' + "存车凭证" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="' + "iccode-" + obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
                             info += '<tr><th class="formTitle">' + "作业状态" + '</th>';
                             info += '<td class="formValue"><input type="text" class="form-control" id="' + "status-" + obj.Warehouse + obj.DeviceCode + '"  disabled/></td></tr>';
@@ -352,6 +347,23 @@
 
                             html += info + '</div></div>';
                             i++;
+
+                            //更新TV的位置
+                            var tv = obj.DeviceCode
+                            if (tv < 10) {
+                                var addres = obj.Address;
+                                var colstr = addres.substr(1, 2);
+                                var laystr = addres.substr(3, 2);
+
+                                var col = parseInt(colstr);
+                                var lay = parseInt(laystr);
+
+                                var tvaddrs = lay + "_" + col;
+                                console.log(tvaddrs);
+
+                                updateTvLocation(tvaddrs, tv);
+                            }
+
                         });
                         html += '</div>';
 
@@ -359,12 +371,7 @@
 
                         //更新作业任务
                         updateDevTasLst();
-                    },
-                    complete: function (XMLHttpRequest, textStatus) {
-
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-
+                       
                     }
                 });
 
@@ -374,18 +381,18 @@
                     url: "@Url.Action("GetLocationList")",
                     dataType: "json",
                     cache: false,
-                    success: function (resp) {                       
+                    success: function (resp) {
                         if (resp.code == 1) {
                             $.each(resp.data, function (index, obj) {
-                                var whs = obj.Warehouse;                                
+                                var whs = obj.Warehouse;
                                 if (whs == 1)
                                 {
                                     var ly = obj.LocLayer;
                                     var clmn = obj.LocColumn;
                                     var sd = obj.LocSide;
                                     var mark = whs + '_' + sd + '_' + clmn + '_' + ly;
-                                    var color = setlocationcolor(obj.Type, obj.Status);                                   
-                                    if (ly == 1) 
+                                    var color = setlocationcolor(obj.Type, obj.Status);
+                                    if (ly == 1)
                                     {
                                         l1_sc.get([mark]).status(color);
                                     }
@@ -410,11 +417,30 @@
                 });
 
                 $("#PPY").css("display","block");
+                $("#area").css("display", "block");
 
                 var wd = $(".dheight").height();
                 $("#details").css("height", wd);
 
-               
+                //更新停库时间
+                $.post("@Url.Action("UpdateLocalTime")", function (result) {
+                    console.log("code-" + result.Code + " ,message-" + result.Message);
+                    if (result.Code == 2)
+                    {
+                        //提示系统时间对应不上
+                        alert(result.Message);
+                    }
+                    else if (result.Code == 3)
+                    {
+                        //顶部显示倒计时
+                        $("h1.text-center").css("display","block").html(result.Message);
+                    }
+                    else
+                    {
+                        $("#company").attr("title", result.Message);
+                    }
+                });
+
             }, 2000);
 
             function updateDevTasLst() {
@@ -437,25 +463,56 @@
 
                             var state = "status-" + code;
                             $("input[id='" + state + "']").val(detail.Status);
-
                         });
-
                     }
                 });
             }
 
             function updateLocStaInfo() {
                 //更新下车位信息
-                $.getJSON("@Url.Action("GetLocStatInfo")", function (json) {
-                    $("span[id='total']").text(json.Total);
-                    $("span[id='occupy']").text(json.Occupy);
-                    $("span[id='space']").text(json.Space);
-                    $("span[id='big']").text(json.BigSpace);
-                    $("span[id='small']").text(json.SmallSpace);
-                    $("span[id='fix']").text(json.FixLoc);
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetLocStatInfo")",
+                    dataType: "json",
+                    cache: false,
+                    success: function (json) {
+                        $("span[id='total']").text(json.Total);
+                        $("span[id='occupy']").text(json.Occupy);
+                        $("span[id='space']").text(json.Space);
+                        $("span[id='big']").text(json.BigSpace);
+                        $("span[id='small']").text(json.SmallSpace);
+                        $("span[id='fix']").text(json.FixLoc);
+                    }
                 });
             }
-          
+
+            var native_tv1 = "";
+            var native_tv2 = "";
+
+            function updateTvLocation(addrs, code)
+            {                
+                if (code == 1)
+                {
+                    if (native_tv1 != "")
+                    {
+                        var $tv1 = $("#" + native_tv1);
+                        $tv1.css({ "background-color":"#ffffff"});
+                        $tv1.empty();                       
+                    }  
+                    native_tv1 = addrs;
+                }
+                else if (code == 2)
+                {                    
+                    if (native_tv2 != "") {
+                        var $tv1 = $("#" + native_tv2);
+                        $tv1.css({ "background-color":"#ffffff"});
+                        $tv1.empty();                       
+                    }
+                    native_tv2 = addrs;
+                }
+
+                $("#" + addrs).css({ "background-color": "#f8baba", "border-radius": "5px", "font-size": "15px" }).html(code);
+            }
 
             function setlocationcolor(type, status)
             {
@@ -474,6 +531,9 @@
                             color = 'entering';
                             break;
                         case 4:
+                            color = 'outing';
+                            break;
+                        case 5:
                             color = 'outing';
                             break;
                         default:
@@ -497,7 +557,7 @@
                     color = 'unavailable';
                 }
                 else if (type ==6) {
-                    //缓存车位                  
+                    //缓存车位
                     switch (status) {
                         case 1:
                             color = 'temp';
@@ -511,7 +571,7 @@
                         case 4:
                             color = 'outing';
                             break;
-                        default:                           
+                        default:
                             break;
                     }
                 }
@@ -535,18 +595,18 @@
             });
 
             function disloaction(lctn, dis)
-            {               
+            {
                 $.ajax({
                     type: "POST",
                     url: "@Url.Action("ManualDisLocation")",
                     data: { "info":lctn,"isdis":dis},
                     dataType: "json",
-                    cache: false,                   
+                    cache: false,
                     success: function (data) {
                         BootstrapDialog.show({
                             title: "温馨提示",
                             message: data.Message
-                        });                       
+                        });
                     }
                 });
             }
@@ -559,15 +619,15 @@
                 return newdate.toLocaleString();
             }
 
-            Date.prototype.Format = function (fmt) { //author: meizz 
+            Date.prototype.Format = function (fmt) { //author: meizz
                 var o = {
-                    "M+": this.getMonth() + 1, //月份 
-                    "d+": this.getDate(), //日 
-                    "h+": this.getHours(), //小时 
-                    "m+": this.getMinutes(), //分 
-                    "s+": this.getSeconds(), //秒 
-                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
-                    "S": this.getMilliseconds() //毫秒 
+                    "M+": this.getMonth() + 1, //月份
+                    "d+": this.getDate(), //日
+                    "h+": this.getHours(), //小时
+                    "m+": this.getMinutes(), //分
+                    "s+": this.getSeconds(), //秒
+                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                    "S": this.getMilliseconds() //毫秒
                 };
                 if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
                 for (var k in o)
@@ -691,7 +751,7 @@
                 var msg="";
                 switch (state)
                 {
-                    case 0:                      
+                    case 0:
                     case 1:
                         msg = "空闲";
                         break;
@@ -728,21 +788,6 @@
 
             //供服务端调用的方法定义
             $.extend(hubs.client, {
-                serveOpened: function () {
-                    $("#svcStatus").html("启动中...");
-                    $("#svcRun").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
-                    $("#svcStop").addClass("btn-info").prop("disabled", false);
-
-                    $("#svc").text("启动中");
-                },
-
-                serveClosed: function () {
-                    $("#svcStatus").html("已停止...");
-                    $("#svcRun").addClass("btn-info").prop("disabled", false);
-                    $("#svcStop").removeClass("btn-info").addClass("btn-default").prop("disabled", true);
-
-                    $("#svc").text("停止中");
-                },
 
                 //Define a function to get 'location updated' events
                 //车位信息推送
@@ -761,9 +806,7 @@
                         else if (ly == 2) {
                             l2_sc.get([mark]).status(color);
                         }
-                        else if (ly == 3) {
-                            l3_sc.get([mark]).status(color);
-                        }
+                      
                     }
 
                     //更新车位显示区域
@@ -789,7 +832,7 @@
                         $disp.append(html);
                         html = '<li>车牌：<span class="text-info">' + lctn.PlateNum + '</span></li>';
                         $disp.append(html);
-                        html = '<li>入库时间：<br/><span class="text-info">' + formatDate(lctn.InDate) + '</span></li>';
+                        html = '<li>入库时间：<span class="text-info">' + lctn.InDate + '</span></li>';
                         $disp.append(html);
                     }
                     console.log("location addrs-" + adrs + " callback");
@@ -797,7 +840,6 @@
 
                 //设备信息推送
                 feedbackDevice: function (smg) {
-
                     //先查询DIV是否已加载完成
                     var wh = smg.Warehouse;
                     var code = smg.DeviceCode;
@@ -830,6 +872,22 @@
                         $("input[id='" + state + "']").val("");
                     }
 
+                    //更新TV的位置
+                    var tv = smg.DeviceCode
+                    if (tv < 10) {
+                        var addres = smg.Address;
+                        var colstr = addres.substr(1, 2);
+                        var laystr = addres.substr(3, 2);
+
+                        var col = parseInt(colstr);
+                        var lay = parseInt(laystr);
+
+                        var tvaddrs = lay + "_" + col;
+                        console.log(tvaddrs);
+
+                        updateTvLocation(tvaddrs, tv);
+                    }
+
                 },
 
                 //推送作业信息
@@ -854,96 +912,65 @@
                     $("span[id='big']").text(json.BigSpace);
                     $("span[id='small']").text(json.SmallSpace);
                     $("span[id='fix']").text(json.FixLoc);
+                },
+
+                //推送设备故障状态显示
+                feedbackDeviceFaultStat: function (data) {
+                    var wh = data.Warehouse;
+                    var code = data.DeviceCode;
+                    var red = data.IsRed;
+
+                    var name = wh + '-' + code;
+                    //console.log('feedback device - ' + name + ' status- ' + red);
+
+                    var obj = $("table[id='" + name + "']");
+                    if (obj.length == 0) {
+                        console.log("feedback deviec info ,but device region no exist");
+                        return;
+                    }
+                    var $tags = $("table[id='" + name + "'] input[id='accept']");
+                    if (red == 1) {
+                        $tags.css("background-color", "red");
+                    }
+                    else {
+                        $tags.css("background-color", "lightgray");
+                    }
+
                 }
 
             });
 
-            //添加客户端调用
-            $("#svcRun").click(function () {
-                checkLogin("run");
-            });
-
-            $("#svcStop").click(function () {
-                BootstrapDialog.show({
-                    title: "友情提示",
-                    message: "<p class='text-danger text-center'>你确定要关闭后台服务？ <span class='text-info'>关闭后将无法对设备进行自动控制！</span></p>",
-                    buttons: [{
-                        label: "确 定",
-                        action: function (self) {
-                            checkLogin("stop");
-                            self.close();
-                        }
-                    }, {
-                        label: "取 消",
-                        action: function (self) {
-                            self.close();
-                        }
-                    }]
-                });
-            });
-          
-            //检查客户端
-            function checkLogin(name) {
-                $.ajax({
-                    url: "/Account/Validate",
-                    type: "GET",
-                    cache: false,
-                    dataType: "text",
-                    success: function (data, state) {
-
-                        if (data == "true") {
-                            if (name == "run") {
-                                hubs.server.openServe();
-                            }
-                            else if (name == "stop") {
-                                hubs.server.closeServe();
-                            }
-                        }
-                        else {
-                            BootstrapDialog.show({
-                                title: "温馨提示",
-                                message: "<p class='text-info text-center'>请登陆后，再执行操作！</p>",
-                                buttons: [{
-                                    label: "关闭",
-                                    action: function (self) {
-                                        self.close();
-                                    }
-                                }]
-                            });
-                        }
-                    },
-                    error: function (er) {
-                        console.log(er);
-                    }
-                });
-            }
-
             //start the connection
             $.connection.hub.start()
                             .then(function () {
-
                                 //注册下
                                 hubs.server.register("6193");
-
-                                return hubs.server.getStatus();
                             })
-                            .done(function (status) {
-                                if (status == "Close") {
-                                    hubs.client.serveClosed();
+                            .done(function () {
 
-                                    $("#svc").text("停止中");
-
-                                } else if (status == "Open") {
-                                    hubs.client.serveOpened();
-
-                                    $("#svc").text("启动中");
-                                }
                             });
-           
+
             //signalr 结束
 
 
         });
+
+        function hrefAlarm(code)
+        {
+            if (code == 11) {
+                window.location.href = "/SystemManager/FaultSummary/Index";
+            }
+            else if (code == 12) {
+                window.location.href = "/SystemManager/FaultSummary/Hall2";
+            }
+            else if (code == 1) {
+                window.location.href = "/SystemManager/FaultSummary/TV1";
+            }
+            else if (code == 2) {
+                window.location.href = "/SystemManager/FaultSummary/TV2";
+            }         
+        }
+
     </script>
 
     }

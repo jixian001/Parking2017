@@ -15,11 +15,23 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
     public class ExternalController : Controller
     {
         // GET: ExternalManager/External      
-        public ActionResult GetCurrentSound(int warehouse, int devicecode)
+        public ActionResult GetCurrentSound()
         {
             Log log = LogFactory.GetLogger("GetCurrentSound");
             try
             {
+                string wh = Request.QueryString["warehouse"];
+                string code = Request.QueryString["devicecode"];
+
+                if (string.IsNullOrEmpty(wh) || 
+                    string.IsNullOrEmpty(code))
+                {
+                    log.Error("传输出现错误，参数为空！");
+                    return Content("null");
+                }
+                int warehouse = Convert.ToInt32(wh);
+                int devicecode = Convert.ToInt32(code);
+
                 string sound = new CWTask().GetNotification(warehouse, devicecode);
                 return Content(sound);
             }
@@ -107,10 +119,13 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     {
                         iccode = "444";
                     }
+                    tsk.PlateNum = plate;
+
                     //更新作业状态为第二次刷卡，启动流程
                     motsk.DealISwipedSecondCard(tsk, iccode);
                     resp.Code = 1;
                     resp.Message = "流程进行中";
+                    
                     return Json(resp);
                 }
                 else
@@ -131,7 +146,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
 
         [HttpPost]
         /// <summary>
-        /// APP,远程取车
+        /// APP,远程取车,只允许使用车牌取车
         /// </summary>
         /// <returns></returns>
         public ActionResult RemoteGetCarInterface()
@@ -152,8 +167,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string warehouse = jo["warehouse"].ToString();
                 string hallID = jo["hallID"].ToString();
                 string plate = jo["plateNum"].ToString();
-                string iccode = jo["iccode"].ToString();
-
+               
                 if (string.IsNullOrEmpty(warehouse) ||
                    string.IsNullOrEmpty(hallID) ||
                    string.IsNullOrEmpty(plate))
@@ -211,7 +225,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     log.Error("APP取车时，车位已被禁用，address - " + loc.Address);
                     resp.Message = "车位已被禁用";
                     return Json(resp);
-                }
+                }               
                 resp = motsk.DealOSwipedCard(moHall, loc);
             }
             catch (Exception ex)
@@ -255,7 +269,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                         loc.Status = EnmLocationStatus.Occupy;
                         cwlctn.UpdateLocation(loc);
 
-                        resp= motask.DeleteQueue(mtsk);
+                        resp= motask.DeleteQueue(mtsk.ID);
                         return Json(resp);
                     }
                 }
@@ -271,7 +285,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                             loc.Status = EnmLocationStatus.Occupy;
                             cwlctn.UpdateLocation(loc);
 
-                            resp = motask.DeleteQueue(mtsk);
+                            resp = motask.DeleteQueue(mtsk.ID);
                             return Json(resp);
                         }
                     }
@@ -471,6 +485,51 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             }
             #endregion
             return Json(resp);
+        }
+
+        /// <summary>
+        /// 厅外刷卡上报
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult ReadICCard()
+        {
+            Log log = LogFactory.GetLogger("External.ReadICCard");
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                //显示，记录
+                log.Info(req);
+                JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+                string wh = jo["warehouse"].ToString();
+                string code = jo["hallID"].ToString();
+                string physcode = jo["physcode"].ToString();
+
+                if (string.IsNullOrEmpty(wh) ||
+                   string.IsNullOrEmpty(code))
+                {
+                    log.Error("传输出现错误，设备参数为空！");
+                    return Content("fail");
+                }
+                if (string.IsNullOrEmpty(physcode))
+                {
+                    log.Error("传输出现错误，物理卡号为空！");
+                    return Content("fail");
+                }
+                int warehouse = Convert.ToInt32(wh);
+                int hallID = Convert.ToInt32(code);
+
+                new CWTaskTransfer(hallID, warehouse).DealICCardMessage(physcode);
+
+                return Content("success");
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return Content("fail");
         }
     }
 }

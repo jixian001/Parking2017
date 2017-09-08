@@ -16,16 +16,16 @@ namespace Parking.Core
     {
         #region manager类
         //预付类
-        private static PreChargingManager preChgManager = new PreChargingManager();
+        private PreChargingManager preChgManager = new PreChargingManager();
         //固定类
-        private static FixChargingRuleManager fixManager = new FixChargingRuleManager();
+        private FixChargingRuleManager fixManager = new FixChargingRuleManager();
         //临时类
-        private static TempChargingRuleManager tempManager = new TempChargingRuleManager();
+        private TempChargingRuleManager tempManager = new TempChargingRuleManager();
         //按次计费
-        private static OrderChargeDetailManager orderDetailManager = new OrderChargeDetailManager();
+        private OrderChargeDetailManager orderDetailManager = new OrderChargeDetailManager();
         //按时计费
-        private static HourChargeDetailManager hourDetailManager = new HourChargeDetailManager();
-        private static HourSectionInfoManager hourSectionManager = new HourSectionInfoManager();
+        private HourChargeDetailManager hourDetailManager = new HourChargeDetailManager();
+        private HourSectionInfoManager hourSectionManager = new HourSectionInfoManager();
         #endregion
 
         #region 预付类
@@ -34,14 +34,9 @@ namespace Parking.Core
         /// </summary>
         /// <param name="where"></param>
         /// <returns></returns>
-        public List<PreCharging> FindPreChargeList(Expression<Func<PreCharging,bool>> where)
+        public List<PreCharging> FindPreChargeList(Expression<Func<PreCharging, bool>> where)
         {
-            IQueryable<PreCharging> iqueryLst = preChgManager.FindList().Where(where);
-            List<PreCharging> allLst = new List<PreCharging>();
-            foreach (var tsk in iqueryLst)
-            {
-                allLst.Add(tsk);
-            }
+            List<PreCharging> allLst = preChgManager.FindList(where);
             return allLst;
         }
 
@@ -56,7 +51,7 @@ namespace Parking.Core
 
             OrderParam orderParam = new OrderParam();
             if (!string.IsNullOrEmpty(sortName))
-            {               
+            {
                 orderParam.PropertyName = sortName;
                 if (!string.IsNullOrEmpty(sortOrder))
                 {
@@ -74,7 +69,7 @@ namespace Parking.Core
             }
 
             page = preChgManager.FindPageList(page, orderParam);
-            return page;            
+            return page;
         }
 
         /// <summary>
@@ -128,14 +123,9 @@ namespace Parking.Core
         /// <returns></returns>
         public List<TempChargingRule> GetTempChgRuleList()
         {
-            IQueryable<TempChargingRule> iqueryLst = tempManager.FindList();
-            List<TempChargingRule> allLst = new List<TempChargingRule>();
-            foreach (var tsk in iqueryLst)
-            {
-                allLst.Add(tsk);
-            }
+            List<TempChargingRule> allLst = tempManager.FindList();
             return allLst;
-        }       
+        }
 
         /// <summary>
         /// 查找
@@ -188,12 +178,8 @@ namespace Parking.Core
         /// <returns></returns>
         public List<OrderChargeDetail> GetOrderDetailList()
         {
-            IQueryable<OrderChargeDetail> iqueryLst = orderDetailManager.FindList();
-            List<OrderChargeDetail> allLst = new List<OrderChargeDetail>();
-            foreach (var tsk in iqueryLst)
-            {
-                allLst.Add(tsk);
-            }
+            List<OrderChargeDetail> allLst = orderDetailManager.FindList();
+
             return allLst;
         }
 
@@ -251,14 +237,9 @@ namespace Parking.Core
         /// <returns></returns>
         public List<HourChargeDetail> FindHourChgDetailList()
         {
-            IQueryable<HourChargeDetail> iqueryLst = hourDetailManager.FindList();
-            List<HourChargeDetail> allLst = new List<HourChargeDetail>();
-            foreach (var tsk in iqueryLst)
-            {
-                allLst.Add(tsk);
-            }
+            List<HourChargeDetail> allLst = hourDetailManager.FindList();
             return allLst;
-        }      
+        }
 
         /// <summary>
         /// 添加
@@ -308,7 +289,7 @@ namespace Parking.Core
         /// </summary>
         /// <param name="where"></param>
         /// <returns></returns>
-        public List<HourSectionInfo> FindHourSectionList(Expression<Func<HourSectionInfo,bool>> where)
+        public List<HourSectionInfo> FindHourSectionList(Expression<Func<HourSectionInfo, bool>> where)
         {
             return hourSectionManager.FindList(where);
         }
@@ -421,71 +402,11 @@ namespace Parking.Core
             return page;
         }
         #endregion
-
-        #region 临时收费记录
-        private static TempChargeLogManager templogManager = new TempChargeLogManager();
-
-        /// <summary>
-        /// 添加临时收费记录
-        /// </summary>
-        public Response AddTempLog(TempUserChargeLog templog)
-        {
-            return templogManager.Add(templog);
-        }
-
-        /// <summary>
-        /// 获取分页列表(临时收费记录)
-        /// </summary>
-        public Page<TempUserChargeLog> FindTempChgLogPageList(int pageSize, int pageIndex, string sortOrder, string sortName)
-        {
-            Page<TempUserChargeLog> page = new Page<TempUserChargeLog>();
-            page.PageIndex = pageIndex;
-            page.PageSize = pageSize;
-
-            OrderParam orderParam = new OrderParam();
-            if (!string.IsNullOrEmpty(sortName))
-            {
-                orderParam.PropertyName = sortName;
-                if (!string.IsNullOrEmpty(sortOrder))
-                {
-                    orderParam.Method = sortOrder.ToLower() == "asc" ? OrderMethod.Asc : OrderMethod.Desc;
-                }
-                else
-                {
-                    orderParam.Method = OrderMethod.Asc;
-                }
-            }
-            else
-            {
-                orderParam.PropertyName = "ID";
-                orderParam.Method = OrderMethod.Asc;
-            }
-
-            page = templogManager.FindPageList(page, orderParam);
-            return page;
-        }
-        #endregion
-
-        #region 固定收费记录
-        private static FixChargeLogManager fixChgLogManager = new FixChargeLogManager();
-
-        /// <summary>
-        /// 添加固定收费记录
-        /// </summary>
-        /// <param name="flog"></param>
-        /// <returns></returns>
-        public Response AddFixLog(FixUserChargeLog flog)
-        {
-            return fixChgLogManager.Add(flog);
-        }
-
-
-        #endregion
-
+     
         /// <summary>
         /// 查询临时用户费用
         /// </summary>
-        public Response GetTempUserInfo(string iccode,bool isPlate)
+        public Response GetTempUserInfo(string iccode, bool isPlate)
         {
             Log log = LogFactory.GetLogger("CWTariff.GetTempUserInfo");
             Response resp = new Response();
@@ -495,79 +416,111 @@ namespace Parking.Core
             {
                 Location loc = null;
                 TempUserInfo info = new TempUserInfo();
-                if (!isPlate)
+                #region 暂不用
+                //if (!isPlate)
+                //{
+                //    #region
+                //    ICCard iccd = cwiccd.Find(ic=>ic.UserCode==iccode);
+                //    if (iccd == null)
+                //    {
+                //        resp.Message = "不是本系统卡！";
+                //        return resp;
+                //    }
+                //    if (iccd.CustID != 0)
+                //    {
+                //        Customer cust = cwiccd.FindCust(iccd.CustID);
+                //        if (cust != null)
+                //        {
+                //            if (cust.Type != EnmICCardType.Temp)
+                //            {
+                //                resp.Message = "该用户不是临时用户！";
+                //                return resp;
+                //            }
+                //        }
+                //    }
+                //    loc = cwlctn.FindLocation(lc=>lc.ICCode==iccode);
+                //    if (loc == null)
+                //    {
+                //        resp.Message = "当前卡号没有存车！";
+                //        return resp;
+                //    }
+                //    #endregion
+                //}
+                //else
+                //{
+                //    #region
+                //    loc = cwlctn.FindLocation(l=>l.PlateNum==iccode);
+                //    if (loc == null)
+                //    {
+                //        resp.Message = "当前输入车牌没有存车！";
+                //        return resp;
+                //    }
+                //    string proof = loc.ICCode;
+                //    Customer cust = null;
+                //    #region
+                //    if (Convert.ToInt32(proof) >= 10000) //是指纹激活的
+                //    {
+                //        int sno = Convert.ToInt32(proof);
+                //        FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == sno);
+                //        if (print == null)
+                //        {
+                //            //上位控制系统故障
+                //            resp.Message = "找不到注册指纹，系统异常！";
+                //            return resp;
+                //        }
+                //        cust = new CWICCard().FindCust(print.CustID);
+                //        if (cust == null)
+                //        {
+                //            //上位控制系统故障
+                //            resp.Message = "指纹没有绑定用户，系统异常！";
+                //            return resp;
+                //        }
+                //    }
+                //    else
+                //    {
+                //        ICCard iccd = new CWICCard().Find(ic => ic.UserCode == proof);
+                //        if (iccd == null)
+                //        {
+                //            //上位控制系统故障
+                //            resp.Message = "上位控制系统异常，找不到卡号！";
+                //            return resp;
+                //        }
+                //        if (iccd.CustID != 0)
+                //        {
+                //            cust = new CWICCard().FindCust(iccd.CustID);
+                //        }
+                //    }
+                //    #endregion
+                //    if (cust != null)
+                //    {
+                //        if (cust.Type != EnmICCardType.Temp)
+                //        {
+                //            resp.Message = "该用户不是临时用户！";
+                //            return resp;
+                //        }
+                //    }
+                //    #endregion
+                //}
+                #endregion
+                if (isPlate)
                 {
-                    #region
-                    ICCard iccd = cwiccd.Find(ic=>ic.UserCode==iccode);
-                    if (iccd == null)
-                    {
-                        resp.Message = "不是本系统卡！";
-                        return resp;
-                    }
-                    if (iccd.CustID != 0)
-                    {
-                        Customer cust = cwiccd.FindCust(iccd.CustID);
-                        if (cust != null)
-                        {
-                            if (cust.Type != EnmICCardType.Temp)
-                            {
-                                resp.Message = "该用户不是临时用户！";
-                                return resp;
-                            }
-                        }
-                    }
-                    loc = cwlctn.FindLocation(lc=>lc.ICCode==iccode);
-                    if (loc == null)
-                    {
-                        resp.Message = "当前卡号没有存车！";
-                        return resp;
-                    }
-                    #endregion
+                    //是车牌
+                    loc = cwlctn.FindLocation(l => l.PlateNum == iccode);
                 }
                 else
                 {
-                    #region
-                    loc = cwlctn.FindLocation(l=>l.PlateNum==iccode);
-                    if (loc == null)
-                    {
-                        resp.Message = "当前输入车牌没有存车！";
-                        return resp;
-                    }
-                    string proof = loc.ICCode;
-                    Customer cust = null;
-                    #region
-                    if (Convert.ToInt32(proof) >= 10000) //是指纹激活的
-                    {
-                        FingerPrint print = new CWFingerPrint().Find(p => p.SN_Number == Convert.ToInt32(proof));
-                        if (print == null)
-                        {
-                            //上位控制系统故障
-                            resp.Message = "找不到注册指纹，系统异常！";
-                            return resp;
-                        }
-                        cust = new CWICCard().FindCust(print.CustID);
-                        if (cust == null)
-                        {
-                            //上位控制系统故障
-                            resp.Message = "指纹没有绑定用户，系统异常！";
-                            return resp;
-                        }
-                    }
-                    else
-                    {
-                        ICCard iccd = new CWICCard().Find(ic => ic.UserCode == proof);
-                        if (iccd == null)
-                        {
-                            //上位控制系统故障
-                            resp.Message = "上位控制系统异常，找不到卡号！";
-                            return resp;
-                        }
-                        if (iccd.CustID != 0)
-                        {
-                            cust = new CWICCard().FindCust(iccd.CustID);
-                        }
-                    }
-                    #endregion
+                    loc = cwlctn.FindLocation(l => l.ICCode == iccode);
+                }
+                if (loc == null)
+                {
+                    resp.Message = "当前车牌没有存车！Proof - " + iccode;
+                    return resp;
+                }
+                int sno = Convert.ToInt32(loc.ICCode);
+                SaveCertificate scert = new CWSaveProof().Find(s => s.SNO == sno);
+                if (scert != null)
+                {
+                    Customer cust = new CWICCard().FindCust(scert.CustID);
                     if (cust != null)
                     {
                         if (cust.Type != EnmICCardType.Temp)
@@ -576,16 +529,16 @@ namespace Parking.Core
                             return resp;
                         }
                     }
-                    #endregion
                 }
+
                 CWTask cwtask = new CWTask();
-                ImplementTask itask = cwtask.Find(tk => tk.ICCardCode == loc.ICCode && tk.IsComplete == 0);
+                ImplementTask itask = cwtask.FindITask(tk => tk.ICCardCode == loc.ICCode && tk.IsComplete == 0);
                 if (itask != null)
                 {
                     resp.Message = "正在作业，无法查询！";
                     return resp;
                 }
-                WorkTask queue = cwtask.FindQueue(q=>q.ICCardCode==loc.ICCode);
+                WorkTask queue = cwtask.FindQueue(q => q.ICCardCode == loc.ICCode);
                 if (queue != null)
                 {
                     resp.Message = "已经加入取车队列，无法查询！";
@@ -596,15 +549,15 @@ namespace Parking.Core
                 info.InDate = loc.InDate.ToString();
                 info.OutDate = DateTime.Now.ToString();
                 TimeSpan span = DateTime.Now - loc.InDate;
-                info.SpanTime= (span.Days > 0 ? span.Days + "天" : " ") + (span.Hours > 0 ? span.Hours + "小时" : " ") +
+                info.SpanTime = (span.Days > 0 ? span.Days + "天" : " ") + (span.Hours > 0 ? span.Hours + "小时" : " ") +
                         (span.Minutes >= 0 ? span.Minutes + "分" : " ") + (span.Seconds >= 0 ? span.Seconds + "秒" : " ");
                 float fee = 0;
-                resp= this.CalculateTempFee(loc.InDate, DateTime.Now,out fee);
+                resp = this.CalculateTempFee(loc.InDate, DateTime.Now, out fee);
                 if (resp.Code == 0)
                 {
                     return resp;
                 }
-                info.NeedFee = fee.ToString();                
+                info.NeedFee = fee.ToString();
                 info.Warehouse = loc.Warehouse;
 
                 int hallID = new CWDevice().AllocateHall(loc, false);
@@ -612,7 +565,7 @@ namespace Parking.Core
 
                 resp.Code = 1;
                 resp.Message = "查询成功";
-                resp.Data = info;               
+                resp.Data = info;
             }
             catch (Exception ex)
             {
@@ -648,7 +601,7 @@ namespace Parking.Core
                     return resp;
                 }
                 TimeSpan ts = outdate - indate;
-                double totalMinutes =Math.Ceiling(ts.TotalMinutes);
+                double totalMinutes = Math.Ceiling(ts.TotalMinutes);
                 TimeSpan span = TimeSpan.Parse(orderdetail.OrderFreeTime.Trim());
                 if (span.TotalMinutes > totalMinutes)
                 {
@@ -676,14 +629,14 @@ namespace Parking.Core
                 //这里都是24小时制，延续计费的方式进行，后面的，再增加
                 //排序
                 List<HourSectionInfo> timeslotLst = sectionInfoLst.OrderBy(sc => sc.StartTime).ToList();
-              
+
                 if (hourdetail.CycleTopFee > 0)
                 {
                     #region 设置了周期最高计费
                     TimeSpan ts = outdate - indate;
                     int days = ts.Days;
                     bool isInit = true;
-                    DateTime newIndate = indate;                   
+                    DateTime newIndate = indate;
                     //计算超过天数的停车费用
                     float daysFee = 0;
                     if (days > 0)
@@ -696,7 +649,7 @@ namespace Parking.Core
                     float otherHoursFee = calcuteHoursFeeHasLimit(newIndate, outdate, timeslotLst, isInit);
                     if (otherHoursFee > 10000)
                     {
-                        resp.Message = "系统异常,Fee - "+otherHoursFee;
+                        resp.Message = "系统异常,Fee - " + otherHoursFee;
                         return resp;
                     }
                     if (otherHoursFee > hourdetail.CycleTopFee)
@@ -733,11 +686,11 @@ namespace Parking.Core
         /// <param name="timeslotLst"></param>
         /// <param name="isInit"></param>
         /// <returns></returns>
-        private float calcuteHoursFeeHasLimit(DateTime Indate,DateTime Outdate,List<HourSectionInfo> timeslotLst,bool isInit)
+        private float calcuteHoursFeeHasLimit(DateTime Indate, DateTime Outdate, List<HourSectionInfo> timeslotLst, bool isInit)
         {
             string onlydate = Indate.ToShortDateString();
 
-            foreach(HourSectionInfo timeslot in timeslotLst)
+            foreach (HourSectionInfo timeslot in timeslotLst)
             {
                 DateTime st = DateTime.Parse(onlydate + " " + timeslot.StartTime.ToLongTimeString());
                 DateTime end = DateTime.Parse(onlydate + " " + (timeslot.EndTime.AddSeconds(-1)).ToLongTimeString());
@@ -807,7 +760,7 @@ namespace Parking.Core
                             TimeSpan frontTS = end - Indate;
                             int frontMinutes = (int)Math.Ceiling(frontTS.TotalMinutes);
                             float sectFee = 0;
-                            if (frontMinutes <=TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
+                            if (frontMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
                             {
                                 sectFee = timeslot.FirstVoidFee;
                             }
@@ -816,7 +769,7 @@ namespace Parking.Core
                                 //减去首段时间，
                                 int remainMinutes = (int)frontMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
                                 //整数部分
-                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;                              
+                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                                 //余数部分
                                 int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                                 //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
@@ -824,7 +777,7 @@ namespace Parking.Core
                                 {
                                     ++integarPart;
                                 }
-                                sectFee = integarPart * timeslot.IntervalVoidFee;                              
+                                sectFee = integarPart * timeslot.IntervalVoidFee;
                             }
 
                             if (timeslot.SectionTopFee > 0)
@@ -863,7 +816,7 @@ namespace Parking.Core
                         //是从这个时间段开始入库的
                         if (isInit)
                         {
-                            if (totalMinutes <=TimeSpan.Parse(timeslot.SectionFreeTime.Trim()).TotalMinutes)
+                            if (totalMinutes <= TimeSpan.Parse(timeslot.SectionFreeTime.Trim()).TotalMinutes)
                             {
                                 //如果在免费时长内，则不收费
                                 return 0;
@@ -873,35 +826,35 @@ namespace Parking.Core
                         if (DateTime.Compare(nextEnd, newOutdate) >= 0)
                         {
                             #region
-                          
-                                //如果在首段时间内，依首段时间计费
-                                if (totalMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
+
+                            //如果在首段时间内，依首段时间计费
+                            if (totalMinutes <= TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes)
+                            {
+                                return timeslot.FirstVoidFee;
+                            }
+                            //减去首段时间，
+                            int remainMinutes = (int)totalMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
+                            //整数部分
+                            int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                            //余数部分
+                            int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
+                            //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
+                            if (remainer > 0)
+                            {
+                                ++integarPart;
+                            }
+                            //返回费用
+                            float sectFee = timeslot.FirstVoidFee + integarPart * timeslot.IntervalVoidFee;
+                            //本段是否有收费限额
+                            if (timeslot.SectionTopFee > 0)
+                            {
+                                if (sectFee > timeslot.SectionTopFee)
                                 {
-                                    return timeslot.FirstVoidFee;
+                                    return timeslot.SectionTopFee;
                                 }
-                                //减去首段时间，
-                                int remainMinutes = (int)totalMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
-                                //整数部分
-                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
-                                //余数部分
-                                int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
-                                //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
-                                if (remainer > 0)
-                                {
-                                    ++integarPart;
-                                }
-                                //返回费用
-                                float sectFee = timeslot.FirstVoidFee + integarPart * timeslot.IntervalVoidFee;
-                                //本段是否有收费限额
-                                if (timeslot.SectionTopFee > 0)
-                                {
-                                    if (sectFee > timeslot.SectionTopFee)
-                                    {
-                                        return timeslot.SectionTopFee;
-                                    }
-                                }
-                                return sectFee;
-                           
+                            }
+                            return sectFee;
+
                             #endregion
                         }
                         else //跨时间段停车
@@ -923,16 +876,16 @@ namespace Parking.Core
                                 //减去首段时间，
                                 int remainMinutes = (int)frontMinutes - (int)TimeSpan.Parse(timeslot.FirstVoidTime.Trim()).TotalMinutes;
                                 //整数部分
-                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;                              
+                                int integarPart = remainMinutes / (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                                 //余数部分
                                 int remainer = remainMinutes % (int)TimeSpan.Parse(timeslot.IntervalVoidTime.Trim()).TotalMinutes;
                                 //不足一个间隔时长的，以一个时长计算（例：不足15分钟的以15分钟计算）
                                 if (remainer > 0)
                                 {
                                     ++integarPart;
-                                }                               
-                                    //跨周期是延续计费时时，则不包含首段时间收费
-                                sectFee = integarPart * timeslot.IntervalVoidFee;                              
+                                }
+                                //跨周期是延续计费时时，则不包含首段时间收费
+                                sectFee = integarPart * timeslot.IntervalVoidFee;
                             }
 
                             if (timeslot.SectionTopFee > 0)
@@ -942,7 +895,7 @@ namespace Parking.Core
                                     sectFee = timeslot.SectionTopFee;
                                 }
                             }
-                           
+
                             //起始时间从本段终点时间开始
                             DateTime strideStart = nextEnd;
 
@@ -958,7 +911,7 @@ namespace Parking.Core
             }
 
             //都没有办法找到相应的区间的，则说明入出库时间都在跨0点后的0点时间段中
-            foreach(HourSectionInfo timeslot in timeslotLst)
+            foreach (HourSectionInfo timeslot in timeslotLst)
             {
                 #region
                 DateTime st = DateTime.Parse(onlydate + " " + timeslot.StartTime.ToLongTimeString());
@@ -1096,7 +1049,7 @@ namespace Parking.Core
                DateTime.Compare(ti.StartTime, DateTime.Parse(ti.StartTime.ToShortDateString() + " " + indate.AddMinutes(1).ToShortTimeString())) == 0
                                                        );
             if (timeslot == null)
-            {                
+            {
                 return 40002;
             }
             string onlydate = indate.ToShortDateString();
@@ -1139,7 +1092,7 @@ namespace Parking.Core
                     #region
                     //计算下些时段集合
                     List<HourSectionInfo> strideTimeslotLst = timeslotLst.FindAll(ti => ti.ID != timeslot.ID);
-                    
+
                     //计算本段内的停车费用，时起始时间及终点时间，以时间段的时间为段
                     TimeSpan ts = end - st;
                     int minutes = (int)Math.Ceiling(ts.TotalMinutes);
@@ -1202,7 +1155,7 @@ namespace Parking.Core
                     {
                         strideTimeslotLst = allTimeSlots.FindAll(ti => ti.StartTime != timeslot.StartTime);
                     }
-                   
+
                     TimeSpan ts = nextEnd - st;
                     int minutes = (int)Math.Ceiling(ts.TotalMinutes);
                     //整数部分
@@ -1220,7 +1173,7 @@ namespace Parking.Core
                     }
 
                     //累加下一个时间段的费用
-                    return sectFee + this.calcuteStrideSection(nextEnd, outdate, strideTimeslotLst,allTimeSlots);
+                    return sectFee + this.calcuteStrideSection(nextEnd, outdate, strideTimeslotLst, allTimeSlots);
 
                     #endregion
                 }
@@ -1240,7 +1193,7 @@ namespace Parking.Core
         {
             //先计算一个周期的总费用，再将时间减去，最后调用 《calcuteHoursFeeHasLimit》有周期限制的
             float cyclefee = 0;
-            foreach(HourSectionInfo timeslot in timeslotLst)
+            foreach (HourSectionInfo timeslot in timeslotLst)
             {
                 #region
                 //本段时间内的时间
@@ -1266,7 +1219,7 @@ namespace Parking.Core
                         ++integarPart;
                     }
                     //首段费用+间隔费用
-                    sectFee = timeslot.FirstVoidFee+ integarPart * timeslot.IntervalVoidFee;
+                    sectFee = timeslot.FirstVoidFee + integarPart * timeslot.IntervalVoidFee;
                 }
 
                 if (timeslot.SectionTopFee > 0)
@@ -1288,8 +1241,8 @@ namespace Parking.Core
                 newIndate = Indate.AddDays(ts.Days);
             }
 
-            return cyclefee + calcuteHoursFeeHasLimit(newIndate, Outdate, timeslotLst,false);
-            
+            return cyclefee + calcuteHoursFeeHasLimit(newIndate, Outdate, timeslotLst, false);
+
         }
 
         #endregion

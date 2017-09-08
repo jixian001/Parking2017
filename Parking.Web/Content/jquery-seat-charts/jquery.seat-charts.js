@@ -10,14 +10,14 @@
 		
 	//'use strict';	
 		
-	$.fn.seatCharts = function (setup) {
+	$.fn.seatCharts = function (sindex,setup) {
 
 		//if there's seatCharts object associated with the current element, return it
 		if (this.data('seatCharts')) {
 			return this.data('seatCharts');
 		}
 		
-		var fn       = this,
+        var fn = this,
 			seats    = {},
 			seatIds  = [],
 			legend,
@@ -352,7 +352,8 @@
 		}
 		
 		fn.append($headerRow);
-		
+
+        var k = 1;
 		//do this for each map row
 		$.each(settings.map, function(row, characters) {
 
@@ -364,7 +365,9 @@
 						.addClass('seatCharts-cell seatCharts-space')
 						.text(settings.naming.rows[row])
 				);
-			}
+            }
+
+
 
 			/*
 			 * Do this for each seat (letter)
@@ -416,8 +419,8 @@
 						return seats[id].node();
 						
 					})(settings.naming) :
-					//this is just an empty space (_)
-					$('<div></div>').addClass('seatCharts-cell seatCharts-space')	
+                    //this is just an empty space (_)
+                    $('<div></div>').addClass('seatCharts-cell seatCharts-space').attr("id", sindex+"_"+k++)
 				);
 			});
 			

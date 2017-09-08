@@ -1,0 +1,141 @@
+﻿
+@{
+    ViewBag.Title = "车牌识别";
+    Layout = "~/Views/Shared/_SingleLayout.cshtml";
+}
+<div class="row">
+    <div class="col-md-6">
+        <h4>1#车厅</h4>
+        <object id="ax1" classid="clsid:3B62E31C-B08C-4FED-83BC-6CEC8F7C1FB8" width="500" height="350"></object>
+        <br />
+        <br />
+        <div id="block1" style="display:none">
+            <div>
+                <label class="control-label">记录时间：</label>
+                <label id="h1rcddtime" class="control-label" style="font-size:18px"></label>
+                <label class="control-label">&nbsp;&nbsp; 车牌号码：</label>
+                <label id="h1plate" class="control-label" style="font-size:18px">暂无</label>
+            </div>
+           
+            <img id="img_h1" alt="H1" src="" style="width:500px;height:350px;" />            
+        </div>
+    </div>
+    <div class="col-md-6">
+        <h4>2#车厅</h4>  
+        <object id="ax2" classid="clsid:3B62E31C-B08C-4FED-83BC-6CEC8F7C1FB8" width="500" height="350"></object>
+        <br /> 
+        <br />           
+        <div id="block2" style="display:none">
+            <div>
+                <label class="control-label">记录时间：</label>
+                <label id="h2rcddtime" class="control-label" style="font-size:18px"></label>
+                <label class="control-label">&nbsp;&nbsp; 车牌号码：</label>
+                <label id="h2plate" class="control-label" style="font-size:18px">暂无</label>
+            </div>           
+            <img id="img_h2" alt="H2" src="" style="width:500px;height:350px;" />            
+        </div>        
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        function GetAX(name) {
+            if (window.document[name]) {
+                return window.document[name];
+            }
+            if (navigator.appName.indexOf("Microsoft Internet") == -1) {
+                if (document.embeds && document.embeds[name])
+                    return document.embeds[name];
+            }
+            else {
+                return document.getElementById(name);
+            }
+        }
+
+        function doGo() {
+            var ax = GetAX("ax1");
+            if (ax) {
+                var ret = ax.StreamClient_StartPlay("rtsp://10.3.36.21:8557/h264");
+            }
+            var ax = GetAX("ax2");
+            if (ax) {
+                var ret = ax.StreamClient_StartPlay("rtsp://10.3.36.31:8557/h264");
+            }
+        }
+
+        $(function () {
+
+            setTimeout(function () {
+
+                doGo();
+
+            }, 1000);
+
+            //signalr 开始
+
+            var hubs = $.connection.parkingHub;
+
+            $.extend(hubs.client, {
+
+                nowPlates: function (dispLst) {
+                    console.log("register feedback! ");
+
+                    $.each(dispLst, function (i, result) {
+
+                        var hallID = result.DeviceCode;                        
+                        if (hallID == 11)
+                        {
+                            $("#block1").css("display", "block");
+                            $("#h1rcddtime").html(result.RcdDtime);
+                            $("#h1plate").html(result.PlateNum);
+                            $("#img_h1").attr({ "alt": result.PlateNum, "src": result.HeadImgVPath });
+                        }
+                        else if (hallID == 12)
+                        {
+                            $("#block2").css("display", "block");
+                            $("#h2rcddtime").html(result.RcdDtime);
+                            $("#h2plate").html(result.PlateNum);
+                            $("#img_h2").attr({ "alt": result.PlateNum, "src": result.HeadImgVPath });
+                        }                        
+
+                    });
+                },
+
+                feedbackPlateInfo: function (zresult) {
+                    console.log("feedback plate");
+
+                    var hallID = zresult.DeviceCode;
+                    if (hallID == 11) {
+
+                        $("#block1").css("display", "block");
+                        $("#h1rcddtime").html(zresult.RcdDtime);
+                        $("#h1plate").html(zresult.PlateNum);                       
+                        $("#img_h1").attr({ "alt": zresult.PlateNum, "src": zresult.HeadImgVPath });
+                    }
+                    else if (hallID == 12) {
+
+                        $("#block2").css("display", "block");
+                        $("#h2rcddtime").html(zresult.RcdDtime);
+                        $("#h2plate").html(zresult.PlateNum);
+                        $("#img_h2").attr({ "alt": zresult.PlateNum, "src": zresult.HeadImgVPath });
+                    }
+
+                }
+            });
+
+            $.connection.hub.start()
+                           .then(function () {
+                               //注册下
+                               hubs.server.register("plate");
+                           })
+                           .done(function () {
+
+                           });
+
+            //signalr 结束
+
+        });
+
+    </script>
+}
+

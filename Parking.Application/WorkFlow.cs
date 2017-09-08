@@ -72,52 +72,52 @@ namespace Parking.Application
                 }
                 //优先发送是报文(子作业)的队列
                 List<WorkTask> lstWaitTelegram = queueList.FindAll(ls => ls.IsMaster == 1);
-                #region 优先发送是避让的队列
-                List<WorkTask> avoidTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType == EnmTaskType.Avoid);
-                for (int i = 0; i < avoidTelegram.Count; i++)
-                {
-                    WorkTask queue = avoidTelegram[i];
-                    Device dev = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
-                    if (dev == null)
-                    {
-                        log.Error("避让队列，找不到执行的设备-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
-                        continue;
-                    }
-                    if (dev.Type != EnmSMGType.ETV)
-                    {
-                        log.Error("避让队列，但执行的设备-" + queue.DeviceCode + " 不是TV");
-                        continue;
-                    }
-                    //如果TV空闲可用，则允许下发
-                    if (dev.IsAble == 1 && dev.IsAvailabe == 1)
-                    {
-                        if (dev.TaskID == 0)
-                        {
-                            //当前TV没有作业，则绑定设备,执行避让
-                            Response resp = cwtask.CreateAvoidTaskByQueue(queue);
-                            log.Info(resp.Message);
-                        }
-                        else
-                        {
-                            //当前作业不为空，查询当前作业状态
-                            //处于等待卸载时，也允许下发避让
-                            ImplementTask itask = cwtask.Find(dev.TaskID);
-                            if (itask != null)
-                            {
-                                if (itask.IsComplete == 0 && itask.Status == EnmTaskStatus.WillWaitForUnload)
-                                {
-                                    //允许避让
-                                    Response resp = cwtask.CreateAvoidTaskByQueue(queue);
-                                    log.Info(resp.Message);
-                                }
-                            }
-                            else
-                            {
-                                log.Info("当前避让队列，对应的设备-"+dev.DeviceCode+"  TaskID-"+dev.TaskID+" 找不到对应的执行队列！");
-                            }                            
-                        }
-                    }
-                }
+                #region 优先发送是避让的队列 本项目无此功能
+                //List<WorkTask> avoidTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType == EnmTaskType.Avoid);
+                //for (int i = 0; i < avoidTelegram.Count; i++)
+                //{
+                //    WorkTask queue = avoidTelegram[i];
+                //    Device dev = new CWDevice().Find(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
+                //    if (dev == null)
+                //    {
+                //        log.Error("避让队列，找不到执行的设备-" + queue.DeviceCode + " 库区-" + queue.Warehouse);
+                //        continue;
+                //    }
+                //    if (dev.Type != EnmSMGType.ETV)
+                //    {
+                //        log.Error("避让队列，但执行的设备-" + queue.DeviceCode + " 不是TV");
+                //        continue;
+                //    }
+                //    //如果TV空闲可用，则允许下发
+                //    if (dev.IsAble == 1 && dev.IsAvailabe == 1)
+                //    {
+                //        if (dev.TaskID == 0)
+                //        {
+                //            //当前TV没有作业，则绑定设备,执行避让
+                //            Response resp = cwtask.CreateAvoidTaskByQueue(queue);
+                //            log.Info(resp.Message);
+                //        }
+                //        else
+                //        {
+                //            //当前作业不为空，查询当前作业状态
+                //            //处于等待卸载时，也允许下发避让
+                //            ImplementTask itask = cwtask.Find(dev.TaskID);
+                //            if (itask != null)
+                //            {
+                //                if (itask.IsComplete == 0 && itask.Status == EnmTaskStatus.WillWaitForUnload)
+                //                {
+                //                    //允许避让
+                //                    Response resp = cwtask.CreateAvoidTaskByQueue(queue);
+                //                    log.Info(resp.Message);
+                //                }
+                //            }
+                //            else
+                //            {
+                //                log.Info("当前避让队列，对应的设备-"+dev.DeviceCode+"  TaskID-"+dev.TaskID+" 找不到对应的执行队列！");
+                //            }                            
+                //        }
+                //    }
+                //}
                 #endregion
                 #region 处理其他报文
                 List<WorkTask> otherTelegram = lstWaitTelegram.FindAll(ls => ls.MasterType != EnmTaskType.Avoid);
@@ -150,19 +150,23 @@ namespace Parking.Application
                                 }
                             }
                             else //处理卸载指令
-                            {
+                            {                                
                                 ImplementTask itask = cwtask.Find(dev.TaskID);
                                 if (itask != null)
                                 {
-                                    //下发卸载指令
-                                    if (itask.IsComplete == 0 && 
-                                        itask.Status == EnmTaskStatus.WillWaitForUnload&&
-                                        itask.ICCardCode==queue.ICCardCode)
+                                    //下发卸载指令,主作业一致的
+                                    if (itask.Status == EnmTaskStatus.WillWaitForUnload)
                                     {
-                                        //可以增加避让判断
-                                        if (cwtask.DealAvoid(queue, dev))
+                                        if (itask.ICCardCode == queue.ICCardCode &&
+                                            itask.Type == queue.MasterType &&
+                                            queue.TelegramType == 14 &&
+                                            queue.SubTelegramType == 1)
                                         {
-                                            cwtask.DealTVUnloadTask(itask,queue);
+                                            //可以增加避让判断
+                                            if (cwtask.DealAvoid(queue, dev))
+                                            {
+                                                cwtask.DealTVUnloadTask(itask, queue);
+                                            }
                                         }
                                     }
                                 }
@@ -186,7 +190,7 @@ namespace Parking.Application
                     if (lctn == null)
                     {
                         log.Error("执行取车队列时，找不到存车车位，删除队列，iccode-" + queue.ICCardCode);
-                        cwtask.DeleteQueue(queue);
+                        cwtask.DeleteQueue(queue.ID);
                         continue;
                     }
                     if (hall.TaskID == 0)
@@ -239,19 +243,22 @@ namespace Parking.Application
         /// 报文发送
         /// </summary>
         public void SendMessage()
-        {
-            List<ImplementTask> tasks =cwtask.GetExecuteTasks(warehouse);
-            if (tasks == null)
-            {
-                return;
-            }
+        {           
             Log log = LogFactory.GetLogger("WorkFlow.SendMessage");
             try
             {
+                //设备上绑定作业号，但没有找到对应的任务,则释放当前作业
+                cwtask.ReleaseDeviceTaskIDButNoTask(warehouse);
+
+                List<ImplementTask> tasks = cwtask.FindITaskLst(t => t.Warehouse == warehouse);
+                if (tasks == null || tasks.Count == 0)
+                {
+                    return;
+                }
                 for (int i = 0; i < tasks.Count; i++)
                 {
                     ImplementTask task = tasks[i];
-                    Device smg = cwdevice.SelectSMG(task.DeviceCode,warehouse);
+                    Device smg = cwdevice.Find(t => t.DeviceCode == task.DeviceCode && t.Warehouse == warehouse);
                     if (smg == null)
                     {
                         log.Error("当前执行作业,绑定的设备号-"+task.DeviceCode+"  库区-"+task.Warehouse+" 不是系统");
@@ -430,6 +437,8 @@ namespace Parking.Application
                                 if (nback)
                                 {
                                     cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    //同时生成（14，1）加入队列中
+                                    cwtask.UnpackUnloadOrder(task);
                                 }
                             }
                             #endregion
@@ -485,6 +494,32 @@ namespace Parking.Application
                                 }
                             }
                             #endregion
+                            #region 故障恢复
+                            else if (task.Status == EnmTaskStatus.TMUROWaitforLoad)
+                            {
+                                //发送装载指令
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(13, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                            }
+                            else if (task.Status == EnmTaskStatus.TMUROWaitforUnload)
+                            {
+                                //发送卸载指令
+                                if (smg.IsAvailabe == 1)
+                                {
+                                    bool nback = this.sendData(this.packageMessage(14, 1, smg.DeviceCode, task));
+                                    if (nback)
+                                    {
+                                        cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.SendWaitAsk);
+                                    }
+                                }
+                            }
+                            #endregion
                         }
                         #endregion
                     }
@@ -511,13 +546,19 @@ namespace Parking.Application
                 {
                     return;
                 }
-                Device smg = cwdevice.SelectSMG(data[6], data[1]);
+                if (data[1] == 0)
+                {
+                    data[1] = 1;
+                }
+                int warehouse = data[1];
+                int code = data[6];
+                Device smg = cwdevice.Find(t => t.DeviceCode ==code && t.Warehouse == warehouse);
                 if (smg == null)
                 {
-                    log.Error("无效报文，找不到相关设备. deviceCode-"+data[6]+" warehouse-"+data[1]);
+                    log.Error("无效报文，找不到相关设备. deviceCode-" + data[6] + " warehouse-" + data[1]);
                     return;
                 }
-                ImplementTask task = cwtask.GetImplementTaskBySmgID(smg.DeviceCode, smg.Warehouse);
+                ImplementTask task = cwtask.FindITask(t=>t.DeviceCode==code&&t.Warehouse==warehouse);
                 if (task != null)
                 {
                     if (smg.Type == EnmSMGType.Hall)
@@ -587,7 +628,7 @@ namespace Parking.Application
                             {
                                 cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
                             }
-                            if(data[2] == 1001 && data[4] == 4)
+                            if (data[2] == 1001 && data[4] == 4)
                             {
                                 cwtask.DealUpdateTaskStatus(task, EnmTaskStatus.IHallFinishing);
                             }
@@ -727,6 +768,14 @@ namespace Parking.Application
                                     //处理装载完成
                                     cwtask.DealLoadFinished(task);
                                 }
+                            }                           
+                        }
+                        else if(task.Status == EnmTaskStatus.WillWaitForUnload)
+                        {
+                            if (data[2] == 1013 && data[4] == 1)
+                            {
+                                //只做重发处理
+                                this.sendData(this.packageMessage(13, 51, smg.DeviceCode, task));
                             }
                         }
                         #endregion
@@ -755,7 +804,7 @@ namespace Parking.Application
                                     //处理作业完成
                                     cwtask.DealCompleteTask(task);
                                 }
-                            }
+                            }                          
                         }
                         #endregion
                         #region 移动
@@ -783,6 +832,38 @@ namespace Parking.Application
                                     //处理作业完成
                                     cwtask.DealCompleteTask(task);
                                 }
+                            }                          
+                        }
+                        #endregion
+                        #region 故障恢复
+                        else if (task.Status == EnmTaskStatus.TMUROWaitforLoad)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 13 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1013 && data[4] == 1)
+                            {
+                                //处理装载完成
+                                cwtask.DealLoadFinishing(task, data[25]);
+                            }
+                        }
+                        else if (task.Status == EnmTaskStatus.TMUROWaitforUnload)
+                        {
+                            if (task.SendStatusDetail == EnmTaskStatusDetail.SendWaitAsk)
+                            {
+                                if (data[2] == 14 && data[3] == 1 && data[4] == 9999)
+                                {
+                                    cwtask.UpdateSendStatusDetail(task, EnmTaskStatusDetail.Asked);
+                                }
+                            }
+                            if (data[2] == 1014 && data[4] == 1)
+                            {
+                                //处理卸载完成
+                                cwtask.DealUnLoadFinishing(task);
                             }
                         }
                         #endregion
@@ -797,15 +878,33 @@ namespace Parking.Application
                         new CWTaskTransfer(smg.DeviceCode, smg.Warehouse).DealCarEntrance();
                     }
                     #endregion
-                    #region 处理开机故障报文
-                    if (data[2] == 1074 && data[4] == 7)
+                    #region 强制发送异常报文
+                    else if (data[2] == 1003 && data[4] == 4)
                     {
-                        //更新设备为不可用
-                        cwdevice.UpdateSMGStatus(smg, 0);
-                        this.sendData(this.packageMessage(74, 1, smg.DeviceCode, null));
+                        this.sendData(this.packageMessage(3, 55, smg.DeviceCode, null));
+                    }
+                    #endregion
+                    #region 发送（14，51）（11，51）
+                    else if (data[2] == 1014 && data[4] == 1)
+                    {
+                        //只做重发处理
+                        this.sendData(this.packageMessage(14, 51, smg.DeviceCode, null));
+                    }
+                    else if (data[2] == 1011 && data[4] == 1)
+                    {
+                        //只做重发处理
+                        this.sendData(this.packageMessage(11, 51, smg.DeviceCode, null));
                     }
                     #endregion
                 }
+
+                #region 处理故障报文
+                if (data[2] == 1074 && data[4] == 7)
+                {
+                    cwdevice.UpdateSMGStatus(smg, 0);
+                    this.sendData(this.packageMessage(74, 1, smg.DeviceCode, null));
+                }
+                #endregion
 
             }
             catch (Exception ex)
@@ -816,6 +915,7 @@ namespace Parking.Application
 
         /// <summary>
         /// 处理报警信息
+        /// 设备报警及状态字是一个DB块的
         /// </summary>
         public void DealAlarmInfo()
         {
@@ -823,8 +923,10 @@ namespace Parking.Application
             try
             {
                 List<Device> deviceLst =cwdevice.FindList(d => d.Warehouse==warehouse);
-                foreach(Device smg in deviceLst)
+                List<Alarm> allfaultsLst = cwdevice.FindAlarmList(d => true);
+                for(int i=0;i<deviceLst.Count;i++)                
                 {
+                    Device smg = deviceLst[i];
                     if (smg.Type == EnmSMGType.Hall)
                     {
                         #region 车厅
@@ -859,9 +961,10 @@ namespace Parking.Application
                         }                       
                         #region 更新报警信息
                         List<Alarm> needUpdate = new List<Alarm>();
-                        List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
-                        foreach(Alarm fault in faultsList)
+                        List<Alarm> faultsList = allfaultsLst.FindAll(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                        for (int f = 0; f < faultsList.Count; f++)
                         {
+                            Alarm fault = faultsList[f];
                             #region
                             int faultAddrs = fault.Address;
                             int byteNum = faultAddrs / 10;
@@ -886,12 +989,12 @@ namespace Parking.Application
                                 {
                                     smg.IsAvailabe = value;
                                     //更新设备可接收新指令
-                                    cwdevice.Update(smg);
+                                    cwdevice.Update(smg, false);
                                 }
                             }
                             #endregion
                         }
-
+                        
                         if (needUpdate.Count > 0)
                         {
                             cwdevice.UpdateAlarmList(needUpdate);
@@ -904,7 +1007,7 @@ namespace Parking.Application
                         if (mode <= bytesAlarmBuf.Length)
                         {
                             short modeValue = shortFromByte(bytesAlarmBuf[mode + 1], bytesAlarmBuf[mode]);
-                            if (modeValue != (short)smg.Mode)
+                            if (modeValue != (short)smg.Mode&& modeValue > 0)
                             {
                                 if (modeValue > 4)
                                 {
@@ -952,9 +1055,15 @@ namespace Parking.Application
                             }
                         }
 
+                        if (smg.InStep == 0 && smg.OutStep == 0)
+                        {
+                            smg.RunStep = 0;
+                            isUpdate = true;
+                        }
+
                         if (isUpdate)
                         {
-                            cwdevice.Update(smg);
+                            cwdevice.Update(smg,false);
                         }
                         #endregion
                         #region 写入车厅的工作方式
@@ -999,9 +1108,10 @@ namespace Parking.Application
                         }
                         #region 更新报警信息
                         List<Alarm> needUpdate = new List<Alarm>();
-                        List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
-                        foreach (Alarm fault in faultsList)
+                        List<Alarm> faultsList = allfaultsLst.FindAll(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                        for (int f = 0; f < faultsList.Count; f++)
                         {
+                            Alarm fault = faultsList[f];
                             #region
                             int faultAddrs = fault.Address;
                             int byteNum = faultAddrs / 10;
@@ -1026,7 +1136,7 @@ namespace Parking.Application
                                 {
                                     smg.IsAvailabe = value;
                                     //更新设备可接收新指令
-                                    cwdevice.Update(smg);
+                                    cwdevice.Update(smg,false);
                                 }
                             }
                             #endregion
@@ -1062,13 +1172,15 @@ namespace Parking.Application
                             layer_Value = shortFromByte(bytesAlarmBuf[layer_Num + 1], bytesAlarmBuf[layer_Num]);
                         }
                         #endregion
-                        string newAddrs = line_Value.ToString() + colmn_Value.ToString().PadLeft(2, '0') + layer_Value.ToString().PadLeft(2, '0');
-                        if (string.Compare(smg.Address, newAddrs) != 0)
+                        if (line_Value > 0 && colmn_Value > 0 && layer_Value > 0)
                         {
-                            smg.Address = newAddrs;
-                            isUpdate = true;
+                            string newAddrs = line_Value.ToString() + colmn_Value.ToString().PadLeft(2, '0') + layer_Value.ToString().PadLeft(2, '0');
+                            if (string.Compare(smg.Address, newAddrs) != 0)
+                            {
+                                smg.Address = newAddrs;
+                                isUpdate = true;
+                            }
                         }
-
                         //自动步
                         int autoStep = 36;
                         if (autoStep <= bytesAlarmBuf.Length)
@@ -1086,9 +1198,9 @@ namespace Parking.Application
                         if (loadStep <= bytesAlarmBuf.Length)
                         {
                             int loadStepValue = shortFromByte(bytesAlarmBuf[loadStep + 1], bytesAlarmBuf[loadStep]);
-                            if (loadStepValue != smg.RunStep)
+                            if (loadStepValue != smg.InStep)
                             {
-                                smg.InStep = loadStep;
+                                smg.InStep = loadStepValue;
                                 isUpdate = true;
                             }
                         }
@@ -1098,9 +1210,9 @@ namespace Parking.Application
                         if (unloadStep <= bytesAlarmBuf.Length)
                         {
                             int unloadStepValue = shortFromByte(bytesAlarmBuf[unloadStep + 1], bytesAlarmBuf[unloadStep]);
-                            if (unloadStepValue != smg.RunStep)
+                            if (unloadStepValue != smg.OutStep)
                             {
-                                smg.OutStep = unloadStep;
+                                smg.OutStep = unloadStepValue;
                                 isUpdate = true;
                             }
                         }
@@ -1110,7 +1222,7 @@ namespace Parking.Application
                         if (mode <= bytesAlarmBuf.Length)
                         {
                             short modeValue = shortFromByte(bytesAlarmBuf[mode + 1], bytesAlarmBuf[mode]);
-                            if (modeValue != (short)smg.Mode)
+                            if (modeValue != (short)smg.Mode&&modeValue>0)
                             {
                                 if (modeValue > 4)
                                 {
@@ -1121,18 +1233,61 @@ namespace Parking.Application
                                     smg.Mode = (EnmModel)modeValue;
                                     isUpdate = true;
                                 }
-
                             }
                         }
 
                         if (isUpdate)
                         {
-                            cwdevice.Update(smg);
+                            cwdevice.Update(smg,false);
                         }
                         #endregion
                         #endregion
                     }
+                    
+                    #region 模式不是全自动时，强制将设备变为不可用
+                    if (smg.Mode != EnmModel.Automatic)
+                    {
+                        if (smg.IsAble == 1)
+                        {
+                            smg.IsAble = 0;
+                            cwdevice.Update(smg,false);
+                        }
+                        //切换模式时，强制将作业变为故障中
+                        if (smg.TaskID != 0)
+                        {
+                            ImplementTask itask = cwtask.Find(smg.TaskID);
+                            if (itask != null)
+                            {
+                                cwtask.DealUpdateTaskStatus(itask, EnmTaskStatus.TMURO);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (smg.Type == EnmSMGType.Hall && smg.IsAble == 0)
+                        {
+                            smg.IsAble = 1;                           
+                            #region 如果只有车厅作业，则可以强制复位车厅作业
+                            if (smg.TaskID != 0)
+                            {
+                                ImplementTask itask = cwtask.Find(smg.TaskID);
+                                if (itask != null)
+                                {
+                                    ImplementTask etask = cwtask.Find(ts=>ts.ICCardCode==itask.ICCardCode);
+                                    if (etask != null)
+                                    {
+                                        smg.TaskID = 0;
+                                        cwtask.DeleteSubTask(itask);
+                                    }
+                                }
+                            }
+                            #endregion
+                            cwdevice.Update(smg);
+                        }
+                    }
+                    #endregion
                 }
+                cwdevice.SaveChange_Alarm();
             }
             catch (Exception ex)
             {
@@ -1140,6 +1295,438 @@ namespace Parking.Application
             }
         }
 
+        /// <summary>
+        /// 设备报警及状态字是不同的DB块的
+        /// </summary>
+        public void DealFaultAlarmAndStatusWord()
+        {
+            Log log = LogFactory.GetLogger("WorkFlow.DealFaultAlarmAndStatusWord");
+            try
+            {
+                List<Device> deviceLst = cwdevice.FindList(d => d.Warehouse == warehouse);
+                foreach (Device smg in deviceLst)
+                {
+                    if (smg.Type == EnmSMGType.Hall)
+                    {
+                        #region 车厅
+                        #region 更新报警位
+                        #region 获取项名称
+                        int basePoint = 1012;
+                        if (smg.DeviceCode > 11)
+                        {
+                            basePoint += smg.DeviceCode - 11;
+                        }
+                        basePoint += smg.DeviceCode;
+
+                        string DBItemName = basePoint.ToString();
+                        string itemName = "";
+                        foreach (string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemName))
+                            {
+                                itemName = item;
+                                break;
+                            }
+                        }
+                        if (itemName == "")
+                        {
+                            log.Error("更新报警时，设备-" + smg.DeviceCode + "   DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        #endregion
+                        byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
+                        if (bytesAlarmBuf != null && bytesAlarmBuf.Length > 0)
+                        {
+                            #region 更新报警信息
+                            List<Alarm> needUpdate = new List<Alarm>();
+                            List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                            foreach (Alarm fault in faultsList)
+                            {
+                                #region
+                                int faultAddrs = fault.Address;
+                                int byteNum = faultAddrs / 10;
+                                int bitNum = faultAddrs % 10;
+
+                                if (byteNum > bytesAlarmBuf.Length)
+                                {
+                                    continue;
+                                }
+                                int value = bytesAlarmBuf[byteNum];
+                                value = value >> bitNum;
+                                value = value % 2;
+                                if (value != fault.Value)
+                                {
+                                    fault.Value = (byte)value;
+                                    needUpdate.Add(fault);
+                                }
+                                //可接收新指令
+                                if (faultAddrs == 297)
+                                {
+                                    if (smg.IsAvailabe != fault.Value)
+                                    {
+                                        smg.IsAvailabe = value;
+                                        //更新设备可接收新指令
+                                        cwdevice.Update(smg);
+                                    }
+                                }
+                                #endregion
+                            }
+
+                            if (needUpdate.Count > 0)
+                            {
+                                cwdevice.UpdateAlarmList(needUpdate);
+                            }
+                            #endregion
+                        }
+                        #endregion
+                        #region 更新设备状态字
+                        #region 获取项名称
+                        int baseWordPoint = 1013;
+                        if (smg.DeviceCode > 11)
+                        {
+                            baseWordPoint += smg.DeviceCode - 11;
+                        }
+                        baseWordPoint += smg.DeviceCode;
+
+                        string DBItemNameWord = baseWordPoint.ToString();
+                        string itemNameWord = "";
+                        foreach (string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemNameWord))
+                            {
+                                itemNameWord = item;
+                                break;
+                            }
+                        }
+                        if (itemNameWord == "")
+                        {
+                            log.Error("更新状态字时，设备-" + smg.DeviceCode + "   DB块-" + DBItemNameWord + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        #endregion
+                        //读状态字
+                        byte[] bytesWordBuf = this.readAlarmBytesBuffer(itemNameWord);
+                        if (bytesWordBuf != null && bytesWordBuf.Length > 0)
+                        {
+                            bool isUpdate = false;
+                            //控制模式 =8
+                            int mode = 8;
+                            if (mode <= bytesWordBuf.Length)
+                            {
+                                short modeValue = shortFromByte(bytesWordBuf[mode + 1], bytesWordBuf[mode]);
+                                if (modeValue != (short)smg.Mode&&modeValue>0)
+                                {
+                                    if (modeValue > 4)
+                                    {
+                                        log.Error("devicecode-" + smg.DeviceCode + " 更新模式时，读取的值不对-value:" + modeValue);
+                                    }
+                                    else
+                                    {
+                                        smg.Mode = (EnmModel)modeValue;
+                                        isUpdate = true;
+                                    }
+
+                                }
+                            }
+                            //存车自动步
+                            int inStep = 10;
+                            if (inStep <= bytesWordBuf.Length)
+                            {
+                                int inStepValue = shortFromByte(bytesWordBuf[inStep + 1], bytesWordBuf[inStep]);
+                                if (inStepValue != smg.InStep)
+                                {
+                                    smg.InStep = inStepValue;
+                                    isUpdate = true;
+
+                                    if (inStepValue != 0)
+                                    {
+                                        smg.RunStep = inStepValue;
+                                    }
+                                }
+                            }
+
+                            //取车自动步
+                            int outStep = 12;
+                            if (outStep <= bytesWordBuf.Length)
+                            {
+                                int outValue = shortFromByte(bytesWordBuf[outStep + 1], bytesWordBuf[outStep]);
+                                if (outValue != smg.OutStep)
+                                {
+                                    smg.OutStep = outValue;
+                                    isUpdate = true;
+
+                                    if (outValue != 0)
+                                    {
+                                        smg.RunStep = outValue;
+                                    }
+                                }
+                            }
+
+                            if (isUpdate)
+                            {
+                                cwdevice.Update(smg);
+                            }
+                           
+                            #region 写入车厅的工作方式
+                            int workpattern = 4;
+                            if (workpattern <= bytesWordBuf.Length)
+                            {
+                                int pValue = shortFromByte(bytesWordBuf[workpattern + 1], bytesWordBuf[workpattern]);
+                                if (pValue != (int)smg.HallType)
+                                {
+                                    string itname = itemNameWord.Split(',').First() + ",INT" + workpattern + ",1";
+                                    WriteValueToPlc(itname, (Int16)smg.HallType);
+                                }
+                            }
+                            #endregion
+                        }
+                        #endregion
+                        #endregion
+                    }
+                    else if (smg.Type == EnmSMGType.ETV)
+                    {
+                        #region ETV
+                        #region 更新报警位
+                        #region 获取项名称
+                        int basePoint = 1003 + 2 * (smg.DeviceCode - 1);
+                        string DBItemName = basePoint.ToString();
+                        string itemName = "";
+                        foreach (string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemName))
+                            {
+                                itemName = item;
+                                break;
+                            }
+                        }
+                        if (itemName == "")
+                        {
+                            log.Error("更新报警时，设备-" + smg.DeviceCode + "  DB块-" + DBItemName + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        #endregion
+                        byte[] bytesAlarmBuf = this.readAlarmBytesBuffer(itemName);
+                        if (bytesAlarmBuf != null && bytesAlarmBuf.Length > 0)
+                        {
+                            #region 更新报警信息
+                            List<Alarm> needUpdate = new List<Alarm>();
+                            List<Alarm> faultsList = cwdevice.FindAlarmList(dev => dev.Warehouse == smg.Warehouse && dev.DeviceCode == smg.DeviceCode);
+                            foreach (Alarm fault in faultsList)
+                            {
+                                #region
+                                int faultAddrs = fault.Address;
+                                int byteNum = faultAddrs / 10;
+                                int bitNum = faultAddrs % 10;
+
+                                if (byteNum > bytesAlarmBuf.Length)
+                                {
+                                    continue;
+                                }
+                                int value = bytesAlarmBuf[byteNum];
+                                value = value >> bitNum;
+                                value = value % 2;
+                                if (value != fault.Value)
+                                {
+                                    fault.Value = (byte)value;
+                                    needUpdate.Add(fault);
+                                }
+                                //可接收新指令
+                                if (faultAddrs == 297)
+                                {
+                                    if (smg.IsAvailabe != fault.Value)
+                                    {
+                                        smg.IsAvailabe = value;
+                                        //更新设备可接收新指令
+                                        cwdevice.Update(smg);
+                                    }
+                                }
+                                #endregion
+                            }
+
+                            if (needUpdate.Count > 0)
+                            {
+                                cwdevice.UpdateAlarmList(needUpdate);
+                            }
+                            #endregion                           
+                        }
+                        #endregion
+
+                        #region 更新状态字
+                        #region 获取项名称
+                        int baseWordPoint = 1004 + 2 * (smg.DeviceCode - 1);                       
+
+                        string DBItemNameWord = baseWordPoint.ToString();
+                        string itemNameWord = "";
+                        foreach (string item in S7_Connection_Items)
+                        {
+                            if (item.Contains("DB" + DBItemNameWord))
+                            {
+                                itemNameWord = item;
+                                break;
+                            }
+                        }
+                        if (itemNameWord == "")
+                        {
+                            log.Error("更新状态字时，设备-" + smg.DeviceCode + "   DB块-" + DBItemNameWord + " 在注册列表中找不到！列表的数量-" + s7_Connection_Items.Length);
+                            continue;
+                        }
+                        #endregion
+                        //读状态字
+                        byte[] bytesWordBuf = this.readAlarmBytesBuffer(itemNameWord);
+                        if (bytesWordBuf != null && bytesWordBuf.Length > 0)
+                        {
+                            #region 更新设备状态
+                            bool isUpdate = false;
+                            #region 更新地址
+                            //当前边
+                            int line_Num = 0;
+                            int line_Value = 0;
+                            if (line_Num <= bytesWordBuf.Length)
+                            {
+                                line_Value = shortFromByte(bytesWordBuf[line_Num + 1], bytesWordBuf[line_Num]);
+                            }
+                            //当前列
+                            int colmn_Num = 2;
+                            int colmn_Value = 0;
+                            if (colmn_Num <= bytesWordBuf.Length)
+                            {
+                                colmn_Value = shortFromByte(bytesWordBuf[colmn_Num + 1], bytesWordBuf[colmn_Num]);
+                            }
+                            //当前层
+                            int layer_Num =4;
+                            int layer_Value = 0;
+                            if (layer_Num <= bytesWordBuf.Length)
+                            {
+                                layer_Value = shortFromByte(bytesWordBuf[layer_Num + 1], bytesWordBuf[layer_Num]);
+                            }
+                            #endregion
+                            //边列层没有是0
+                            if (line_Value > 0 && colmn_Value > 0 && layer_Value > 0)
+                            {
+                                string newAddrs = line_Value.ToString() + colmn_Value.ToString().PadLeft(2, '0') + layer_Value.ToString().PadLeft(2, '0');
+                                if (string.Compare(smg.Address, newAddrs) != 0)
+                                {
+                                    smg.Address = newAddrs;
+                                    isUpdate = true;
+                                }
+                            }
+
+                            //自动步
+                            int autoStep = 6;
+                            if (autoStep <= bytesWordBuf.Length)
+                            {
+                                int autoStepValue = shortFromByte(bytesWordBuf[autoStep + 1], bytesWordBuf[autoStep]);
+                                if (autoStepValue != smg.RunStep)
+                                {
+                                    smg.RunStep = autoStepValue;
+                                    isUpdate = true;
+                                }
+                            }
+
+                            //装载步进
+                            int loadStep = 8;
+                            if (loadStep <= bytesWordBuf.Length)
+                            {
+                                int loadStepValue = shortFromByte(bytesWordBuf[loadStep + 1], bytesWordBuf[loadStep]);
+                                if (loadStepValue != smg.RunStep)
+                                {
+                                    smg.InStep = loadStep;
+                                    isUpdate = true;
+                                }
+                            }
+
+                            //卸载步进
+                            int unloadStep = 10;
+                            if (unloadStep <= bytesWordBuf.Length)
+                            {
+                                int unloadStepValue = shortFromByte(bytesWordBuf[unloadStep + 1], bytesWordBuf[unloadStep]);
+                                if (unloadStepValue != smg.RunStep)
+                                {
+                                    smg.OutStep = unloadStep;
+                                    isUpdate = true;
+                                }
+                            }
+
+                            //控制模式
+                            int mode = 20;
+                            if (mode <= bytesWordBuf.Length)
+                            {
+                                short modeValue = shortFromByte(bytesWordBuf[mode + 1], bytesWordBuf[mode]);
+                                if (modeValue != (short)smg.Mode&&modeValue>0)
+                                {
+                                    if (modeValue > 4)
+                                    {
+                                        log.Error("devicecode-" + smg.DeviceCode + " 更新模式时，读取的值不对-value:" + modeValue);
+                                    }
+                                    else
+                                    {
+                                        smg.Mode = (EnmModel)modeValue;
+                                        isUpdate = true;
+                                    }
+
+                                }
+                            }
+
+                            if (isUpdate)
+                            {
+                                cwdevice.Update(smg);
+                            }
+                            #endregion
+                        }
+                        #endregion
+                        #endregion
+                    }
+
+                    #region 模式不是全自动时，强制将设备变为不可用
+                    if (smg.Mode != EnmModel.Automatic)
+                    {
+                        if (smg.IsAble == 1)
+                        {
+                            smg.IsAble = 0;
+                            cwdevice.Update(smg);
+                        }
+                        //切换模式时，强制将作业变为故障中
+                        if (smg.TaskID != 0)
+                        {                            
+                            ImplementTask itask = cwtask.Find(smg.TaskID);
+                            if (itask != null)
+                            {
+                                cwtask.DealUpdateTaskStatus(itask, EnmTaskStatus.TMURO);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (smg.Type == EnmSMGType.Hall && smg.IsAble == 0)
+                        {                           
+                            smg.IsAble = 1;
+                            #region 如果只有车厅作业，则可以强制复位车厅作业
+                            if (smg.TaskID != 0)
+                            {
+                                ImplementTask itask = cwtask.Find(smg.TaskID);
+                                if (itask != null)
+                                {
+                                    ImplementTask etask = cwtask.Find(ts => ts.ICCardCode == itask.ICCardCode);
+                                    if (etask == null)
+                                    {
+                                        smg.TaskID = 0;
+                                        cwtask.DeleteSubTask(itask);
+                                    }
+                                }
+                            }
+                            #endregion
+                            cwdevice.Update(smg);
+                        }
+                    }
+                    #endregion
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+
+        }
         /// <summary>
         /// 报文接收
         /// </summary>

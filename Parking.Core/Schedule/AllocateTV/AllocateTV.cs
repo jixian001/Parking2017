@@ -123,6 +123,39 @@ namespace Parking.Core
         /// <param name="frlct"></param>
         /// <param name="tolct"></param>
         /// <returns></returns>
+        public Device PPYAllocateTvOfTransfer(Location frlct,out Location tolct)
+        {
+            tolct = null;
+            CWLocation cwlctn = new CWLocation();
+            CWICCard cwiccd = new CWICCard();
+            List<Location> allLocLst = cwlctn.FindLocList();           
+            var query = from loc in allLocLst
+                        where loc.Type == EnmLocationType.Normal &&
+                              loc.Status == EnmLocationStatus.Space &&
+                              loc.Region==frlct.Region&&
+                              cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null &&
+                              loc.NeedBackup==0 &&
+                              compareSize(loc.LocSize, frlct.LocSize) >= 0
+                        orderby Math.Abs(frlct.LocColumn - loc.LocColumn)
+                        select loc;
+            List<Location> lctnLst = query.ToList();
+            if (lctnLst.Count > 0)
+            {
+                tolct = lctnLst.FirstOrDefault();
+
+                Device tv = new CWDevice().Find(d=>d.Region==frlct.Region);
+                return tv;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 没有任何作业时，如果缓存位被占用，则强制回挪，
+        /// TV分配，挪移车位分配
+        /// </summary>
+        /// <param name="frlct"></param>
+        /// <param name="tolct"></param>
+        /// <returns></returns>
         public Device AllocateTvOfTransport(Location frlct,out Location toLct)
         {
             toLct = null;
@@ -197,7 +230,7 @@ namespace Parking.Core
         }
 
         /// <summary>
-        /// 要生成挪移作业时，挪移车位的查找
+        /// 巷道堆垛式---要生成挪移作业时，挪移车位的查找
         /// </summary>
         /// <param name="nEtv"></param>
         /// <param name="frLct"></param>
@@ -212,10 +245,10 @@ namespace Parking.Core
             List<Device> nEtvList = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
             WorkScope workscope = new WorkScope(nEtvList);
             CScope scope = workscope.GetEtvScope(nEtv);
-
+            
             List<Location> availLst = new List<Location>();
-
-            List<Location> lctnLst = cwlctn.FindLocationList(loc => cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null);
+            List<Location> backOccupyLst = new List<Location>();
+            List<Location> lctnLst = cwlctn.FindLocList();            
             //先找出相同区域的，尺寸一致的，如果是2边车位，则后面的车位不能是作业的车位
             var query_same = from loc in lctnLst
                              where loc.Type == EnmLocationType.Normal &&
@@ -223,21 +256,28 @@ namespace Parking.Core
                                  loc.Region == frLct.Region &&
                                  loc.LocSide != 4 &&
                                 (compareSize(loc.LocSize, frLct.LocSize) == 1 ||
-                                 compareSize(loc.LocSize, frLct.LocSize) == 2)
+                                 compareSize(loc.LocSize, frLct.LocSize) == 2)&&
+                                 cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null
                              orderby  Math.Abs(frLct.LocColumn-loc.LocColumn), loc.LocSide ascending
                              select loc;
+
             foreach(Location loc in query_same)
             {
                 if (loc.LocSide == 2)
                 {
-                    Location back = cwlctn.FindLocation(lc => lc.Address == string.Format(loc.LocSide.ToString() + loc.Address.Substring(1)));
+                    string backAddrs = string.Format((loc.LocSide+2).ToString() + loc.Address.Substring(1));
+                    Location back = cwlctn.FindLocation(lc => lc.Address == backAddrs);
                     if (back != null)
                     {
-                        if (back.Status == EnmLocationStatus.Space||
-                            back.Status==EnmLocationStatus.Occupy)
+                        if (back.Status == EnmLocationStatus.Space)
                         {
                             availLst.Add(loc);
                         }
+                        else if (back.Status == EnmLocationStatus.Occupy)
+                        {
+                            backOccupyLst.Add(loc);
+                        }
+
                     }
                 }
                 else
@@ -245,13 +285,13 @@ namespace Parking.Core
                     availLst.Add(loc);
                 }
             }
+            availLst.AddRange(backOccupyLst);
             //再找缓存车位
             var query_temp = from loc in lctnLst
                              where loc.Type == EnmLocationType.Temporary &&
                                     loc.Status == EnmLocationStatus.Space &&
                                     compareSize(loc.LocSize, frLct.LocSize) > 0
-                             orderby Math.Abs(frLct.LocColumn - loc.LocColumn),
-                                     Math.Abs(frLct.Region-loc.Region)
+                             orderby Math.Abs(loc.Region - frLct.Region)
                              select loc;
             availLst.AddRange(query_temp);
             //最后找不同区域的，尺寸一致的，如果是2边车位，则后面的车位不能是作业的车位
@@ -261,14 +301,75 @@ namespace Parking.Core
                                  loc.Region != frLct.Region &&
                                  loc.LocSide != 4 &&
                                 (compareSize(loc.LocSize, frLct.LocSize) == 1 ||
-                                 compareSize(loc.LocSize, frLct.LocSize) == 2)
+                                 compareSize(loc.LocSize, frLct.LocSize) == 2) &&
+                                 cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null
                              orderby Math.Abs(frLct.LocColumn - loc.LocColumn), loc.LocSide ascending
                              select loc;
+            List<Location> backOccupyLst_Big = new List<Location>();
             foreach (Location loc in query_diff)
             {
                 if (loc.LocSide == 2)
                 {
-                    Location back = cwlctn.FindLocation(lc => lc.Address == string.Format(loc.LocSide.ToString() + loc.Address.Substring(1)));
+                    string backAddrs = string.Format((loc.LocSide + 2).ToString() + loc.Address.Substring(1));
+                    Location back = cwlctn.FindLocation(lc => lc.Address == backAddrs);
+                    if (back != null)
+                    {
+                        if (back.Status == EnmLocationStatus.Space)
+                        {
+                            availLst.Add(loc);
+                        }else if (back.Status == EnmLocationStatus.Occupy)
+                        {
+                            backOccupyLst_Big.Add(loc);
+                        }
+                    }
+                }
+                else
+                {
+                    availLst.Add(loc);
+                }
+            }
+            availLst.AddRange(backOccupyLst_Big);           
+
+            foreach (Location loc in availLst)
+            {
+                if (scope.LeftCol <= loc.LocColumn && loc.LocColumn <= scope.RightCol)
+                {
+                    return loc;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 6174平面移动库挪移车位查找，库区只有一个车位尺寸
+        /// </summary>
+        /// <param name="frLct"></param>
+        /// <returns></returns>
+        public Location PPYAllocateLctnNeedTransfer(Location frLct)
+        {
+            CWLocation cwlctn = new CWLocation();
+            CWICCard cwiccd = new CWICCard();
+
+            List<Location> lctnLst = cwlctn.FindLocList();
+            //找出1、2边空闲的车位
+            var query_same = from loc in lctnLst
+                             where loc.Type == EnmLocationType.Normal &&
+                                 loc.Status == EnmLocationStatus.Space &&
+                                 loc.Region == frLct.Region &&
+                                 loc.LocSide != 3 &&
+                                 compareSize(loc.LocSize, frLct.LocSize) >= 0 &&
+                                 cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) == null
+                             orderby Math.Abs(frLct.LocColumn - loc.LocColumn)
+                             select loc;
+
+            List<Location> availLst = new List<Location>();
+            foreach (Location loc in query_same)
+            {
+                //如果是1边车位，后面的车位要是空闲或占用的
+                if (loc.LocSide == 1)
+                {
+                    string backAddrs = string.Format((loc.LocSide + 2).ToString() + loc.Address.Substring(1));
+                    Location back = cwlctn.FindLocation(lc => lc.Address ==backAddrs);
                     if (back != null)
                     {
                         if (back.Status == EnmLocationStatus.Space ||
@@ -284,12 +385,18 @@ namespace Parking.Core
                 }
             }
 
-            foreach(Location loc in availLst)
+            //再找缓存车位
+            var query_temp = from loc in lctnLst
+                             where loc.Type == EnmLocationType.Temporary &&
+                                   loc.Status == EnmLocationStatus.Space &&
+                                   loc.Region == frLct.Region &&
+                                   compareSize(loc.LocSize, frLct.LocSize) >= 0
+                             orderby Math.Abs(frLct.LocColumn - loc.LocColumn)
+                             select loc;
+            availLst.AddRange(query_temp);
+            if (availLst.Count > 0)
             {
-                if (scope.LeftCol <= loc.LocColumn && loc.LocColumn <= scope.RightCol)
-                {
-                    return loc;
-                }
+                return availLst[0];
             }
             return null;
         }
@@ -311,9 +418,9 @@ namespace Parking.Core
                 foreach(Device dev in orderbyLst)
                 {
                     CScope scope = workscope.GetEtvScope(dev);
-                    if (scope.LeftCol <= frlct.LocColumn && frlct.LocColumn <= frlct.LocColumn)
+                    if (scope.LeftCol <= frlct.LocColumn && frlct.LocColumn <= scope.RightCol)
                     {
-                        if (scope.LeftCol <= tolct.LocColumn && frlct.LocColumn <= tolct.LocColumn)
+                        if (scope.LeftCol <= tolct.LocColumn && tolct.LocColumn <= scope.RightCol)
                         {
                             return dev;
                         }

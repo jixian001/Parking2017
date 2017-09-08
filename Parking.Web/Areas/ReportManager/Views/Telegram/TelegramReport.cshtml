@@ -1,0 +1,429 @@
+﻿
+@{
+    ViewBag.Title = "报文记录查询";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+            <li>统计报表</li>
+            <li class="active">报文记录</li>
+        </ol>
+        <div class="panel panel-default" style="display:none">
+            <div class="panel-heading">
+                查询条件
+            </div>
+            <div class="panel-body">
+                <div>
+                    <table class="form">
+                        <tr>
+                            <th class="formTitle">起始日期</th>
+                            <td class="formValue">
+                                <input id="startdtime" name="startdtime" type="date" class="form-control form_datetime" placeholder="格式：2017-04-01 00:00" />
+                            </td>
+                            <th class="formTitle">截止日期</th>
+                            <td class="formValue">
+                                <input id="enddtime" name="enddtime" type="date" class="form-control form_datetime" placeholder="格式：2017-04-01 00:00" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="formTitle">查询参数</th>
+                            <td class="formValue">
+                                <select id="goods" name="goods" class="form-control">
+                                    <option value="0">请选择</option>
+                                </select>
+                            </td>
+                            <th class="formTitle">查询内容</th>
+                            <td class="formValue">
+                                <input id="fcontent" name="fcontent" type="text" class="form-control" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div id="toolbar" class="btn-group pull-right" role="group">
+                <button id="btnFind" class="btn btn-info">查 询</button>
+                <button id="btnReport" class="btn btn-danger">导出到Excel表</button>
+            </div>
+        </div>
+        <div>
+            <table id="TelegramGrid"></table>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    @Styles.Render("~/Content/defform")
+    @Styles.Render("~/Content/bootstraptable")
+    @Scripts.Render("~/bundles/bootstraptable")
+    <script type="text/javascript">
+        $(function () {
+
+            $('.form_datetime').datetimepicker({
+                language: 'zh-CN',
+                weekStart: 1,
+                todayBtn: 1,
+                autoclose: 1,
+                todayHighlight: 1,
+                startView: 2,
+                forceParse: 0,
+                showMeridian: 1
+            });
+            $("#startdtime").val(getNowFormatDate(20));
+            $("#enddtime").val(getNowFormatDate(0));
+
+            var $goods = $("#goods");
+            setTimeout(function () {
+                $('.panel').css('display','block');
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetQueryNameForTelegram")",
+                    dataType: "json",
+                    cache: false,
+                    beforeSend: function (XMLHttpRequest) {
+
+                    },
+                    success: function (data) {
+                        $("#fcontent").val("");
+                        var html = '<option value="0">所有</option>';
+                        $.each(data, function (index, obj) {
+                            html += '<option value="' + obj.OptionValue + '">' + obj.OptionText + '</option>';
+                        });
+                        $goods.empty();
+                        $goods.append(html);
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            }, 500);
+
+            //初始化表格
+            var $table = $("#TelegramGrid");
+            $table.bootstrapTable({
+                toolbar: "#toolbar",
+                toolbarAlign: "right",
+                buttonsAligh: "right",
+                showRefresh: true,  //刷新功能
+                showToggle: true,
+                showFooter: false,
+                showColumns: true,    //显示所有列
+                pagination: true,
+                striped: true,              //是否显示行间隔色
+                sidePagination: "server",
+                //clickToSelect: true,
+                //singleSelect: true,   //单选
+                pageNumber: 1,              //初始化加载第一页，默认第一页
+                pageSize: 10,                 //每页的记录数
+                pageList: "[10,20,50,100]",
+                method: "GET",
+                url: "@Url.Action("FindTelegramList")",
+                queryParams: queryParams,         //前端调用服务时，会默认传递上边提到的参数
+                queryParamsType: "",              //设置为 ''  在这种情况下传给服务器的参数为：pageSize,pageNumber
+                dataType: "json",
+                columns: [
+                    {
+                        title: "库区",
+                        field: "Warehouse",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "记录时间",
+                        field: "RecordDtime",
+                        align: "left",
+                        valign: "middle",
+                        formatter:dtimeFormatter
+                    },
+                    {
+                        title: "报文类型",
+                        field: "Type",
+                        align: "center",
+                        valign: "middle",
+                        formatter: typeFormatter
+                    },
+                    {
+                        title: "报文",
+                        field: "Telegram",
+                        align: "left",
+                        valign: "middle"
+                    },
+                    {
+                        title: "设备",
+                        field: "DeviceCode",
+                        align: "left",
+                        valign: "middle",
+                        formatter: deviceFormatter
+                    },
+                    {
+                        title: "IC卡",
+                        field: "ICCode",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "车辆信息",
+                        field: "CarInfo",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "源地址",
+                        field: "FromAddress",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "目的地址",
+                        field: "ToAddress",
+                        align: "center",
+                        valign: "middle"
+                    },
+                    {
+                        title: "报文ID",
+                        field: "TelegramID",
+                        align: "center",
+                        valign: "middle"
+                    }
+                ],
+
+                formatLoadingMessage: function () {
+                    return "请稍等，正在加载中...";
+                },
+
+                formatNoMatches: function () {
+                    return "无符合条件的记录";
+                }
+            });
+
+            //查询参数
+            function queryParams(params)
+            {
+                var start = $("input[name='startdtime']").val();
+                var end = $("input[name='enddtime']").val();
+                var name = $("#goods option:selected").val(); //value值
+                var content = $("#fcontent").val();
+
+                return {
+                    pageSize: params.pageSize,  //一定包含
+                    pageIndex: params.pageNumber,  //一定包含
+                    queryName: name,
+                    queryValue: content,
+                    stdtime: start,
+                    enddtime:end
+                };
+            }
+
+            //查询
+            $("#btnFind").click(function () {
+                var name = $("#goods option:selected").val(); //value值
+                var content = $("#fcontent").val();
+                if (name != "0" && name != "GetNum" && name != "SaveNum")
+                {
+                    if (content == "")
+                    {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
+                    }
+                }
+                $table.bootstrapTable("refresh");
+            });
+
+            //导出到EXCEL
+            $("#btnReport").click(function () {
+
+                var start = $("input[name='startdtime']").val();
+                var end = $("input[name='enddtime']").val();
+
+                var disp = $("#goods option:selected").text();
+                var name = $("#goods option:selected").val(); //value值
+                var content = $("#fcontent").val();
+
+                if (name != "0") {
+                    if (content == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "请输入查询内容！"
+                        });
+                        return;
+                    }
+                }
+                else if (name == "GetNum" || name == "SaveNum") {
+                    if (content == "") {
+                        BootstrapDialog.show({
+                            title: "温馨提示",
+                            message: "无效的查询参数，该参数不允许导出报表！"
+                        });
+                        return;
+                    }
+                }
+
+                var currtime = getCurrentTime();
+
+                BootstrapDialog.show({
+                    title:"友情提示",
+                    message: "<p>注意：</p>" +
+                             "<p class='text-danger' style='margin-left:20px'>报出的Excel文件保存在后台服务器中.</p><br>" +
+                             "<p>确定要将以下查询条件 查询到的记录 导出到 <b>服务器</b>指定路径下的 Excel 文件中？</p>" +
+                             "<div style='margin-left:20px'><p>查询条件：</p><div style='margin-left:50px'>" +
+                             "<p>起始时间： <span class='text-info'>" + start + "</span></p>" +
+                             "<p>截止时间： <span class='text-info'>" + end + "</span></p>" +
+                             "<p>查询参数： <span class='text-info'>" + disp + "</span></p>" +
+                             "<p>查询内容： <span class='text-info'>" + content + "</span></p></div></div><br>"+
+                             "<p>导出的文件名：<input type='text' id='filename' value='报文记录"+currtime+"' class='text-info'/></p>",
+                    buttons: [{
+                        label: "确 定",
+                        action: function (self) {
+                            var fileName=$("#filename").val();
+
+                            $.ajax({
+                                type: "POST",
+                                url: "@Url.Action("RenderToExcel")",
+                                data:{"code":1,"startdt":start,"enddt":end,"queryname":name,"content":content,"filename":fileName},
+                                dataType: "json",
+                                cache: false,
+                                success: function (data) {
+
+                                    BootstrapDialog.show({
+                                        title: "温馨提示",
+                                        message: data.Message
+                                    });
+
+                                },
+                                complete: function (XMLHttpRequest, textStatus) {
+                                    self.close();
+                                }
+                            });
+
+                        }
+                    }, {
+                        label: "取 消",
+                        action: function (self) {
+                            self.close();
+                        }
+                    }]
+                });
+
+
+
+            });
+
+
+            //报文类型
+            function typeFormatter(value, row, index)
+            {
+                if (value == 1) {
+                    value = "接收";
+                }
+                else if (value == 2) {
+                    value = "发送";
+                }
+                return value;
+            }
+
+            //设备类型
+            function deviceFormatter(value, row, index) {
+                if (value > 10) {
+                    value = '车厅' + (value - 10).toString();
+                } else {
+                    value = 'TV' + value.toString();
+                }
+                return value;
+            }
+
+            function dtimeFormatter(value, row, index) {
+                return formatDate(value);
+            }
+
+
+            //获取当前时间
+            function getNowFormatDate(num) {
+                var date = new Date();
+                date.setMinutes(date.getMinutes()-num);
+                var seperator1 = "-";
+                var seperator2 = ":";
+                var month = date.getMonth() + 1;
+                var strDate = date.getDate();
+                if (month >= 1 && month <= 9) {
+                    month = "0" + month;
+                }
+                if (strDate >= 0 && strDate <= 9) {
+                    strDate = "0" + strDate;
+                }
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+
+                var currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
+                        + " " + hour + seperator2 + minute;
+                return currentdate;
+            }
+
+            //获取当前时间，将其组合起来
+            function getCurrentTime() {
+                var date = new Date();
+
+                var hour = date.getHours();
+                if (hour >= 0 && hour <= 9) {
+                    hour = "0" + hour;
+                }
+                var minute = date.getMinutes();
+                if (minute >= 0 && minute <= 9) {
+                    minute = "0" + minute;
+                }
+
+                var second = date.getMilliseconds();
+                if (second >= 0 && second <= 9) {
+                    second = "0" + second;
+                }
+
+                var currenttime = hour + minute + second;
+
+                return currenttime;
+            }
+
+            //格式化日期显示
+            //Date(1391141532000)的字符串转换成javascript中的日期对象
+            function formatDate(dt) {
+                var milliseconds = parseInt(dt.replace(/\D/igm, ""));
+                var newdate = new Date(milliseconds).Format("yyyy-MM-dd hh:mm:ss");
+                return newdate.toLocaleString();
+            }
+
+            Date.prototype.Format = function (fmt) { //author: meizz
+                var o = {
+                    "M+": this.getMonth() + 1, //月份
+                    "d+": this.getDate(), //日
+                    "h+": this.getHours(), //小时
+                    "m+": this.getMinutes(), //分
+                    "s+": this.getSeconds(), //秒
+                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                    "S": this.getMilliseconds() //毫秒
+                };
+                if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+                for (var k in o)
+                    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                return fmt;
+            }
+
+        });
+    </script>
+}
+

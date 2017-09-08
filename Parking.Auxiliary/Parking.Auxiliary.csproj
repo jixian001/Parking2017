@@ -91,10 +91,6 @@
       <HintPath>..\packages\NPOI.2.3.0\lib\net40\NPOI.OpenXmlFormats.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="S7.Net, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d5812d469e84c693, processorArchitecture=MSIL">
-      <HintPath>..\packages\S7netplus.0.1.4\lib\net45\S7.Net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -116,18 +112,21 @@
     <Compile Include="FingerPrint\FPrintBase64.cs" />
     <Compile Include="Log\Log.cs" />
     <Compile Include="Log\LogFactory.cs" />
+    <Compile Include="Model\BackAlarm.cs" />
+    <Compile Include="Model\LocStatInfo.cs" />
+    <Compile Include="Model\ParkingRecord.cs" />
+    <Compile Include="Model\PlateDisplay.cs" />
     <Compile Include="Model\RetFPring.cs" />
     <Compile Include="Model\SMSInfo.cs" />
+    <Compile Include="Model\SubTask.cs" />
     <Compile Include="Model\TempUserInfo.cs" />
+    <Compile Include="Model\ZhiWenResult.cs" />
     <Compile Include="OrderParam.cs" />
     <Compile Include="Page.cs" />
-    <Compile Include="PLC\Define-PLC\IPLC.cs" />
-    <Compile Include="PLC\Define-PLC\SocketPLC.cs" />
-    <Compile Include="PLC\NuGet-PLC\S7NetPlus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RdICCard\ICCardCommon.cs" />
-    <Compile Include="RdICCard\ICCardReader.cs" />
+    <Compile Include="RdICCard\RFBOOK\ICCardReader.cs" />
     <Compile Include="RdICCard\ICCardRW.cs" />
+    <Compile Include="RdICCard\RFUSB\CIcCardRWOne.cs" />
     <Compile Include="Report\ExcelUtility.cs" />
     <Compile Include="Response.cs" />
   </ItemGroup>

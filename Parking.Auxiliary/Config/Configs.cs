@@ -27,7 +27,7 @@ namespace Parking.Auxiliary
         {
             Log log = LogFactory.GetLogger("Configs.SetValue");
             try
-            {
+            {               
                 string path = "";
                 if (HttpContext.Current == null)
                 {
@@ -37,7 +37,6 @@ namespace Parking.Auxiliary
                 {
                     path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
                 }
-                //log.Debug("Path- " + path);
 
                 System.Xml.XmlDocument xDoc = new System.Xml.XmlDocument();
                 xDoc.Load(path);
@@ -69,9 +68,9 @@ namespace Parking.Auxiliary
 
     public class XMLHelper
     {
-       
+
         static XMLHelper()
-        {            
+        {
         }
 
         /// <summary>
@@ -80,7 +79,7 @@ namespace Parking.Auxiliary
         /// <param name="root"></param>
         /// <param name="xname"></param>
         /// <returns></returns>
-        public static string GetRootNodeValueByXpath(string root,string nodeName)
+        public static string GetRootNodeValueByXpath(string root, string nodeName)
         {
             Log log = LogFactory.GetLogger("XMLHelper.GetRootNodeValueByXpath");
             string path = "";
@@ -88,13 +87,12 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
                 }
-                //log.Debug("Path- "+path);
 
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
@@ -110,7 +108,7 @@ namespace Parking.Auxiliary
                 }
             }
             catch (Exception ex)
-            {               
+            {
                 log.Error("path - " + path + " ,root - " + root + " ,nodename - " + nodeName + Environment.NewLine + ex.ToString());
             }
             return null;
@@ -123,7 +121,7 @@ namespace Parking.Auxiliary
         /// <param name="warehouse">PLC ID="1" 用于匹配 id值</param>
         /// <param name="nodeName">库区内PLC节点下的节点名</param>
         /// <returns></returns>
-        public static XmlNode GetPlcNodeByTagName(string settingpath,string warehouse,string nodeName)
+        public static XmlNode GetPlcNodeByTagName(string settingpath, string warehouse, string nodeName)
         {
             Log log = LogFactory.GetLogger("XMLHelper.GetPlcNodeByTagName");
             string path = "";
@@ -131,13 +129,12 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
                 }
-                //log.Debug("Path- " + path);
 
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
@@ -156,13 +153,13 @@ namespace Parking.Auxiliary
                         {
                             XmlNode element = xnode.SelectSingleNode(nodeName);
                             return element;
-                        }                        
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - "+warehouse+" ,nodename - " + nodeName + 
+                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - " + warehouse + " ,nodename - " + nodeName +
                             Environment.NewLine + ex.ToString());
             }
             return null;
@@ -177,7 +174,7 @@ namespace Parking.Auxiliary
         /// <param name="nodeName"></param>
         /// <param name="attributeName"></param>
         /// <returns></returns>
-        public static XmlNode GetHallNodeByTageName(string settingpath,string warehouse,string hall, string nodeName)
+        public static XmlNode GetHallNodeByTageName(string settingpath, string warehouse, string hall, string nodeName)
         {
             Log log = LogFactory.GetLogger("XMLHelper.GetHallNodeByTageName");
             string path = "";
@@ -185,14 +182,13 @@ namespace Parking.Auxiliary
             {
                 if (HttpContext.Current == null)
                 {
-                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.xml";
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
                 }
                 else
                 {
-                    path = HttpContext.Current.Server.MapPath("~/Configs/System.xml");
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
                 }
-                //log.Debug("Path- " + path);
-               
+
                 XmlDocument xmlDoc = new XmlDocument();
                 XmlReaderSettings setting = new XmlReaderSettings();
                 setting.IgnoreComments = true;
@@ -215,7 +211,7 @@ namespace Parking.Auxiliary
             }
             catch (Exception ex)
             {
-                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - " + warehouse +" ,Hall - "+hall+ " ,nodename - " + nodeName +
+                log.Error("path - " + path + " ,settingpath - " + settingpath + " ,warehouse - " + warehouse + " ,Hall - " + hall + " ,nodename - " + nodeName +
                              Environment.NewLine + ex.ToString());
             }
             return null;
@@ -227,9 +223,9 @@ namespace Parking.Auxiliary
         /// <param name="nodeList"></param>
         /// <param name="tagname"></param>
         /// <returns></returns>
-        public static XmlNode GetXmlNodeByTagName(XmlNodeList nodeList,string tagname)
+        public static XmlNode GetXmlNodeByTagName(XmlNodeList nodeList, string tagname)
         {
-            foreach(XmlNode node in nodeList)
+            foreach (XmlNode node in nodeList)
             {
                 if (node.Name == tagname)
                 {
@@ -262,7 +258,7 @@ namespace Parking.Auxiliary
             return null;
         }
 
-        public static string GetXmlValueOfAttribute(XmlNode node,string attri)
+        public static string GetXmlValueOfAttribute(XmlNode node, string attri)
         {
             XmlAttribute attribute = node.Attributes[attri];
             if (attribute != null)
@@ -278,13 +274,13 @@ namespace Parking.Auxiliary
         /// <param name="nodeList"></param>
         /// <param name="innerText"></param>
         /// <returns>返回list中的对应节点</returns>
-        public static XmlNode GetXmlNodeHasChildeName(XmlNodeList nodeList,string innerText)
+        public static XmlNode GetXmlNodeHasChildeName(XmlNodeList nodeList, string innerText)
         {
-            foreach(XmlNode node in nodeList)
+            foreach (XmlNode node in nodeList)
             {
                 if (node.HasChildNodes)
                 {
-                    foreach(XmlNode xnode in node.ChildNodes)
+                    foreach (XmlNode xnode in node.ChildNodes)
                     {
                         if (xnode.InnerText == innerText)
                         {
@@ -296,6 +292,89 @@ namespace Parking.Auxiliary
             return null;
         }
 
+        /// <summary>
+        /// 设置XML值
+        /// </summary>
+        /// <param name="settingpath"></param>
+        /// <param name="innerText"></param>
+        public static void SetXmlNodeValue(string xpath, string subnode, string innerText)
+        {
+            Log log = LogFactory.GetLogger("XMLHelper.SetXmlNodeValue");
+            try
+            {
+                string path = "";
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                }
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(path);
+
+                XmlNode node = xmlDoc.SelectSingleNode(xpath);
+                if (node != null && node.HasChildNodes)
+                {
+                    XmlNode xnode = node.SelectSingleNode(subnode);
+                    if (xnode != null)
+                    {
+                        xnode.InnerText = innerText;
+                    }
+                }
+                xmlDoc.Save(path);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 查询Limit值
+        /// </summary>
+        /// <param name="xpath">\Root\limit</param>
+        /// <param name="xnode">code</param>
+        /// <returns></returns>
+        public static string GetXmlNodeValue(string xpath, string xnode)
+        {
+            Log log = LogFactory.GetLogger("XMLHelper.GetXmlNodeValue");
+            try
+            {
+                string path = "";
+                if (HttpContext.Current == null)
+                {
+                    path = AppDomain.CurrentDomain.BaseDirectory + @"/Configs/System.config";
+                }
+                else
+                {
+                    path = HttpContext.Current.Server.MapPath("~/Configs/System.config");
+                }
+
+                XmlDocument xmlDoc = new XmlDocument();
+                XmlReaderSettings setting = new XmlReaderSettings();
+                setting.IgnoreComments = true;
+                XmlReader reader = XmlReader.Create(path, setting);
+                xmlDoc.Load(reader);
+                reader.Close();
+
+                XmlNode node = xmlDoc.SelectSingleNode(xpath);
+                if (node != null && node.HasChildNodes)
+                {
+                    XmlNode subNode = node.SelectSingleNode(xnode);
+                    if (subNode != null)
+                    {
+                        return subNode.InnerText;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return null;
+        }
 
     }
 }

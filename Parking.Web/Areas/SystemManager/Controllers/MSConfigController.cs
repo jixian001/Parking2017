@@ -103,41 +103,43 @@ namespace Parking.Web.Areas.SystemManager.Controllers
 
         [HttpPost]
         public ActionResult Edit(int ID,int IsAble, string HallType)
-        {            
-            Device smg = new CWDevice().Find(dev => dev.ID == ID);
-            if (smg == null)
+        {
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("POST Edit");
+            try
             {
-                return RedirectToAction("Index");
-            }
-            if (IsAble > 1)
-            {
-                ModelState.AddModelError("", "<可用性> 只允许输入：0、1  两种");
-                return View(smg);
-            }
-            smg.IsAble = IsAble;
-            if (smg.Type == EnmSMGType.Hall)
-            {
-                EnmHallType htype = EnmHallType.Init;
-                bool nback = Enum.TryParse(HallType, out htype);
-                if (nback)
+                Device smg = new CWDevice().Find(dev => dev.ID == ID);
+                if (smg == null)
                 {
-                    smg.HallType = htype;
+                    return RedirectToAction("Index");
                 }
-                else
+                if (IsAble > 1)
                 {
-                    ModelState.AddModelError("", " <车厅类型> 不正确，只允许输入：Entrance、Exit、EnterOrExit 三种");
+                    ModelState.AddModelError("", "<可用性> 只允许输入：0、1  两种");
                     return View(smg);
                 }
+                smg.IsAble = IsAble;
+                if (smg.Type == EnmSMGType.Hall)
+                {
+                    EnmHallType htype = EnmHallType.Init;
+                    bool nback = Enum.TryParse(HallType, out htype);
+                    if (nback)
+                    {
+                        smg.HallType = htype;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", " <车厅类型> 不正确，只允许输入：Entrance、Exit、EnterOrExit 三种");
+                        return View(smg);
+                    }
+                }
+                resp = new CWDevice().Update(smg);
             }
-            Response resp = new CWDevice().Update(smg);
-            if (resp.Code == 1)
+            catch (Exception ex)
             {
-                return RedirectToAction("Index");
+                log.Error(ex.ToString());
             }
-            else
-            {
-                return View(smg);
-            }
+            return RedirectToAction("Index");          
         }
 
     }

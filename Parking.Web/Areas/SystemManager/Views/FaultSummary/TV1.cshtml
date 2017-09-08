@@ -1,0 +1,140 @@
+﻿@{
+    ViewBag.Title = "ETV1故障信息";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row">
+    <div class="col-md-2">@Html.Partial("_PartialSideNav")</div>
+    <div class="col-md-10">
+       
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-home">&nbsp;@Html.ActionLink("首页", "Index", "Home", new { area = "" }, htmlAttributes: new { @class = "" })</span></li>
+                <li>故障汇总</li>
+                <li class="active" id="breaditem">TV1</li>
+            </ol>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <div class="panel-title">状态位显示区</div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="list-group" id="statuslist">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <div class="panel-title">报警位显示区</div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="list-group" id="faultlist">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<div>
+    <input type="hidden" value="1" id="warehouse" name="warehouse" />
+    <input type="hidden" value="1" id="devicecode" name="devicecode" />
+</div>
+
+@section scripts{
+    <script>
+        $(function () {
+            //第一次手动加载
+            var wh = $("#warehouse").val();
+            var code = $("#devicecode").val();
+            //显示状态信息位
+            updatealarm(wh, code);
+
+            //后面使用signalr更新
+
+            var hubs = $.connection.parkingHub;
+
+            $.extend(hubs.client, {
+
+                feedbacktv1alarm: function (data) {
+
+                    var htmlstate = '';
+                    var htmlfault = '';
+
+                    $.each(data, function (index, content) {
+
+                        if (content.Type == 1) {
+                            htmlstate += '<div class="list-group-item text-default text-center">' + content.Description + '</div>';
+                        }
+                        else if (content.Type == 2) {
+                            htmlfault += '<div class="list-group-item text-danger text-center">' + content.Description + '</div>';
+                        }
+
+                    });
+
+                    $("#faultlist").html(htmlfault);
+
+                    $("#statuslist").html(htmlstate);
+                }
+
+            });
+
+            //start the connection
+            $.connection.hub.start()
+                            .then(function () {
+                                //注册下
+                                hubs.server.register("tv1");
+
+                            })
+                            .done(function () {
+
+                            }
+                            );
+
+            //signalr 结束
+
+        });
+
+        function updatealarm(wh, code) {
+            //显示报警,状态位
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("FindAlarmsLst", "FaultSummary")",
+                data: { warehouse: wh, devicecode: code },
+                dataType: "json",
+                cache: false,
+                success: function (data) {
+
+                    var htmlstate = '';
+                    var htmlfault = '';
+
+                    $.each(data, function (index, content) {
+
+                        if (content.Type == 1)
+                        {
+                            htmlstate += '<div class="list-group-item text-default text-center">' + content.Description + '</div>';
+                        }
+                        else if (content.Type == 2)
+                        {
+                            htmlfault += '<div class="list-group-item text-danger text-center">' + content.Description + '</div>';
+                        }
+
+                    });
+
+                    $("#faultlist").html(htmlfault);
+
+                    $("#statuslist").html(htmlstate);
+                }
+            });
+        }
+    </script>
+
+}
+
+
+
+

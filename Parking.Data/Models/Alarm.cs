@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 namespace Parking.Data
-{
-    
+{    
     /// <summary>
     /// 报警信息
     /// </summary>    

@@ -9,14 +9,5 @@ namespace Parking.Data
 {
     public class OrderChargeDetailManager:BaseManager<OrderChargeDetail>
     {
-        public OrderChargeDetail Find(Expression<Func<OrderChargeDetail, bool>> where)
-        {
-            return _repository.Find(where);
-        }
-
-        public OrderChargeDetail Find(int id)
-        {
-            return _repository.Find(id);
-        }
     }
 }

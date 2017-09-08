@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Parking.Data;
 using Parking.Auxiliary;
 using System.Linq.Expressions;
+using System.Web;
+using System.Web.Caching;
 
 namespace Parking.Core
 {
@@ -14,44 +16,62 @@ namespace Parking.Core
     /// </summary>
     public class CWDevice
     {
-        private static DeviceManager manager = new DeviceManager();
-        private Log log;
+        private DeviceManager manager = new DeviceManager();       
 
         public CWDevice()
         {
-            log = LogFactory.GetLogger("CWDevice");
-        }
-        /// <summary>
-        /// 依设备号查找设备
-        /// </summary>
-        /// <param name="code"></param>
-        /// <param name="warehouse"></param>
-        /// <returns></returns>
-        public Device SelectSMG(int code,int warehouse)
-        {
-            return manager.Find(dev=>dev.Warehouse==warehouse&&dev.DeviceCode==code);
         }
 
         public Response Update(Device smg)
-        {      
-            return manager.Update(smg);
-        }
-
-        /// <summary>
-        /// 强制更新
-        /// </summary>
-        /// <param name="smg"></param>
-        /// <param name="isSave"></param>
-        /// <returns></returns>
-        public Response Update(Device smg,bool isSave)
         {
-            return manager.Update(smg,isSave);
+            Response resp = manager.Update(smg);
+            if (resp.Code == 1)
+            {
+                //回调设备状态
+                MainCallback<Device>.Instance().OnChange(2, resp.Data);
+            }
+            #region 记录设备状态
+            string addrs = "";
+            if (smg.Type == EnmSMGType.ETV)
+            {
+                addrs = smg.Address;
+            }
+
+            DeviceInfoLog devlog = new DeviceInfoLog
+            {
+                Warehouse = smg.Warehouse,
+                DeviceCode = smg.DeviceCode,
+                RecordDtime = DateTime.Now,
+                Mode = smg.Mode.ToString(),
+                IsAble = smg.IsAble,
+                IsAvailabe = smg.IsAvailabe,
+                RunStep = smg.RunStep,
+                InStep = smg.InStep,
+                OutStep = smg.OutStep,
+                Address = addrs,
+                TaskID = smg.TaskID
+            };
+            new CWDeviceStatusLog().AddLog(devlog);
+            #endregion
+            return resp;
         }
 
-        public void UpdateSMGStatus(Device smg,int state)
+        public async Task<Response> UpdateAsync(Device smg)
+        {
+            Response resp = await manager.UpdateAsync(smg);
+            if (resp.Code == 1)
+            {
+                //回调设备状态
+                MainCallback<Device>.Instance().OnChange(2, resp.Data);
+            }
+            return resp;
+        }
+
+        public int UpdateSMGStatus(Device smg, int state)
         {
             smg.IsAble = state;
-            Update(smg);
+            Response resp = Update(smg);
+            return resp.Code;
         }
 
         public Device Find(Expression<Func<Device, bool>> where)
@@ -59,21 +79,33 @@ namespace Parking.Core
             return manager.Find(where);
         }
 
+        public async Task<Device> FindAsync(Expression<Func<Device, bool>> where)
+        {
+            return await manager.FindAsync(where);
+        }
+
+        public List<Device> FindList()
+        {
+            return manager.FindList();
+        }
+
+        public async Task<List<Device>> FindListAsync()
+        {
+            return await manager.FindListAsync();
+        }
+
         public List<Device> FindList(Expression<Func<Device, bool>> where)
         {
-            List<Device> devsLst = new List<Device>();
-            try
-            {
-                devsLst = manager.FindList(where);
-            }
-            catch (Exception ex)
-            {
-                log.Error(ex.ToString());
-            }
+            List<Device> devsLst = manager.FindList(where);
             return devsLst;
         }
 
-        public List<Device> FindList(Expression<Func<Device, bool>> where,OrderParam param)
+        public async Task<List<Device>> FindListAsync(Expression<Func<Device, bool>> where)
+        {
+            return await manager.FindListAsync(where);
+        }
+
+        public List<Device> FindList(Expression<Func<Device, bool>> where, OrderParam param)
         {
             return manager.FindList(where, param);
         }
@@ -106,9 +138,9 @@ namespace Parking.Core
         /// <param name="lct"></param>
         /// <param name="isTemp">是否是临时取物</param>
         /// <returns></returns>
-        public int AllocateHall(Location lct,bool isTemp)
-        {            
-            List<Device> hallsList = manager.FindList(d=>d.Type==EnmSMGType.Hall);
+        public int AllocateHall(Location lct, bool isTemp)
+        {
+            List<Device> hallsList = FindList(d => d.Type == EnmSMGType.Hall);
             var query = from hall in hallsList
                         where hall.Mode == EnmModel.Automatic &&
                               hall.IsAble == 1 &&
@@ -125,17 +157,17 @@ namespace Parking.Core
             {
                 return avaibleHalls[0].DeviceCode;
             }
-            Device first = avaibleHalls.Find(h=>h.TaskID==0);
+            Device first = avaibleHalls.Find(h => h.TaskID == 0);
             if (first != null)
             {
                 return first.DeviceCode;
             }
             Dictionary<int, int> _dicHallTaskCount = new Dictionary<int, int>();
             List<WorkTask> queueList = new CWTask().FindQueueList(q => true);
-            foreach(Device dev in avaibleHalls)
+            foreach (Device dev in avaibleHalls)
             {
                 int count = 0;
-                foreach(WorkTask wt in queueList)
+                foreach (WorkTask wt in queueList)
                 {
                     if (dev.DeviceCode == wt.DeviceCode)
                     {
@@ -148,14 +180,119 @@ namespace Parking.Core
 
             return dicHallOrder.FirstOrDefault().Key;
         }
-        
+
+        /// <summary>
+        /// 判断搬运器上有车否
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public int JudgeTVHasCar(int warehouse, int code)
+        {
+            List<Alarm> alarmsLst = FindAlarmList(a => a.Warehouse == warehouse && a.DeviceCode == code);
+            if (alarmsLst == null || alarmsLst.Count == 0)
+            {
+                return 0;
+            }
+            #region
+            int hascaraddr = 0;
+            int nocaraddr = 0;
+            int partaholdaddr = 0;
+            int partbholdaddr = 0;
+            int partareleaseaddr = 0;
+            int partbreleaseaddr = 0;
+            try
+            {
+                string hascar = XMLHelper.GetRootNodeValueByXpath("root", "CarrierHasCar");
+                int.TryParse(hascar, out hascaraddr);
+
+                string nocar = XMLHelper.GetRootNodeValueByXpath("root", "CarrierNoCar");
+                int.TryParse(nocar, out nocaraddr);
+
+                string partahold = XMLHelper.GetRootNodeValueByXpath("root", "PartAHold");
+                int.TryParse(hascar, out hascaraddr);
+
+                string partbhold = XMLHelper.GetRootNodeValueByXpath("root", "PartBHold");
+                int.TryParse(partbhold, out partbholdaddr);
+
+                string partarelease = XMLHelper.GetRootNodeValueByXpath("root", "PartARelease");
+                int.TryParse(partarelease, out partareleaseaddr);
+
+                string partbrelease = XMLHelper.GetRootNodeValueByXpath("root", "PartBRelease");
+                int.TryParse(partbrelease, out partbreleaseaddr);
+            }
+            catch (Exception ex)
+            {
+                Log log = LogFactory.GetLogger("JudgeTVHasCar");
+                log.Error(ex.ToString());
+            }
+            #endregion
+            //搬运器上有车           
+            Alarm hasCar = alarmsLst.Find(a => a.Address == hascaraddr);
+            if (hasCar == null)
+            {
+                return 1;
+            }
+            //A夹持
+            Alarm partA_j = alarmsLst.Find(a => a.Address == partaholdaddr);
+            //B夹持
+            Alarm partB_j = alarmsLst.Find(a => a.Address == partbholdaddr);
+            if (partA_j == null || partB_j == null)
+            {
+                return 2;
+            }
+            //搬运器上无车           
+            Alarm noCar = alarmsLst.Find(a => a.Address == nocaraddr);
+            if (hasCar == null)
+            {
+                return 3;
+            }
+            //A松开
+            Alarm partA_r = alarmsLst.Find(a => a.Address == partareleaseaddr);
+            //B松开
+            Alarm partB_r = alarmsLst.Find(a => a.Address == partbreleaseaddr);
+            if (partA_j == null || partB_j == null)
+            {
+                return 4;
+            }
+            //有车判断
+            if (hasCar.Value == 1 && partA_j.Value == 1 && partB_j.Value == 1)
+            {
+                return 10;
+            }
+            //无车判断
+            if (noCar.Value == 1 && partA_r.Value == 1 && partB_r.Value == 1)
+            {
+                return 20;
+            }
+            return 0;
+        }
 
         #region 报警状态位控制
-        private static AlarmManager manager_alarm = new AlarmManager();
+        private AlarmManager manager_alarm = new AlarmManager();
+
+        public Alarm FindAlarm(Expression<Func<Alarm, bool>> where)
+        {
+            Log log = LogFactory.GetLogger("FindAlarm");
+            try
+            {
+                return manager_alarm.Find(where);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return null;
+        }
 
         public List<Alarm> FindAlarmList(Expression<Func<Alarm, bool>> where)
         {
             return manager_alarm.FindList(where);
+        }
+
+        public async Task<List<Alarm>> FindAlarmListAsync(Expression<Func<Alarm, bool>> where)
+        {
+            return await manager_alarm.FindListAsync(where);
         }
 
         /// <summary>
@@ -163,44 +300,67 @@ namespace Parking.Core
         /// </summary>
         /// <param name="alarmLst"></param>
         /// <returns></returns>
-        public Response UpdateAlarmList(List<Alarm> alarmLst)
+        public async Task<Response> UpdateAlarmListAsync(List<Alarm> alarmLst)
         {
-            return manager_alarm.UpdateAlarmList(alarmLst);
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("UpdateAlarmList");
+            try
+            {
+                resp = await manager_alarm.UpdateAlarmListAsync(alarmLst);
+
+                #region 报警记录写入数据库              
+                List<Alarm> faultLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Red);
+                if (faultLst.Count > 0)
+                {
+                    new CWFaultLog().AddFaultRecord(faultLst);
+                }
+                #endregion
+
+                #region 写状态位记录入数据库
+                List<Alarm> statusLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Green);
+                if (faultLst.Count > 0)
+                {
+                    new CWStatusLog().AddStateRecord(statusLst);
+                }
+                #endregion
+
+                #region 推送至显示
+                int warehouse = alarmLst.First().Warehouse;
+                int devicecode = alarmLst.First().DeviceCode;
+                List<BackAlarm> backlst = new List<BackAlarm>();
+
+                List<Alarm> hasValueLst = manager_alarm.FindList(al => al.Warehouse == warehouse && al.DeviceCode == devicecode && al.Value == 1);
+                foreach (Alarm ar in hasValueLst)
+                {
+                    int type = 0;
+                    if (ar.Color == EnmAlarmColor.Green)
+                    {
+                        type = 1;
+                    }
+                    else if (ar.Color == EnmAlarmColor.Red)
+                    {
+                        type = 2;
+                    }
+
+                    BackAlarm back = new BackAlarm
+                    {
+                        Type = type,
+                        Description = ar.Description
+                    };
+
+                    backlst.Add(back);
+                }
+
+                SingleCallback.Instance().WatchFaults(warehouse, devicecode, backlst);
+                #endregion              
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return resp;
         }
 
-        #endregion
-
-        #region 车牌识别映射到车厅设备表
-        private static PlateInfoManager plateManager = new PlateInfoManager();
-
-        /// <summary>
-        /// 查找车厅车牌
-        /// </summary>
-        /// <param name="where"></param>
-        /// <returns></returns>
-        public PlateMappingDev FindPlateInfo(Expression<Func<PlateMappingDev, bool>> where)
-        {
-            return plateManager.Find(where);
-        }
-
-        /// <summary>
-        /// 更新对应的车厅车牌信息
-        /// 主要是清空
-        /// </summary>
-        /// <param name="dev"></param>
-        /// <returns></returns>
-        public Response UpdatePlateInfo(PlateMappingDev dev)
-        {
-            return plateManager.Update(dev);
-        }
-
-        /// <summary>
-        /// 更新对应的车厅车牌信息       
-        /// </summary>
-        public Response UpdatePlateInfo(PlateMappingDev dev,bool isSave)
-        {
-            return plateManager.Update(dev,isSave);
-        }
         #endregion
 
     }

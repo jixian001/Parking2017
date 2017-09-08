@@ -40,5 +40,14 @@ namespace Parking.Data
         /// 本次缴费
         /// </summary>
         public float CurrFee { get; set; }
+        /// <summary>
+        /// 操作员
+        /// </summary>
+        public string OprtCode { get; set; }
+        /// <summary>
+        /// 记录时间
+        /// </summary>
+        public DateTime RecordDTime { get; set; }
+
     }
 }

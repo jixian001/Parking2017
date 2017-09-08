@@ -18,7 +18,7 @@ namespace Parking.Data
         [Required]
         /// <summary>
         /// 编号，5位数，唯一
-        /// int32范围（10000-30000）
+        /// int32范围（10000-22000）
         /// </summary>
         public int SN_Number { get; set; } 
         [Required]       

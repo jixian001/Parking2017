@@ -8,12 +8,7 @@ using System.Linq.Expressions;
 namespace Parking.Data
 {
     public class PlateInfoManager:BaseManager<PlateMappingDev>
-    {
-        public PlateMappingDev Find(Expression<Func<PlateMappingDev,bool>> where)
-        {
-            return _repository.Find(where);
-        }
-
+    {     
 
     }
 }
