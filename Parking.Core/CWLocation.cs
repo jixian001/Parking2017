@@ -147,7 +147,8 @@ namespace Parking.Core
                 }
                 else
                 {
-                    if (loc.Type == EnmLocationType.Disable)
+                    if (loc.Type == EnmLocationType.Disable||
+                        loc.Type==EnmLocationType.HasCarLocker)
                     {
                         loc.Type = EnmLocationType.Normal;
                     }

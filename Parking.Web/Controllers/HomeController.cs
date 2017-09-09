@@ -78,24 +78,18 @@ namespace Parking.Web.Controllers
             string[] info = locinfo.Split('_');
             if (info.Length < 4)
             {
-                var nback = new {
+                var nback = new
+                {
                     code = 0,
                     data = "数据长度不正确," + locinfo
                 };
-                return Json(nback,JsonRequestBehavior.AllowGet);
+                return Json(nback, JsonRequestBehavior.AllowGet);
             }
             Location lctn = null;
-            try
-            {
-                int wh = Convert.ToInt32(info[0]);
-                string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2, '0');
-                lctn = await new CWLocation().FindLocationAsync(lc => lc.Address == address && lc.Warehouse == wh);
-            }
-            catch (Exception ex)
-            {
-                Log log = LogFactory.GetLogger("GetLocation");
-                log.Error(ex.ToString());
-            }
+
+            int wh = Convert.ToInt32(info[0]);
+            string address = info[1] + info[2].PadLeft(2, '0') + info[3].PadLeft(2, '0');
+            lctn = await new CWLocation().FindLocationAsync(lc => lc.Address == address && lc.Warehouse == wh);
             if (lctn == null)
             {
                 var nback = new
@@ -113,8 +107,8 @@ namespace Parking.Web.Controllers
                     data = lctn
                 };
                 return Json(ret, JsonRequestBehavior.AllowGet);
-            }            
-        }        
+            }
+        }      
         
         [HttpPost]
         public async Task<JsonResult> ManualDisLocation(string info,bool isdis)

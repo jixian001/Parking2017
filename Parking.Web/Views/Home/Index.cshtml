@@ -71,6 +71,7 @@
                     <div class="lbl lblentering">入库</div>
                     <div class="lbl lblouting">出库</div>
                     <div class="lbl lblspace">空闲</div>
+                    <div class="lbl lbllocker">锁定</div>
                 </div>
             </div>
         </div>
@@ -579,6 +580,11 @@
                     //禁用缓存车位
                     color = 'disabletemp';
                 }
+                else if (type == 8)
+                {
+                    //反光板对不上锁车位
+                    color = 'hascarlocker';
+                }
                 return color;
             }
 
@@ -737,6 +743,9 @@
                         break;
                     case 7:
                         msg = "禁用";
+                        break;
+                    case 8:
+                        msg = "锁定";
                         break;
                     default:
                         msg = type;

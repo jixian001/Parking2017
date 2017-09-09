@@ -447,7 +447,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 ImplementTask task =await cwtask.FindITaskAsync(taskID);
                 if (task != null)
                 {
-                    cwtask.DealLoadFinished(task);
+                    await cwtask.DealLoadFinishedAsync(task);
                 }
             }
             catch (Exception ex)
@@ -687,6 +687,48 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         {
             Response resp =await new CWTask().DealAvoidAsync(queueID, warehouse, devicecode);
             return Json(resp,JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        /// <summary>
+        /// 车厅装载时高度复检不通过
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ContentResult> ReCheckCarWithLoad()
+        {
+            byte[] bytes = new byte[Request.InputStream.Length];
+            Request.InputStream.Read(bytes, 0, bytes.Length);
+            string req = System.Text.Encoding.Default.GetString(bytes);
+
+            JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+            string tid = jo["TaskID"].ToString();
+            string checkcode = jo["CheckCode"].ToString();
+            string distance = jo["Distance"].ToString();
+
+            int taskid = Convert.ToInt32(tid);
+            int dist = Convert.ToInt32(distance);
+
+            await new CWTask().ReCheckCarWithLoadAsync(taskid, dist, checkcode);
+            return Content("success");
+        }
+
+        [HttpPost]
+        /// <summary>
+        /// 车位卸载时,车位上有车，则重新分配车位
+        /// </summary>
+        public async Task<ContentResult> DealUnloadButHasCarBlock()
+        {
+            byte[] bytes = new byte[Request.InputStream.Length];
+            Request.InputStream.Read(bytes, 0, bytes.Length);
+            string req = System.Text.Encoding.Default.GetString(bytes);
+
+            JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+            string tid = jo["TaskID"].ToString();
+
+            int taskid = Convert.ToInt32(tid);
+
+            await new CWTask().DealUnloadButHasCarBlock(taskid);
+            return Content("success");
         }
 
     }

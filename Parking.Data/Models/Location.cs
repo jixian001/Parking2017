@@ -66,7 +66,8 @@ namespace Parking.Data
         ETV,       //ETV 4
         Invalid,   //无效车位-5
         Temporary,  //缓存车位 6
-        TempDisable //缓存车位，禁用时用 7
+        TempDisable, //缓存车位，禁用时用 7
+        HasCarLocker,  //反光板对不上，锁车位
     }
 
     public enum EnmLocationStatus

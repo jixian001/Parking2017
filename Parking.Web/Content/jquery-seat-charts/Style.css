@@ -80,6 +80,9 @@ div.seatCharts-seat.entering {
 div.seatCharts-seat.outing {
 	background-color: #e25959;
 }
+div.seatCharts-seat.hascarlocker {
+    background-color: #064970;
+}
 
 .checkout-button {	
 	margin: 0px 20px;

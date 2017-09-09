@@ -181,7 +181,7 @@ namespace Parking.Core
 
         public async Task<Response> AddITaskAsync(ImplementTask itask)
         {
-            Response resp =await manager.AddAsync(itask);
+            Response resp = await manager.AddAsync(itask);
             if (resp.Code == 1)
             {
                 MainCallback<ImplementTask>.Instance().OnChange(1, itask);
@@ -201,7 +201,7 @@ namespace Parking.Core
 
         public async Task<Response> UpdateITaskAsync(ImplementTask itask)
         {
-            Response resp =await manager.UpdateAsync(itask);
+            Response resp = await manager.UpdateAsync(itask);
             if (resp.Code == 1)
             {
                 MainCallback<ImplementTask>.Instance().OnChange(2, itask);
@@ -240,7 +240,7 @@ namespace Parking.Core
                 Status = itask.Status,
                 SendStatusDetail = itask.SendStatusDetail
             };
-            Response resp =await manager.DeleteAsync(itask);
+            Response resp = await manager.DeleteAsync(itask);
 
             if (resp.Code == 1)
             {
@@ -257,7 +257,7 @@ namespace Parking.Core
 
         public async Task<List<ImplementTask>> FindITaskLstAsync()
         {
-            List<ImplementTask> retLst =await manager.FindListAsync();
+            List<ImplementTask> retLst = await manager.FindListAsync();
             return retLst;
         }
 
@@ -307,6 +307,8 @@ namespace Parking.Core
         {
             try
             {
+                CWDevice cwdevice = new CWDevice();
+
                 ImplementTask task = new ImplementTask();
                 task.Warehouse = hall.Warehouse;
                 task.DeviceCode = hall.DeviceCode;
@@ -341,10 +343,50 @@ namespace Parking.Core
                 Response _resp = AddITask(task);
                 if (_resp.Code == 1)
                 {
-                    //这里是否可以获取到ID？或者再查询一次
                     hall.TaskID = task.ID;
-                    new CWDevice().Update(hall);
+                    cwdevice.Update(hall);
                 }
+                #region 增加调度，如果区域内的ETV为空闲，则让其移动至车厅门，等待接车
+                Device etv = cwdevice.Find(e => e.Region == hall.Region && e.Type == EnmSMGType.ETV);
+                if (etv != null)
+                {
+                    if (etv.IsAble == 1 && etv.TaskID == 0 && etv.SoonTaskID == 0)
+                    {
+                        if (etv.IsAvailabe == 1)
+                        {
+                            //生成作业，绑定于etv中
+                            ImplementTask etask = new ImplementTask
+                            {
+                                Warehouse = etv.Warehouse,
+                                DeviceCode = etv.DeviceCode,
+                                Type = EnmTaskType.Move,
+                                Status = EnmTaskStatus.TWaitforMove,
+                                SendStatusDetail = EnmTaskStatusDetail.NoSend,
+                                CreateDate = DateTime.Now,
+                                SendDtime = DateTime.Now.AddMinutes(-1),
+                                HallCode = hall.DeviceCode,
+                                FromLctAddress = etv.Address,
+                                ToLctAddress = hall.Address,
+                                ICCardCode = "",
+                                Distance = 0,
+                                CarSize = "",
+                                IsComplete = 0,
+                                LocSize = "",
+                                PlateNum = ""
+                            };
+                            _resp = AddITask(etask);
+                            if (_resp.Code == 1)
+                            {
+                                etv.TaskID = etask.ID;
+                                cwdevice.Update(etv);
+                            }
+                            MainCallback<ImplementTask>.Instance().OnChange(1, etask);
+                        }
+                    }
+                }
+
+                #endregion
+
                 //显示页面用
                 MainCallback<ImplementTask>.Instance().OnChange(1, task);
             }
@@ -1355,7 +1397,7 @@ namespace Parking.Core
                 #endregion
 
                 task.Status = EnmTaskStatus.Finished;
-                task.IsComplete = 1;               
+                task.IsComplete = 1;
                 DeleteITask(task);
 
             }
@@ -1527,7 +1569,7 @@ namespace Parking.Core
         /// <param name="tsk"></param>
         public async Task<int> UnpackUnloadOrderAsync(ImplementTask tsk)
         {
-            WorkTask exitQueue =await manager_queue.FindAsync(m => m.IsMaster == 1 && m.DeviceCode == tsk.DeviceCode && m.ICCardCode == tsk.ICCardCode && m.TelegramType == 14);
+            WorkTask exitQueue = await manager_queue.FindAsync(m => m.IsMaster == 1 && m.DeviceCode == tsk.DeviceCode && m.ICCardCode == tsk.ICCardCode && m.TelegramType == 14);
             if (exitQueue == null)
             {
                 //生成卸载指令，加入队列
@@ -1553,11 +1595,11 @@ namespace Parking.Core
         }
 
         /// <summary>
-        /// 收到（13，51，9999）
-        /// 将存车装载完成，生成卸载指令，加入队列中
+        /// 收到（13/43，51，9999）
+        /// 将存车装载完成
         /// </summary>
         /// <param name="tsk"></param>
-        public void DealLoadFinished(ImplementTask tsk)
+        public async Task DealLoadFinishedAsync(ImplementTask tsk)
         {
             Log log = LogFactory.GetLogger("CWTask.DealLoadFinished");
             try
@@ -1567,7 +1609,7 @@ namespace Parking.Core
                 tsk.SendStatusDetail = EnmTaskStatusDetail.Asked;
                 tsk.SendDtime = DateTime.Now;
                 tsk.IsComplete = 0;
-                UpdateITask(tsk);
+                await UpdateITaskAsync(tsk);
             }
             catch (Exception ex)
             {
@@ -2465,7 +2507,7 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("CWTask.CreateAvoidTaskByQueue");
             try
             {
-                WorkTask queue =await FindQueueAsync(queueID);
+                WorkTask queue = await FindQueueAsync(queueID);
                 if (queue == null)
                 {
                     log.Error("生成可执行的避让作业时，依ID号找不到队列，ID - " + queueID);
@@ -2493,7 +2535,7 @@ namespace Parking.Core
                 resp = AddITask(subtask);
                 if (resp.Code == 1)
                 {
-                    Device dev =await new CWDevice().FindAsync(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
+                    Device dev = await new CWDevice().FindAsync(d => d.Warehouse == queue.Warehouse && d.DeviceCode == queue.DeviceCode);
                     //如果是处于装载完成中，也允许先避让，
                     //将当前作业ID加入待发送卸载中，
                     //避让优先
@@ -2540,7 +2582,7 @@ namespace Parking.Core
                     #region
                     if (queue.MasterType == EnmTaskType.SaveCar)
                     {
-                        Location loc =await cwlctn.FindLocationAsync(l => l.Address == queue.ToLctAddress);
+                        Location loc = await cwlctn.FindLocationAsync(l => l.Address == queue.ToLctAddress);
                         if (loc != null && loc.Type == EnmLocationType.Normal)
                         {
                             locSize = loc.LocSize;
@@ -2847,7 +2889,7 @@ namespace Parking.Core
                     resp.Message = "找不到队列";
                     return resp;
                 }
-                Device smg =await new CWDevice().FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == code);
+                Device smg = await new CWDevice().FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == code);
                 if (smg == null)
                 {
                     log.Error("依设备号找不到设备，code - " + code);
@@ -3241,7 +3283,7 @@ namespace Parking.Core
                     resp.Message = "找不到队列";
                     return resp;
                 }
-                Device smg =  new CWDevice().Find(d => d.Warehouse == warehouse && d.DeviceCode == code);
+                Device smg = new CWDevice().Find(d => d.Warehouse == warehouse && d.DeviceCode == code);
                 if (smg == null)
                 {
                     log.Error("依设备号找不到设备，code - " + code);
@@ -3872,7 +3914,7 @@ namespace Parking.Core
             CWDevice cwdevice = new CWDevice();
             CWLocation cwlctn = new CWLocation();
 
-            Device tv = new AllocateTV().Allocate(hall, lct);          
+            Device tv = new AllocateTV().Allocate(hall, lct);
             if (tv == null)
             {
                 log.Error("队列-卡号：" + master.ICCardCode + " 车厅："
@@ -4459,7 +4501,7 @@ namespace Parking.Core
                 #region
                 Location frLctn = tempOccupyLst[0];
                 Location toLctn;
-                Device etv = new AllocateTV().AllocateTvOfTransport(frLctn, out toLctn);               
+                Device etv = new AllocateTV().AllocateTvOfTransport(frLctn, out toLctn);
                 if (etv == null)
                 {
                     return 0;
@@ -4555,13 +4597,13 @@ namespace Parking.Core
         public async Task<int> ReleaseDeviceTaskIDButNoTaskAsync(int warehouse)
         {
             CWDevice cwdevice = new CWDevice();
-            List<Device> devsLst =await new CWDevice().FindListAsync(d => d.Warehouse == warehouse);
+            List<Device> devsLst = await new CWDevice().FindListAsync(d => d.Warehouse == warehouse);
             for (int i = 0; i < devsLst.Count; i++)
             {
                 Device smg = devsLst[i];
                 if (smg.TaskID != 0)
                 {
-                    ImplementTask itask =await manager.FindAsync(smg.TaskID);
+                    ImplementTask itask = await manager.FindAsync(smg.TaskID);
                     if (itask == null)
                     {
                         smg.TaskID = 0;
@@ -4668,7 +4710,7 @@ namespace Parking.Core
         public async Task ResetHallOnlyHasTaskAsync(int warehouse, int hallID)
         {
             CWDevice cwdevice = new CWDevice();
-            Device smg =await cwdevice.FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == hallID);
+            Device smg = await cwdevice.FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == hallID);
             if (smg != null && smg.Type == EnmSMGType.Hall)
             {
                 ImplementTask itask = FindITask(smg.TaskID);
@@ -4795,7 +4837,7 @@ namespace Parking.Core
             Response resp = new Response();
             try
             {
-                WorkTask mtsk =await manager_queue.FindAsync(tid);
+                WorkTask mtsk = await manager_queue.FindAsync(tid);
                 WorkTask copy = new WorkTask
                 {
                     ID = mtsk.ID,
@@ -5027,7 +5069,7 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("DealCarDriveOffTracing");
             try
             {
-                Device hall =await new CWDevice().FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == devicecode);
+                Device hall = await new CWDevice().FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == devicecode);
                 if (hall == null)
                 {
                     return;
@@ -5065,6 +5107,193 @@ namespace Parking.Core
                     new CWDevice().Update(hall);
                 }
 
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 车厅装载时高度复检不通过，释放原来车位，重新分配车位
+        /// </summary>       
+        /// <returns></returns>
+        public async Task ReCheckCarWithLoadAsync(int taskid, int distance, string checkcode)
+        {
+            Log log = LogFactory.GetLogger("ReCheckCarWithLoad");
+            try
+            {
+                ImplementTask etsk = await FindAsync(taskid);
+                if (etsk == null)
+                {
+                    log.Error("系统异常，依ID - " + taskid + " 找不到作业！");
+                    return;
+                }
+                if (checkcode.Length != 3)
+                {
+                    log.Error("上报外形尺寸不正确，CheckCode - " + checkcode);
+                    return;
+                }
+                CWDevice cwdevice = new CWDevice();
+                CWLocation cwlctn = new CWLocation();
+
+                Device etv = await cwdevice.FindAsync(d => d.Warehouse == etsk.Warehouse && d.DeviceCode == etsk.DeviceCode);
+                if (etv == null)
+                {
+                    log.Error("找不到设备，DeviceCode - " + etsk.DeviceCode);
+                    return;
+                }
+                //只接收存车的
+                if (etsk.Type == EnmTaskType.SaveCar)
+                {
+                    #region 将车厅作业完成
+                    Device hall = cwdevice.Find(cd => cd.Warehouse == etsk.Warehouse && cd.DeviceCode == etsk.HallCode);
+                    if (hall != null)
+                    {
+                        ImplementTask halltask = FindITask(tt => tt.Warehouse == hall.Warehouse && tt.DeviceCode == hall.DeviceCode);
+                        if (halltask != null)
+                        {
+                            halltask.Status = EnmTaskStatus.Finished;
+                            halltask.IsComplete = 1;
+                            DeleteITask(halltask);
+                        }
+                        hall.TaskID = 0;
+                        hall.SoonTaskID = 0;
+                        cwdevice.Update(hall);
+                    }
+                    else
+                    {
+                        log.Error("存车装载完成，要复位车厅设备时，车厅设备为NULL");
+                    }
+                    #endregion
+
+                    Location toLct = await cwlctn.FindLocationAsync(l => l.Address == etsk.ToLctAddress && l.Warehouse == etsk.Warehouse);
+
+                    //查找车位，如果查找得到，则复位原来的车位，同时生成卸载作业；
+                    //如果查找不到，则不做任何处理
+                    Location loc = new AllocateLocBySecond().AllocateLocOfEtvScope(etv, checkcode);
+                    if (loc == null)
+                    {
+                        log.Info("复检尺寸不通过时，二次分配车位，找不到合适车位，checkcode - " + checkcode + ",原来存车位 - " + toLct.Address + " 尺寸 - " + toLct.LocSize);
+                        return;
+                    }
+                    loc.Status = EnmLocationStatus.Entering;
+                    loc.InDate = toLct.InDate;
+                    loc.WheelBase = distance;
+                    loc.CarSize = checkcode;
+                    loc.PlateNum = toLct.PlateNum;
+                    loc.ImagePath = toLct.ImagePath;
+                    loc.ICCode = etsk.ICCardCode;
+                    await cwlctn.UpdateLocationAsync(loc);
+
+                    toLct.Status = EnmLocationStatus.Space;
+                    toLct.InDate = DateTime.Parse("2017-1-1");
+                    toLct.WheelBase = 0;
+                    toLct.CarSize = "";
+                    toLct.ICCode = "";
+                    toLct.PlateNum = "";
+                    toLct.ImagePath = "";
+                    await cwlctn.UpdateLocationAsync(toLct);
+
+                    etsk.ToLctAddress = loc.Address;
+                    etsk.Distance = distance;
+                    etsk.CarSize = checkcode;
+                    etsk.LocSize = loc.LocSize;
+                    etsk.Status = EnmTaskStatus.ReCheckInLoad;
+                    etsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+                    etsk.SendDtime = DateTime.Now;
+
+                    await UpdateITaskAsync(etsk);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 车位卸载时,车位上有车，则重新分配车位
+        /// </summary>
+        public async Task DealUnloadButHasCarBlock(int taskid)
+        {
+            Log log = LogFactory.GetLogger("DealUnloadButHasCarBlock");
+            try
+            {
+                #region
+                CWLocation cwlctn = new CWLocation();
+                CWDevice cwdevice = new CWDevice();
+
+                ImplementTask etask = await FindAsync(taskid);
+                if (etask == null)
+                {
+                    log.Error("系统异常，依ID - " + taskid + " 找不到作业！");
+                    return;
+                }
+                if (etask.Type == EnmTaskType.GetCar)
+                {
+                    log.Error("当前作业是取车，为非法报文！");
+                    return;
+                }
+                Device etv = await cwdevice.FindAsync(d => d.Warehouse == etask.Warehouse && d.DeviceCode == etask.DeviceCode);
+                if (etv == null)
+                {
+                    log.Error("系统异常，找不到移动设备 devicecode - " + etask.DeviceCode);
+                    return;
+                }
+                Location unloadLctn = await cwlctn.FindLocationAsync(l => l.Warehouse == etask.Warehouse && l.Address == etask.ToLctAddress);
+                if (unloadLctn == null)
+                {
+                    log.Error("系统异常，找不到卸载车位 - " + etask.ToLctAddress);
+                    return;
+                }
+                if (unloadLctn.Type != EnmLocationType.Normal)
+                {
+                    log.Error("卸载车位 - " + etask.ToLctAddress + " 不是正常车位，可能是车厅！");
+                    return;
+                }
+                if (etask.IsComplete == 11)
+                {
+                    log.Info("已经进行分配过车位，不再进行分配车位");
+                    return;
+                }
+                Location transLctn = new AllocateLocBySecond().AllocateLocOfEtvScope(etv, unloadLctn.CarSize);
+                if (transLctn == null)
+                {
+                    log.Info("卸载车位上有车时，二次分配车位，找不到合适车位，checkcode - " + unloadLctn.CarSize + ",卸载车位 - " + unloadLctn.Address);
+                    return;
+                }
+                //将原车位数据搬移，同时将其类型设为系统禁用，修改作业状态
+                transLctn.Status = EnmLocationStatus.Entering;
+                transLctn.ICCode = unloadLctn.ICCode;
+                transLctn.InDate = unloadLctn.InDate;
+                transLctn.WheelBase = unloadLctn.WheelBase;
+                transLctn.CarSize = unloadLctn.CarSize;
+                transLctn.PlateNum = unloadLctn.PlateNum;
+                transLctn.ImagePath = unloadLctn.ImagePath;
+
+                await cwlctn.UpdateLocationAsync(transLctn);
+
+                //禁用原车位
+                unloadLctn.Type = EnmLocationType.HasCarLocker;
+                unloadLctn.Status = EnmLocationStatus.Space;
+                unloadLctn.InDate = DateTime.Parse("2017-1-1");
+                unloadLctn.WheelBase = 0;
+                unloadLctn.CarSize = "";
+                unloadLctn.ICCode = "";
+                unloadLctn.PlateNum = "";
+                unloadLctn.ImagePath = "";
+
+                await cwlctn.UpdateLocationAsync(transLctn);
+
+                etask.Status = EnmTaskStatus.WaitforDeleteTask;
+                etask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+                etask.SendDtime = DateTime.Now;
+                etask.ToLctAddress = transLctn.Address;
+                etask.LocSize = transLctn.LocSize;
+
+                await UpdateITaskAsync(etask);
+                #endregion
             }
             catch (Exception ex)
             {

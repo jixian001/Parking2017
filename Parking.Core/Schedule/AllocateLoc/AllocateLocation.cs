@@ -1051,7 +1051,7 @@ namespace Parking.Core
             }
             return null;
         }
-
+        
 
         /// <summary>
         /// 比较尺寸

@@ -170,6 +170,12 @@ namespace Parking.Web.Models
                 case EnmTaskStatus.TMUROWaitforUnload:
                     msg = "MURO下发卸载";
                     break;
+                case EnmTaskStatus.ReCheckInLoad:
+                    msg = "上报复检尺寸";
+                    break;
+                case EnmTaskStatus.WaitforDeleteTask:
+                    msg = "删除指令";
+                    break;
                 default:
                     msg = status.ToString();
                     break;

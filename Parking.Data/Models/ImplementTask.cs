@@ -37,8 +37,7 @@ namespace Parking.Data
         public string CarSize { get; set; }
         public int CarWeight { get; set; }
         /// <summary>
-        /// 判断当前作业是否完成，
-        /// 如果完成了，则只在系统里做个记录
+        /// 0-未完成，1-已完成，11- 车位上有车时，已发送了一次卸载       
         /// </summary>
         public int IsComplete { get; set; }
         //如果有其他报文需求信息，再增加
@@ -108,12 +107,16 @@ namespace Parking.Data
         TWaitforUnload,  //等待执行卸载
         TWaitforMove,// 等待移动
 
-        LoadFinishing,//装载完成
-        UnLoadFinishing,//卸载完成
-        MoveFinishing,//移动完成
+        LoadFinishing, //装载完成
+        UnLoadFinishing, //卸载完成
+        MoveFinishing, //移动完成
 
         WillWaitForUnload, // 装载完成后，将其更新为等待卸载，同时生成卸载指令
-        TMUROWaitforLoad   // 等待装载
+        TMUROWaitforLoad=34,   // 等待装载
+
+        ReCheckInLoad,   //车厅装载时复核尺寸
+        WaitforDeleteTask,  //删除指令 下发（23，1）
+        DeleteTaskFinishing //收到（1023，1），删除完成
     }
 
 }
