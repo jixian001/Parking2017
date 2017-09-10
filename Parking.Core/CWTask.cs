@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Parking.Auxiliary;
 using Parking.Data;
 using System.Linq.Expressions;
+using Parking.Core.Schedule;
 
 namespace Parking.Core
 {
@@ -1945,24 +1946,14 @@ namespace Parking.Core
             Response resp = new Response();
             try
             {
-                Device smg = new AllocateTV().Allocate(mohall, lct);
-                //Device smg = new CWDevice().Find(d => d.Region == lct.Region);
-                if (smg == null)
+                Device myHall = new AllocateHallAndTv().Allocate(mohall, lct);
+                if (myHall == null)
                 {
-                    //系统故障
-                    this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "20.wav");
+                    AddNofication(mohall.Warehouse, mohall.DeviceCode, "42.wav");
 
                     resp.Message = "找不到可用的TV";
                     return resp;
                 }
-                if (smg.Mode != EnmModel.Automatic)
-                {
-                    this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "42.wav");
-
-                    resp.Message = "TV的模式不是全自动";
-                    return resp;
-                }
-
                 lct.Status = EnmLocationStatus.Outing;
                 Response respo = new CWLocation().UpdateLocation(lct);
                 if (respo.Code == 1)
@@ -4238,7 +4229,6 @@ namespace Parking.Core
             try
             {
                 Device tv = new AllocateTV().Allocate(hall, lct);
-                //Device tv = cwdevice.Find(d => d.Region == lct.Region);
                 if (tv == null)
                 {
                     log.Error("队列-卡号：" + master.ICCardCode + " 车厅："
@@ -4611,6 +4601,7 @@ namespace Parking.Core
                     }
                 }
             }
+
             return 1;
         }
 
@@ -4784,6 +4775,26 @@ namespace Parking.Core
         }
 
         /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="queue"></param>
+        /// <returns></returns>
+        public Response UpdateQueue(WorkTask queue)
+        {
+            return manager_queue.Update(queue);
+        }
+
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="queue"></param>
+        /// <returns></returns>
+        public async Task<Response> UpdateQueueAsync(WorkTask queue)
+        {
+            return await manager_queue.UpdateAsync(queue);
+        }
+
+        /// <summary>
         /// 删除队列
         /// </summary>
         /// <param name="queue"></param>
@@ -4954,7 +4965,6 @@ namespace Parking.Core
         /// <returns></returns>
         public Page<WorkTask> FindPagelist(Page<WorkTask> pageWork, Expression<Func<WorkTask, bool>> where, OrderParam param)
         {
-
             if (param == null)
             {
                 param = new OrderParam()
@@ -5294,6 +5304,133 @@ namespace Parking.Core
 
                 await UpdateITaskAsync(etask);
                 #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 维护作业队列，主要更改出车车厅,
+        /// 这个做得简洁些，同一个区域内的，车厅及ETV都空闲时，
+        /// 才允许更改
+        /// </summary>
+        public async Task MaintainWorkQueueAsync()
+        {
+            Log log = LogFactory.GetLogger("MaintainWorkQueue");
+            try
+            {
+                CWDevice cwdevice = new CWDevice();
+                CWLocation cwlctn = new CWLocation();
+
+                List<Device> hallsLst = await cwdevice.FindListAsync(d => d.Type == EnmSMGType.Hall && d.TaskID == 0 && d.Mode == EnmModel.Automatic);
+                List<Device> etvsLst = await cwdevice.FindListAsync(d => d.Type == EnmSMGType.ETV);
+                //获取没有作业的ETV
+                List<Device> hasTaskEtvLst = etvsLst.FindAll(d => d.IsAble == 1 && d.TaskID == 0);
+                //如果ETV与车厅同一个区域
+                if (hallsLst.Count == 1 && hasTaskEtvLst.Count == 1)
+                {
+                    Device hall = hallsLst[0];
+                    Device etv = hasTaskEtvLst[0];
+
+                    if (hall.Region == etv.Region)
+                    {
+                        if (hall.IsAvailabe == 1 && etv.IsAvailabe == 1)
+                        {
+                            List<WorkTask> masterLst = await FindQueueListAsync(m => m.IsMaster == 2 && m.MasterType == EnmTaskType.GetCar && m.Warehouse == hall.Warehouse);
+                            if (masterLst.Count == 0)
+                            {
+                                return;
+                            }
+                            if (masterLst.Exists(m => m.DeviceCode == hall.DeviceCode))
+                            {
+                                //如果还有取车队列，暂不更改
+                                return;
+                            }
+                            //判断当前空闲的ETV，是否可达车位 （即另一台ETV正在执行的作业不包含其车位）
+                            Device otherEtv = etvsLst.Find(d => d.DeviceCode != etv.DeviceCode && d.Warehouse == etv.Warehouse);
+                            if (otherEtv == null)
+                            {
+                                log.Error("系统异常，找不到对面的ETV，etvsLst - " + etvsLst.Count + " ,Current - " + etv.DeviceCode);
+                                return;
+                            }
+                            int minScope = 0;
+                            int maxScope = 0;
+                            #region
+                            if (otherEtv.IsAble == 0)
+                            {
+                                //是1号ETV
+                                if (otherEtv.DeviceCode < etv.DeviceCode)
+                                {
+                                    minScope = 1;
+                                    maxScope = Convert.ToInt32(otherEtv.Address.Substring(1, 2)) + 3;
+                                }
+                                else
+                                {
+                                    minScope = Convert.ToInt32(otherEtv.Address.Substring(1, 2)) - 3;
+                                    maxScope = 18;
+                                }
+                            }
+                            else
+                            {
+                                if (otherEtv.TaskID == 0)
+                                {
+                                    log.Error("系统异常，找不到对面的ETV,查询不到其作业号！");
+                                    return;
+                                }
+                                ImplementTask task = await FindAsync(otherEtv.TaskID);
+                                if (task == null)
+                                {
+                                    log.Error("系统异常，依作业号 - " + otherEtv.TaskID + " 找不到作业！");
+                                    return;
+                                }
+                                string toAddrs = "";
+                                if (task.Status == EnmTaskStatus.TWaitforLoad)
+                                {
+                                    toAddrs = task.FromLctAddress;
+                                }
+                                else
+                                {
+                                    toAddrs = task.ToLctAddress;
+                                }
+                                int toCol = Convert.ToInt32(toAddrs.Substring(1, 2));
+                                //1#ETV
+                                if (otherEtv.DeviceCode < etv.DeviceCode)
+                                {
+                                    minScope = 1;
+                                    maxScope = toCol + 3;
+                                }
+                                else
+                                {
+                                    minScope = toCol - 3;
+                                    maxScope = 18;
+                                }
+                            }
+                            #endregion
+
+                            for (int i = 0; i < masterLst.Count; i++)
+                            {
+                                WorkTask mtsk = masterLst[i];
+                                Location loc = cwlctn.FindLocation(lc => lc.ICCode == mtsk.ICCardCode);
+                                if (loc == null)
+                                {
+                                    continue;
+                                }
+                                if (loc.LocColumn > minScope && loc.LocColumn < maxScope)
+                                {
+                                    continue;
+                                }
+                                //修改出车车厅
+                                mtsk.DeviceCode = hall.DeviceCode;
+                                mtsk.HallCode = hall.DeviceCode;
+
+                                await UpdateQueueAsync(mtsk);
+                            }
+
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

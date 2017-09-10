@@ -731,5 +731,14 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             return Content("success");
         }
 
+        /// <summary>
+        /// 维护作业队列，是当车厅空闲时，将强制将别的车厅的作业分配给他执行
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ContentResult> MaintainWorkQueue()
+        {
+            await new CWTask().MaintainWorkQueueAsync();
+            return Content("success");
+        }       
     }
 }

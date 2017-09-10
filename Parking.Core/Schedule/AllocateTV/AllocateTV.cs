@@ -69,8 +69,7 @@ namespace Parking.Core
                         if (task != null)
                         {
                             string toAddrs = "";
-                            if (task.Status == EnmTaskStatus.TWaitforLoad ||
-                                task.Status == EnmTaskStatus.TWaitforMove)
+                            if (task.Status == EnmTaskStatus.TWaitforLoad)
                             {
                                 toAddrs = task.FromLctAddress;
                             }
@@ -110,7 +109,7 @@ namespace Parking.Core
                     }
                 }
                 //有两个空闲或，两个忙时，都优先分配车厅所在区域的ETV
-                List<Device> orderbyLst = availableLst.OrderBy(d => Math.Abs(d.Region - loc.Region)).ToList();
+                List<Device> orderbyLst = availableLst.OrderBy(d => Math.Abs(d.Region - hall.Region)).ToList();
                 return orderbyLst[0];
             }
             return null;
