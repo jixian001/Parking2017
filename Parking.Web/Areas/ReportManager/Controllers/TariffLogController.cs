@@ -206,7 +206,6 @@ namespace Parking.Web.Areas.ReportManager.Controllers
             #endregion
             return Json(resp, JsonRequestBehavior.AllowGet);
         }
-
-
+        
     }
 }

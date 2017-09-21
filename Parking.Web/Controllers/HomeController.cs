@@ -234,8 +234,7 @@ namespace Parking.Web.Controllers
                 {
                     resp.Message = "上传的指纹特性数量不正确，Length- "+psTZ.Length;
                 }
-
-                log.Debug(resp.Message);
+                log.Debug("指纹上传返回值 - "+resp.Message);
             }
             catch (Exception ex)
             {
@@ -306,6 +305,7 @@ namespace Parking.Web.Controllers
                     plateNum = result.PlateNum;
                     sound = result.Sound;
                 }
+                log.Debug("一体机刷卡,返回 - " + resp.Message);
             }
             catch (Exception ex)
             {

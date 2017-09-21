@@ -56,6 +56,8 @@ namespace Parking.Core
                         log.Info("当前预定车位，address-" + lct.Address + " ,wh- " + lct.Warehouse + " ,locsize- " + lct.LocSize + ",carsize- " + checkCode + " 尺寸不合适，按临时卡分配");
                         //释放预定的车位
                         lct.Status = EnmLocationStatus.Space;
+                        lct.PlateNum = "";
+                        lct.InDate= DateTime.Parse("2017-1-1");
                         cwlctn.UpdateLocation(lct);
                         //按临时车位处理
                         lct = this.PXDAllocate(hall, checkCode, out smg);
@@ -158,8 +160,10 @@ namespace Parking.Core
             List<Location> lctnLst = new List<Location>();
             #region 依距车厅的远近找出所有车位的集合          
             List<Location> allLocLst = cwlctn.FindLocList();
+            List<Customer> fixCustLst = cwiccd.FindCustList(cu => cu.Type == EnmICCardType.FixedLocation || cu.Type == EnmICCardType.VIP);
             //排除固定车位
-            allLocLst = allLocLst.FindAll(lc => cwiccd.FindFixLocationByAddress(hall.Warehouse, lc.Address) == null);
+            allLocLst = allLocLst.FindAll(lc => fixCustLst.Exists(cc => cc.LocAddress == lc.Address && cc.Warehouse == lc.Warehouse));
+
             #region 车位尺寸一致
             List<Location> sameLctnLst = new List<Location>();
 

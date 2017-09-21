@@ -96,6 +96,7 @@
     <Compile Include="CWTaskTransfer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schedule\AllocateLoc\AllocateLocation.cs" />
+    <Compile Include="Schedule\AllocateLoc\AllocateLocByBook.cs" />
     <Compile Include="Schedule\AllocateLoc\AllocateLocBySecond.cs" />
     <Compile Include="Schedule\AllocateTV\AllocateHallAndTv.cs" />
     <Compile Include="Schedule\AllocateTV\AllocateTV.cs" />

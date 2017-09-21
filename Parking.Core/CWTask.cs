@@ -219,7 +219,9 @@ namespace Parking.Core
                 DeviceCode = itask.DeviceCode,
                 Type = itask.Type,
                 Status = itask.Status,
-                SendStatusDetail = itask.SendStatusDetail
+                SendStatusDetail = itask.SendStatusDetail,
+                ICCardCode=itask.ICCardCode,
+                PlateNum=itask.PlateNum
             };
             Response resp = manager.Delete(itask.ID);
 
@@ -589,7 +591,8 @@ namespace Parking.Core
                     ICCardCode = htsk.ICCardCode,
                     Distance = distance,
                     CarSize = checkCode,
-                    CarWeight = weight
+                    CarWeight = weight,
+                    PlateNum=lct.PlateNum
                 };
                 resp = AddQueue(queue);
                 if (resp.Code == 1)
@@ -680,7 +683,8 @@ namespace Parking.Core
                     ICCardCode = htsk.ICCardCode,
                     Distance = distance,
                     CarSize = carsize,
-                    CarWeight = weight
+                    CarWeight = weight,
+                    PlateNum=lct.PlateNum
                 };
                 resp = AddQueue(queue);
                 if (resp.Code == 1)
@@ -1588,7 +1592,8 @@ namespace Parking.Core
                     ICCardCode = tsk.ICCardCode,
                     Distance = tsk.Distance,
                     CarSize = tsk.CarSize,
-                    CarWeight = tsk.CarWeight
+                    CarWeight = tsk.CarWeight,
+                    PlateNum=""
                 };
                 AddQueue(queue);
             }
@@ -1975,7 +1980,8 @@ namespace Parking.Core
                     ICCardCode = lct.ICCode,
                     Distance = lct.WheelBase,
                     CarSize = lct.CarSize,
-                    CarWeight = lct.CarWeight
+                    CarWeight = lct.CarWeight,
+                    PlateNum=lct.PlateNum
                 };
                 respo = AddQueue(queue);
                 if (respo.Code == 1)
@@ -1987,7 +1993,7 @@ namespace Parking.Core
 
                     this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "28.wav");
 
-                    #region 推送停车记录给云平台
+                    #region 推送记录给云平台
                     ParkingRecord pkRecord = new ParkingRecord
                     {
                         TaskType = 1,
@@ -2000,6 +2006,8 @@ namespace Parking.Core
                         InDate = lct.InDate.ToString()
                     };
                     CloudCallback.Instance().WatchParkingRcd(pkRecord);
+
+                    CloudCallback.Instance().WatchWorkTask(1, queue);
                     #endregion
                 }
                 else
@@ -2062,7 +2070,8 @@ namespace Parking.Core
                     ICCardCode = lct.ICCode,
                     Distance = lct.WheelBase,
                     CarSize = lct.CarSize,
-                    CarWeight = lct.CarWeight
+                    CarWeight = lct.CarWeight,
+                    PlateNum=lct.PlateNum
                 };
                 resp = AddQueue(queue);
                 if (resp.Code == 1)
@@ -2083,6 +2092,8 @@ namespace Parking.Core
                         InDate = lct.InDate.ToString()
                     };
                     CloudCallback.Instance().WatchParkingRcd(pkRecord);
+
+                    CloudCallback.Instance().WatchWorkTask(1, queue);
                     #endregion
                 }
 
@@ -2143,13 +2154,16 @@ namespace Parking.Core
                     ICCardCode = lct.ICCode,
                     Distance = lct.WheelBase,
                     CarSize = lct.CarSize,
-                    CarWeight = lct.CarWeight
+                    CarWeight = lct.CarWeight,
+                    PlateNum=lct.PlateNum
                 };
                 resp = AddQueue(queue);
                 if (resp.Code == 1)
                 {
                     log.Info(DateTime.Now.ToString() + "  取物操作，添加取物队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
                     resp.Message += " 已经加入取车队列，请稍后！";
+
+                    CloudCallback.Instance().WatchWorkTask(1, queue);
                 }
 
             }
@@ -2342,7 +2356,8 @@ namespace Parking.Core
                     ICCardCode = frlct.ICCode,
                     Distance = frlct.WheelBase,
                     CarSize = frlct.CarSize,
-                    CarWeight = frlct.CarWeight
+                    CarWeight = frlct.CarWeight,
+                    PlateNum=""
                 };
                 resp = AddQueue(queue);
                 if (resp.Code == 1)
@@ -2772,7 +2787,8 @@ namespace Parking.Core
                                             ICCardCode = forwardLctn.ICCode,
                                             Distance = forwardLctn.WheelBase,
                                             CarSize = forwardLctn.CarSize,
-                                            CarWeight = forwardLctn.CarWeight
+                                            CarWeight = forwardLctn.CarWeight,
+                                            PlateNum=""
                                         };
                                         AddQueue(transback_queue);
                                         log.Info("生成回挪队列，deviceCode-" + dev.DeviceCode + " ,ID-" + transback_queue.ID + " ,ICCode - " + forwardLctn.ICCode);
@@ -4057,7 +4073,8 @@ namespace Parking.Core
                                             ICCardCode = master.ICCardCode,
                                             Distance = master.Distance,
                                             CarSize = master.CarSize,
-                                            CarWeight = master.CarWeight
+                                            CarWeight = master.CarWeight,
+                                            PlateNum=""
                                         };
                                         AddQueue(waitqueue);
 
@@ -4089,7 +4106,8 @@ namespace Parking.Core
                                                 ICCardCode = forwardLctn.ICCode,
                                                 Distance = forwardLctn.WheelBase,
                                                 CarSize = forwardLctn.CarSize,
-                                                CarWeight = forwardLctn.CarWeight
+                                                CarWeight = forwardLctn.CarWeight,
+                                                PlateNum=""
                                             };
                                             AddQueue(transback_queue);
                                         }
@@ -4123,7 +4141,8 @@ namespace Parking.Core
                                         ICCardCode = master.ICCardCode,
                                         Distance = master.Distance,
                                         CarSize = master.CarSize,
-                                        CarWeight = master.CarWeight
+                                        CarWeight = master.CarWeight,
+                                        PlateNum=""
                                     };
                                     AddQueue(waitqueue);
 
@@ -4202,7 +4221,8 @@ namespace Parking.Core
                     ICCardCode = master.ICCardCode,
                     Distance = master.Distance,
                     CarSize = master.CarSize,
-                    CarWeight = master.CarWeight
+                    CarWeight = master.CarWeight,
+                    PlateNum = ""
                 };
                 AddQueue(waitqueue);
             }
@@ -4335,7 +4355,8 @@ namespace Parking.Core
                                                 ICCardCode = master.ICCardCode,
                                                 Distance = master.Distance,
                                                 CarSize = master.CarSize,
-                                                CarWeight = master.CarWeight
+                                                CarWeight = master.CarWeight,
+                                                PlateNum = ""
                                             };
                                             AddQueue(waitqueue);
                                             #endregion
@@ -4363,7 +4384,8 @@ namespace Parking.Core
                                                     ICCardCode = forwardLctn.ICCode,
                                                     Distance = forwardLctn.WheelBase,
                                                     CarSize = forwardLctn.CarSize,
-                                                    CarWeight = forwardLctn.CarWeight
+                                                    CarWeight = forwardLctn.CarWeight,
+                                                    PlateNum = ""
                                                 };
                                                 AddQueue(transback_queue);
                                             }
@@ -4451,7 +4473,8 @@ namespace Parking.Core
                                 ICCardCode = master.ICCardCode,
                                 Distance = master.Distance,
                                 CarSize = master.CarSize,
-                                CarWeight = master.CarWeight
+                                CarWeight = master.CarWeight,
+                                PlateNum = ""
                             };
                             AddQueue(waitHallQueue);
 
@@ -4548,7 +4571,8 @@ namespace Parking.Core
                         ICCardCode = frLctn.ICCode,
                         Distance = frLctn.WheelBase,
                         CarSize = frLctn.CarSize,
-                        CarWeight = frLctn.CarWeight
+                        CarWeight = frLctn.CarWeight,
+                        PlateNum = ""
                     };
                     AddQueue(tvQueue);
                 }
@@ -5301,6 +5325,7 @@ namespace Parking.Core
                 etask.SendDtime = DateTime.Now;
                 etask.ToLctAddress = transLctn.Address;
                 etask.LocSize = transLctn.LocSize;
+                etask.IsComplete = 11;
 
                 await UpdateITaskAsync(etask);
                 #endregion
@@ -5426,6 +5451,7 @@ namespace Parking.Core
                                 mtsk.HallCode = hall.DeviceCode;
 
                                 await UpdateQueueAsync(mtsk);
+                                break;
                             }
 
                         }

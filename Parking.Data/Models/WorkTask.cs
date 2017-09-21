@@ -29,15 +29,13 @@ namespace Parking.Data
         [StringLength(10)]
         public string ToLctAddress { get; set; }
         [StringLength(10)]
-        public string ICCardCode { get; set; }
-        /// <summary>
-        /// 轴距
-        /// </summary>
+        public string ICCardCode { get; set; }     
         public int Distance { get; set; }
         [StringLength(10)]
         public string CarSize { get; set; }
-        public int CarWeight { get; set; }        
-
+        public int CarWeight { get; set; }
+        [StringLength(10)]
+        public string PlateNum { get; set; }
     }
 
 }

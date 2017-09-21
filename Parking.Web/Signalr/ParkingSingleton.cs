@@ -31,16 +31,23 @@ namespace Parking.Web
 
             log = LogFactory.GetLogger("ParkingSingleton");
 
+            #region 给主页面显示用的
             MainCallback<Location>.Instance().WatchEvent += FileWatch_LctnWatchEvent;
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
             MainCallback<ImplementTask>.Instance().WatchEvent += FileWatch_IMPTaskWatchEvent;
             MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
+            #endregion
 
             SingleCallback.Instance().ICCardWatchEvent += ParkingSingleton_ICCardWatchEvent;
             SingleCallback.Instance().FaultsWatchEvent += ParkingSingleton_FaultsWatchEvent;
             SingleCallback.Instance().PlateWatchEvent += ParkingSingleton_PlateWatchEvent;
 
+            #region 给云服务数据推送的
             CloudCallback.Instance().ParkingRcdWatchEvent += ParkingSingleton_ParkingRcdWatchEvent;
+            CloudCallback.Instance().MasterTaskWatchEvent += ParkingSingleton_MasterTaskWatchEvent;
+            CloudCallback.Instance().ImpTaskWatchEvent += ParkingSingleton_ImpTaskWatchEvent;
+            CloudCallback.Instance().SendSMSWatchEvent += ParkingSingleton_SendSMSWatchEvent;
+            #endregion
 
         }
 
@@ -279,16 +286,6 @@ namespace Parking.Web
             //给界面用
             Clients.All.feedbackImpTask(detail);
             #endregion
-
-            #region 上传执行业务给云服务
-            var iRet = new
-            {
-                Type = type,
-                SubTask = itask
-            };
-            string jsonstr = JsonConvert.SerializeObject(iRet);
-            Clients.All.feedbackImpTaskToCloud(jsonstr);
-            #endregion
         }
 
         /// <summary>
@@ -304,36 +301,25 @@ namespace Parking.Web
                 {
                     return;
                 }
-                #region 上传队列信息给云服务
-                var iRet = new
+
+                #region 给LED的
+                int count = 0;
+                int wh = mtsk.Warehouse;
+                int hallID = mtsk.DeviceCode;
+                List<WorkTask> mtskLst = new CWTask().FindQueueList(d => d.Warehouse == wh && d.DeviceCode == hallID);
+                count = mtskLst.Count;
+
+                var data = new
                 {
-                    Type = type,
-                    MasterTask = mtsk
+                    Warehouse = wh,
+                    HallID = hallID,
+                    Count = count
                 };
-                string jsonstr = JsonConvert.SerializeObject(iRet);
-                Clients.All.feedbackWorkTaskToCloud(jsonstr);
+                string jsonStr = JsonConvert.SerializeObject(data);
+                //推送
+                Clients.All.QueueStateToLed(jsonStr);
                 #endregion
 
-                Task.Factory.StartNew(() =>
-                {
-                    #region 给LED的
-                    int count = 0;
-                    int wh = mtsk.Warehouse;
-                    int hallID = mtsk.DeviceCode;
-                    List<WorkTask> mtskLst = new CWTask().FindQueueList(d => d.Warehouse == wh && d.DeviceCode == hallID);
-                    count = mtskLst.Count;
-
-                    var data = new
-                    {
-                        Warehouse = wh,
-                        HallID = hallID,
-                        Count = count
-                    };
-                    string jsonStr = JsonConvert.SerializeObject(data);
-                    //推送
-                    Clients.All.QueueStateToLed(jsonStr);
-                    #endregion
-                });
             }
             catch (Exception ex)
             {
@@ -393,7 +379,7 @@ namespace Parking.Web
             };
             Clients.All.feedbackDeviceFaultStat(data);
             #endregion
-        }       
+        }
 
         /// <summary>
         /// 回调车牌识别给LED、车牌识别页面
@@ -417,9 +403,9 @@ namespace Parking.Web
             string jsonIccd = JsonConvert.SerializeObject(iccd);
             Clients.All.ICCodeInfoToLed(jsonIccd);
             #endregion
-
         }
 
+        #region 推送到云服务
         /// <summary>
         /// 停车记录推送到云平台
         /// </summary>
@@ -429,6 +415,54 @@ namespace Parking.Web
             string jsonstr = JsonConvert.SerializeObject(record);
             Clients.All.feedbackParkingRecordToCloud(jsonstr);
         }
+
+        /// <summary>
+        /// 可执行作业推送到云平台
+        /// </summary>
+        private void ParkingSingleton_ImpTaskWatchEvent(int type, ImplementTask itask)
+        {
+            #region 上传执行业务给云服务
+            var iRet = new
+            {
+                Type = type,
+                SubTask = itask
+            };
+            string jsonstr = JsonConvert.SerializeObject(iRet);
+            Clients.All.feedbackImpTaskToCloud(jsonstr);
+            #endregion
+        }
+
+        /// <summary>
+        /// 取车队列推送到云平台
+        /// </summary>
+        private void ParkingSingleton_MasterTaskWatchEvent(int type, WorkTask mtsk)
+        {
+            if (mtsk.IsMaster == 1 || type != 1)
+            {
+                return;
+            }
+
+            #region 上传队列信息给云服务
+            var iRet = new
+            {
+                Type = type,
+                MasterTask = mtsk
+            };
+            string jsonstr = JsonConvert.SerializeObject(iRet);
+            Clients.All.feedbackWorkTaskToCloud(jsonstr);
+            #endregion
+        }
+
+        /// <summary>
+        /// 发送短信服务
+        /// </summary>
+        /// <param name="sms"></param>
+        private void ParkingSingleton_SendSMSWatchEvent(SMSInfo sms)
+        {
+            string jsonstr = JsonConvert.SerializeObject(sms);
+            Clients.All.feedbackSMSInfo(jsonstr);
+        }
+        #endregion
 
     }
 }

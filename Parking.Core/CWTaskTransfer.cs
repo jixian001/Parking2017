@@ -1310,7 +1310,7 @@ namespace Parking.Core
                         Response respe = cwsaveproof.Add(scert);
                         if (respe.Code == 1)
                         {
-                            log.Debug("存车按指纹，保存至存车指纹库成功，SNO - " + SNO);
+                            log.Debug("存车按指纹，保存至存车卡号成功，SNO - " + SNO);
                         }
                         #endregion
                         #region

@@ -9,6 +9,5 @@ namespace Parking.Data
     public class DeviceInfoLogManager:BaseManager<DeviceInfoLog>
     {
 
-
     }
 }

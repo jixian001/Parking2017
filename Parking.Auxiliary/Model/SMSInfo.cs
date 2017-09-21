@@ -10,9 +10,9 @@ namespace Parking.Auxiliary
     {       
         public int warehouse { get; set; }
         public int DeviceCode { get; set; }
-        public string ICCode { get; set; }
+        public string Plate { get; set; }
         public int AutoStep { get; set; }
         public string Message { get; set; }
-        public DateTime RcdTime { get; set; }
+        public string RcdTime { get; set; }
     }
 }

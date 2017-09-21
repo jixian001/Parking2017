@@ -448,8 +448,10 @@ namespace Parking.Core
             int sspace = 0;
             try
             {
-                List<Location> locLst = new CWLocation().FindLocList();
                 CWICCard cwiccd = new CWICCard();
+                List<Location> locLst = new CWLocation().FindLocList();
+                List<Customer> custsLst = cwiccd.FindCustList(cu=>cu.Type==EnmICCardType.FixedLocation||cu.Type==EnmICCardType.VIP);
+               
                 for (int i = 0; i < locLst.Count; i++)
                 {
                     Location loc = locLst[i];
@@ -460,7 +462,7 @@ namespace Parking.Core
                         total++;
                     }
                     bool isFixLoc = false;
-                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) != null)
+                    if (custsLst.Exists(cc=>cc.LocAddress==loc.Address&&cc.Warehouse==loc.Warehouse))
                     {
                         fix++;
                         isFixLoc = true;

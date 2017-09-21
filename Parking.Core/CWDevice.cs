@@ -16,7 +16,7 @@ namespace Parking.Core
     /// </summary>
     public class CWDevice
     {
-        private DeviceManager manager = new DeviceManager();       
+        private DeviceManager manager = new DeviceManager();
 
         public CWDevice()
         {
@@ -42,7 +42,7 @@ namespace Parking.Core
                 Warehouse = smg.Warehouse,
                 DeviceCode = smg.DeviceCode,
                 RecordDtime = DateTime.Now,
-                Mode =ConvertMode(smg.Mode),
+                Mode = ConvertMode(smg.Mode),
                 IsAble = smg.IsAble,
                 IsAvailabe = smg.IsAvailabe,
                 RunStep = smg.RunStep,
@@ -295,6 +295,7 @@ namespace Parking.Core
             return await manager_alarm.FindListAsync(where);
         }
 
+        private static Dictionary<int, SMSInfo> dicSmsRequest = new Dictionary<int, SMSInfo>();
         /// <summary>
         /// 批量更新
         /// </summary>
@@ -329,7 +330,7 @@ namespace Parking.Core
                 int devicecode = alarmLst.First().DeviceCode;
                 List<BackAlarm> backlst = new List<BackAlarm>();
 
-                List<Alarm> hasValueLst = manager_alarm.FindList(al => al.Warehouse == warehouse && al.DeviceCode == devicecode && al.Value == 1);
+                List<Alarm> hasValueLst = await manager_alarm.FindListAsync(al => al.Warehouse == warehouse && al.DeviceCode == devicecode && al.Value == 1);
                 foreach (Alarm ar in hasValueLst)
                 {
                     int type = 0;
@@ -350,9 +351,74 @@ namespace Parking.Core
 
                     backlst.Add(back);
                 }
-
                 SingleCallback.Instance().WatchFaults(warehouse, devicecode, backlst);
-                #endregion              
+                #endregion
+
+                #region 向云服务请求短信发送                
+                if (faultLst.Count > 0)
+                {
+                    Alarm myalarm = faultLst[0];
+                    Device smg = await FindAsync(d => d.Warehouse == myalarm.Warehouse && d.DeviceCode == myalarm.DeviceCode);                    
+                    if (smg==null|| smg.TaskID == 0)
+                    {
+                        return resp;
+                    }
+                    //一定是作业时报警才上报
+                    ImplementTask itask = await new CWTask().FindAsync(smg.TaskID);
+                    if (itask == null)
+                    {
+                        return resp;
+                    }
+                    SMSInfo sms = null;
+                    if (dicSmsRequest.ContainsKey(smg.DeviceCode))
+                    {
+                        SMSInfo info = dicSmsRequest[smg.DeviceCode];                       
+                        //同一个任务，只发送一次
+                        if (info.Plate == itask.PlateNum)
+                        {
+                            return resp;
+                        }                        
+                        //15分钟内只允许发送一条
+                        DateTime rcdtime = DateTime.Parse(info.RcdTime);
+                        if (DateTime.Compare(rcdtime, DateTime.Now.AddMinutes(15)) < 0)
+                        {
+                            return resp;
+                        }
+                        //内容重复的，一个小时内只发一次
+                        if (info.Message == myalarm.Description&& DateTime.Compare(rcdtime, DateTime.Now.AddHours(1)) < 0)
+                        {
+                            return resp;
+                        }
+                        sms = new SMSInfo {
+                            warehouse=smg.Warehouse,
+                            DeviceCode=smg.DeviceCode,
+                            Plate=itask.PlateNum,
+                            AutoStep=smg.RunStep,
+                            Message=myalarm.Description,
+                            RcdTime=DateTime.Now.ToString()
+                        };
+                        dicSmsRequest[smg.DeviceCode] = sms;
+                    }
+                    else
+                    {
+                        sms = new SMSInfo
+                        {
+                            warehouse = smg.Warehouse,
+                            DeviceCode = smg.DeviceCode,
+                            Plate = itask.PlateNum,
+                            AutoStep = smg.RunStep,
+                            Message = myalarm.Description,
+                            RcdTime = DateTime.Now.ToString()
+                        };
+                        dicSmsRequest.Add(smg.DeviceCode,sms);
+                    }
+                    if (sms != null)
+                    {
+                        CloudCallback.Instance().SendSMSToCloud(sms);
+                    }
+                }
+                #endregion
+
             }
             catch (Exception ex)
             {

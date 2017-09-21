@@ -23,7 +23,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string wh = Request.QueryString["warehouse"];
                 string code = Request.QueryString["devicecode"];
 
-                if (string.IsNullOrEmpty(wh) || 
+                if (string.IsNullOrEmpty(wh) ||
                     string.IsNullOrEmpty(code))
                 {
                     log.Error("传输出现错误，参数为空！");
@@ -66,22 +66,22 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string iccode = jo["iccode"].ToString();
                 string plate = jo["plateNum"].ToString();
 
-                if (string.IsNullOrEmpty(warehouse) || string.IsNullOrEmpty(hallID))
-                {                    
-                    log.Error("APP存车，hallID为空或warehouse为空！");
+                if (string.IsNullOrEmpty(hallID))
+                {
+                    log.Error("APP存车，hallID为空！");
                     resp.Message = "参数错误";
                     return Json(resp);
                 }
-                int wh = Convert.ToInt32(warehouse);
+                int wh = 1;
                 int code = Convert.ToInt32(hallID);
 
                 CWDevice cwdevice = new CWDevice();
                 CWTask motsk = new CWTask();
 
-                Device moHall = cwdevice.Find(dev=>dev.Warehouse==wh&&dev.DeviceCode==code);
+                Device moHall = cwdevice.Find(dev => dev.Warehouse == wh && dev.DeviceCode == code);
                 if (moHall == null)
                 {
-                    log.Error("APP存车时， 找不到车厅设备. warehouse - "+warehouse+" ,hallID - "+hallID);
+                    log.Error("APP存车时， 找不到车厅设备. warehouse - " + warehouse + " ,hallID - " + hallID);
                     resp.Message = "找不到车厅";
                     return Json(resp);
                 }
@@ -115,17 +115,39 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                         resp.Message = "不是处于刷卡阶段";
                         return Json(resp);
                     }
+                    CWICCard cwiccd = new CWICCard();
+
+                    string physiccode = "1234567890";
+                    Customer cust = cwiccd.FindCust(cc => cc.PlateNum == plate);
+                    if (cust != null)
+                    {
+                        ICCard iccd = cwiccd.Find(ic => ic.CustID == cust.ID);
+                        if (iccd != null)
+                        {
+                            iccode = iccd.UserCode;
+                            physiccode = iccd.PhysicCode;
+                        }
+                    }
+                    CWSaveProof cwsaveproof = new CWSaveProof();
                     if (string.IsNullOrEmpty(iccode))
                     {
-                        iccode = "444";
+                        iccode = cwsaveproof.GetMaxSNO().ToString();
                     }
-                    tsk.PlateNum = plate;
 
+                    SaveCertificate scert = new SaveCertificate();
+                    scert.IsFingerPrint = 2;
+                    scert.Proof = physiccode;
+                    scert.SNO = Convert.ToInt32(iccode);
+                    //添加凭证到存车库中
+                    Response respe = cwsaveproof.Add(scert);
+
+                    tsk.PlateNum = plate;
                     //更新作业状态为第二次刷卡，启动流程
                     motsk.DealISwipedSecondCard(tsk, iccode);
+
                     resp.Code = 1;
                     resp.Message = "流程进行中";
-                    
+
                     return Json(resp);
                 }
                 else
@@ -167,37 +189,37 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string warehouse = jo["warehouse"].ToString();
                 string hallID = jo["hallID"].ToString();
                 string plate = jo["plateNum"].ToString();
-               
-                if (string.IsNullOrEmpty(warehouse) ||
-                   string.IsNullOrEmpty(hallID) ||
-                   string.IsNullOrEmpty(plate))
+
+                if (string.IsNullOrEmpty(plate))
                 {
-                    log.Error("参数错误,库区、车厅号或车牌号有为空的！");
+                    log.Error("车牌号为空的！");
                     resp.Message = "参数错误";
                     return Json(resp);
                 }
-                int wh = Convert.ToInt32(warehouse);
-                int hcode = Convert.ToInt32(hallID);
+                #region 暂不用
+                //int wh = Convert.ToInt32(warehouse);
+                //int hcode = Convert.ToInt32(hallID);
 
-                Device moHall = cwdevice.Find(d => d.Warehouse == wh && d.DeviceCode == hcode);
-                if (moHall == null)
-                {
-                    log.Error("APP取车时，查找不到车厅，warehouse- " + warehouse + " ,hallID- " + hallID);
-                    resp.Message = "找不到车厅";
-                    return Json(resp);
-                }
-                if (moHall.Mode != EnmModel.Automatic)
-                {
-                    log.Error("APP取车时，车厅模式不是全自动 , Mode - " + moHall.Mode.ToString());
-                    resp.Message = "车厅不是全自动";
-                    return Json(resp);
-                }
-                if (moHall.HallType == EnmHallType.Entrance)
-                {
-                    log.Error("APP取车时，车厅不是出车厅,halltype - " + moHall.HallType.ToString());
-                    resp.Message = "车厅不是全自动";
-                    return Json(resp);
-                }
+                //Device moHall = cwdevice.Find(d => d.Warehouse == wh && d.DeviceCode == hcode);
+                //if (moHall == null)
+                //{
+                //    log.Error("APP取车时，查找不到车厅，warehouse- " + warehouse + " ,hallID- " + hallID);
+                //    resp.Message = "找不到车厅";
+                //    return Json(resp);
+                //}
+                //if (moHall.Mode != EnmModel.Automatic)
+                //{
+                //    log.Error("APP取车时，车厅模式不是全自动 , Mode - " + moHall.Mode.ToString());
+                //    resp.Message = "车厅不是全自动";
+                //    return Json(resp);
+                //}
+                //if (moHall.HallType == EnmHallType.Entrance)
+                //{
+                //    log.Error("APP取车时，车厅不是出车厅,halltype - " + moHall.HallType.ToString());
+                //    resp.Message = "车厅不是全自动";
+                //    return Json(resp);
+                //}
+                #endregion
                 Location loc = new CWLocation().FindLocation(lc => lc.PlateNum == plate);
                 if (loc == null)
                 {
@@ -225,8 +247,18 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     log.Error("APP取车时，车位已被禁用，address - " + loc.Address);
                     resp.Message = "车位已被禁用";
                     return Json(resp);
-                }               
-                resp = motsk.DealOSwipedCard(moHall, loc);
+                }
+                //分配车厅
+                int hallcode = new CWDevice().AllocateHall(loc, false);
+                Device moHall = new CWDevice().Find(d => d.DeviceCode == hallcode);
+                if (moHall != null)
+                {
+                    resp = motsk.DealOSwipedCard(moHall, loc);
+                }
+                else
+                {
+                    resp.Message = "找不到合适车厅";
+                }
             }
             catch (Exception ex)
             {
@@ -238,7 +270,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         }
 
         /// <summary>
-        /// APP，取消取车
+        /// APP，取消取车,暂没有
         /// </summary>
         /// <returns></returns>
         [HttpPost]
@@ -260,38 +292,52 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
 
                 CWTask motask = new CWTask();
                 CWLocation cwlctn = new CWLocation();
-                if (!string.IsNullOrEmpty(iccode))
-                {
-                    WorkTask mtsk = motask.FindQueue(mt=>mt.ICCardCode==iccode);
-                    if (mtsk != null)
-                    {
-                        Location loc = cwlctn.FindLocation(lc=>lc.ICCode==iccode);
-                        loc.Status = EnmLocationStatus.Occupy;
-                        cwlctn.UpdateLocation(loc);
+                #region 不用
+                //if (!string.IsNullOrEmpty(iccode))
+                //{
+                //    WorkTask mtsk = motask.FindQueue(mt => mt.ICCardCode == iccode);
+                //    if (mtsk != null)
+                //    {
+                //        Location loc = cwlctn.FindLocation(lc => lc.ICCode == iccode);
+                //        loc.Status = EnmLocationStatus.Occupy;
+                //        cwlctn.UpdateLocation(loc);
 
-                        resp= motask.DeleteQueue(mtsk.ID);
-                        return Json(resp);
-                    }
-                }
-
+                //        resp = motask.DeleteQueue(mtsk.ID);
+                //        return Json(resp);
+                //    }
+                //}
+                #endregion
                 if (!string.IsNullOrEmpty(plate))
                 {
-                    Location loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate);
+                    Location loc = cwlctn.FindLocation(lc => lc.PlateNum == plate);
                     if (loc != null)
                     {
-                        WorkTask mtsk = motask.FindQueue(mt=>mt.ICCardCode==loc.ICCode);
+                        WorkTask mtsk = motask.FindQueue(mt => mt.ICCardCode == loc.ICCode);
                         if (mtsk != null)
                         {
                             loc.Status = EnmLocationStatus.Occupy;
                             cwlctn.UpdateLocation(loc);
 
-                            resp = motask.DeleteQueue(mtsk.ID);
+                            motask.DeleteQueue(mtsk.ID);
+                            resp.Code = 1;
+                            resp.Message = "取消成功";
                             return Json(resp);
                         }
+                        else
+                        {
+                            resp.Code = 1;
+                            resp.Message = "当前车辆还没有取车";
+                        }
+                    }
+                    else
+                    {
+                        resp.Message = "车辆不在库里";
                     }
                 }
-
-                resp.Message = "没有找到取车记录";
+                else
+                {
+                    resp.Message = "车牌不允许为空";
+                }
             }
             catch (Exception ex)
             {
@@ -324,90 +370,64 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string proof = jo["proof"].ToString();
                 string plate = jo["platenum"].ToString();
 
-                if (string.IsNullOrEmpty(proof) ||                   
+                if (string.IsNullOrEmpty(proof) ||
                     string.IsNullOrEmpty(type))
                 {
-                    log.Error("参数错误,车位或类型 有为空的！");
+                    log.Error("参数错误,车位尺寸或接口类型 有为空的！");
+                    resp.Message = "参数错误";
+                    return Json(resp);
+                }               
+                if (string.IsNullOrEmpty(plate))
+                {
+                    log.Error("参数错误：车位预定时，车牌为空的！");
                     resp.Message = "参数错误";
                     return Json(resp);
                 }
+                CWLocation cwlctn = new CWLocation();
                 int deftype = Convert.ToInt32(type);
                 //车位预定
                 if (deftype == 3)
                 {
-                    if (string.IsNullOrEmpty(plate))
+                    string checkcode = "122";
+                    if (proof == "111")
                     {
-                        log.Error("参数错误：车位预定时，车牌为空的！");
-                        resp.Message = "参数错误";
-                        return Json(resp);
+                        checkcode = "121";
                     }
-                }
-
-                int warehouse = 1;
-                if (!string.IsNullOrEmpty(wh))
-                {
-                    warehouse = Convert.ToInt32(warehouse);
-                }
-                string[] arr = proof.Split('(');
-                if (arr.Length < 2)
-                {
-                    log.Error("车位参数错误,proof- " + proof);
-                    resp.Message = "车位参数错误";
-                    return Json(resp);
-                }
-                string address = arr[0];
-                string size = arr[1].Substring(0, 3);
-
-                CWLocation cwlctn = new CWLocation();
-                Location loc = cwlctn.FindLocation(lc=>lc.Warehouse==warehouse&&lc.Address==address);
-                if (loc == null)
-                {
-                    log.Error("APP预定时，找不到取车位,plate - " + plate);
-                    resp.Message = "没有存车";
-                    return Json(resp);
-                }
-                if (loc.Type != EnmLocationType.Normal)
-                {
-                    log.Error("APP预定时，不是正常车位，address- " + address);
-                    resp.Message = "当前车位不允许操作";
-                    return Json(resp);
-                }
-
-                //车位预定
-                if (deftype == 3)
-                {
-                    if (loc.Status != EnmLocationStatus.Space)
+                    Location loc = new AllocateLocByBook().AllocateLoc(checkcode);
+                    if (loc == null)
                     {
-                        log.Error("APP预定时，不是空闲车位，address- " + address);
-                        resp.Message = "当前车位不允许操作";
-                        return Json(resp);
+                        loc.Status = EnmLocationStatus.Book;
+                        loc.PlateNum = plate;
+                        loc.InDate = DateTime.Now;
+                        cwlctn.UpdateLocation(loc);
 
+                        resp.Code = 1;
+                        resp.Message = "预定成功";
+
+                        log.Info("预定成功, checkcode - " + proof + " ,address - " + loc.Address + " ,locsize - " + loc.LocSize);
                     }
-                    loc.Status = EnmLocationStatus.Book;
-                    loc.PlateNum = plate;
-                    loc.InDate = DateTime.Now;
-                    cwlctn.UpdateLocation(loc);
-
-                    resp.Code = 1;
-                    resp.Message = "预定成功";                   
+                    else
+                    {
+                        resp.Message = "找不到合适车位";
+                    }
                 }
                 else if (deftype == 4)
                 {
-                    //车位取消
-                    if (loc.Status != EnmLocationStatus.Book)
+                    Location loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate&&lc.Status==EnmLocationStatus.Book);
+                    if (loc != null)
                     {
-                        log.Error("APP取消预定时，该车位没有被预定，address- " + address + " ,status - " + loc.Status.ToString());
-                        resp.Message = "当前车位操作失败";
-                        return Json(resp);
+                        loc.Status = EnmLocationStatus.Space;
+                        loc.PlateNum = "";
+                        loc.InDate = DateTime.Parse("2017-1-1");
+                        cwlctn.UpdateLocation(loc);
 
+                        resp.Code = 1;
+                        resp.Message = "取消预定成功";
                     }
-                    loc.Status = EnmLocationStatus.Space;
-                    loc.PlateNum = "";
-                    loc.InDate = DateTime.Parse("2017-7-4");
-                    cwlctn.UpdateLocation(loc);
-
-                    resp.Code = 1;
-                    resp.Message = "取消预定成功";                   
+                    else
+                    {
+                        resp.Message = "车辆没有预定车位";
+                    }
                 }
                 else
                 {
@@ -448,7 +468,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 Location loc = null;
                 if (!string.IsNullOrEmpty(plate))
                 {
-                    loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate);
+                    loc = cwlctn.FindLocation(lc => lc.PlateNum == plate);
                 }
                 if (loc == null)
                 {
@@ -471,14 +491,14 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     resp.Message = "查询费用成功";
                     resp.Fee = fee;
                     resp.InDtime = loc.InDate.ToString();
-                    resp.OutDtime = DateTime.Now.ToString();                    
+                    resp.OutDtime = DateTime.Now.ToString();
                 }
                 else
                 {
-                    log.Error("APP查询费用,系统异常- "+resp.Message);
-                } 
+                    log.Error("APP查询费用,系统异常- " + resp.Message);
+                }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 log.Error(ex.ToString());
                 resp.Message = "系统异常";
