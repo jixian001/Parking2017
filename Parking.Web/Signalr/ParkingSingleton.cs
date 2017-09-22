@@ -38,9 +38,12 @@ namespace Parking.Web
             MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
             #endregion
 
+            #region 个推
             SingleCallback.Instance().ICCardWatchEvent += ParkingSingleton_ICCardWatchEvent;
             SingleCallback.Instance().FaultsWatchEvent += ParkingSingleton_FaultsWatchEvent;
             SingleCallback.Instance().PlateWatchEvent += ParkingSingleton_PlateWatchEvent;
+            SingleCallback.Instance().FixLocsWatchEvent += ParkingSingleton_FixLocsWatchEvent;
+            #endregion
 
             #region 给云服务数据推送的
             CloudCallback.Instance().ParkingRcdWatchEvent += ParkingSingleton_ParkingRcdWatchEvent;
@@ -101,7 +104,42 @@ namespace Parking.Web
                 #region 更新车位状态
                 if (loca != null)
                 {
-                    Clients.All.feedbackLocInfo(loca);
+                    Customer cust = new CWICCard().FindFixLocationByAddress(loca.Warehouse, loca.Address);
+                    int isfix = 0;
+                    string custname = "";
+                    string deadline = "";
+                    string platenum = "";
+                    if (cust != null)
+                    {
+                        isfix = 1;
+                        custname = cust.UserName;
+                        deadline = cust.Deadline.ToString();
+                        platenum = cust.PlateNum;
+                    }
+
+                    LocsMapping map = new LocsMapping
+                    {
+                        Warehouse = loca.Warehouse,
+                        Address = loca.Address,
+                        LocSide = loca.LocSide,
+                        LocColumn = loca.LocColumn,
+                        LocLayer = loca.LocLayer,
+                        Type = loca.Type,
+                        Status = loca.Status,
+                        LocSize = loca.LocSize,
+                        ICCode = loca.ICCode,
+                        WheelBase = loca.WheelBase,
+                        CarWeight = loca.CarWeight,
+                        CarSize = loca.CarSize,
+                        InDate = loca.InDate.ToString(),
+                        PlateNum = loca.PlateNum,
+                        IsFixLoc = isfix,
+                        CustName = custname,
+                        Deadline = deadline,
+                        RcdPlate = platenum
+                    };
+
+                    Clients.All.feedbackLocInfo(map);
                 }
                 #endregion
                 #region 更新统计信息
@@ -405,6 +443,35 @@ namespace Parking.Web
             #endregion
         }
 
+        /// <summary>
+        /// 固定用户信息改变时推送
+        /// </summary>       
+        private void ParkingSingleton_FixLocsWatchEvent(Location loc, int isfix, string custname, string deadline, string rcdplate)
+        {
+            LocsMapping map = new LocsMapping
+            {
+                Warehouse = loc.Warehouse,
+                Address = loc.Address,
+                LocSide = loc.LocSide,
+                LocColumn = loc.LocColumn,
+                LocLayer = loc.LocLayer,
+                Type = loc.Type,
+                Status = loc.Status,
+                LocSize = loc.LocSize,
+                ICCode = loc.ICCode,
+                WheelBase = loc.WheelBase,
+                CarWeight = loc.CarWeight,
+                CarSize = loc.CarSize,
+                InDate = loc.InDate.ToString(),
+                PlateNum = loc.PlateNum,
+                IsFixLoc = isfix,
+                CustName = custname,
+                Deadline = deadline,
+                RcdPlate = rcdplate
+            };
+            Clients.All.feedbackLocInfo(map);
+        }
+
         #region 推送到云服务
         /// <summary>
         /// 停车记录推送到云平台
@@ -419,9 +486,18 @@ namespace Parking.Web
         /// <summary>
         /// 可执行作业推送到云平台
         /// </summary>
+        /// <param name="type">1-添加，2-更新，3-删除</param>
         private void ParkingSingleton_ImpTaskWatchEvent(int type, ImplementTask itask)
         {
             #region 上传执行业务给云服务
+            if(itask.Type==EnmTaskType.Avoid||
+                itask.Type == EnmTaskType.RetrySend||
+                itask.Type == EnmTaskType.Move||
+                itask.Type == EnmTaskType.Transpose)
+            {
+                return;
+            }
+
             var iRet = new
             {
                 Type = type,
@@ -435,6 +511,7 @@ namespace Parking.Web
         /// <summary>
         /// 取车队列推送到云平台
         /// </summary>
+        /// <param name="type">1-添加，2-更新（暂不用）</param>
         private void ParkingSingleton_MasterTaskWatchEvent(int type, WorkTask mtsk)
         {
             if (mtsk.IsMaster == 1 || type != 1)

@@ -222,8 +222,7 @@
 
             //单击单元格时，显示车位信息
             function displayInfo(msg) {
-
-                console.log("selected location :" + msg);
+               
                 $("input[name='lctn']").val(msg);
                 var $disp = $("#selected-seats");
                 var $addrs = $("#addr");
@@ -246,10 +245,10 @@
                         {
                             var obj = nback.data;
                             $addrs.text(obj.Address);
-                            var html = '<li class="">库区：' + obj.Warehouse + '</li>';
-                            $disp.html(html);
+                            //var html = '<li class="">库区：' + obj.Warehouse + '</li>';
+                            //$disp.html(html);
                             html = '<li>地址：' + obj.LocSide + '边' + obj.LocColumn + '列' + obj.LocLayer + '层</li>';
-                            $disp.append(html);
+                            $disp.html(html);
                             html = '<li id="li_type">类型：' + formatLocType(obj.Type) + '</li>';
                             $disp.append(html);
                             html = '<li>状态：' + formatLocStatus(obj.Status) + '</li>';
@@ -264,6 +263,15 @@
                             $disp.append(html);
                             html = '<li>车牌：<span class="text-info">' + obj.PlateNum + '</span></li>';
                             $disp.append(html);
+
+                            if (obj.IsFixLoc == 1)
+                            {
+                                html = '<li>车主姓名：<span class="text-info">' + obj.CustName + '</span></li>';
+                                $disp.append(html);
+                                html = '<li>注册车牌：<span class="text-info">' + obj.RcdPlate + '</span></li>';
+                                $disp.append(html);
+                            }
+
                             html = '<li>入库时间：<span class="text-info"><br>' +formatDate(obj.InDate) + '</span></li>';
                             $disp.append(html);
 
@@ -275,8 +283,6 @@
                         }
                     }
                 });
-
-                //$("html,body").animate({ scrollTop: ($("#area").offset().top)-60 }, 1500);
 
                 return 'selected';
             }
@@ -404,6 +410,10 @@
                                     else if (ly == 3)
                                     {
                                         l3_sc.get([mark]).status(color);
+                                    }
+
+                                    if (obj.IsFixLoc == 1) {
+                                        $("#" + mark).addClass("divborder");
                                     }
                                 }
                             });
@@ -815,7 +825,13 @@
                         else if (ly == 2) {
                             l2_sc.get([mark]).status(color);
                         }
-                      
+
+                        if (lctn.IsFixLoc == 1) {
+                            $("#" + mark).addClass("divborder");
+                        }
+                        else {                           
+                            $("#" + mark).removeClass("divborder");
+                        }
                     }
 
                     //更新车位显示区域
@@ -823,10 +839,10 @@
                     if ($("#lctn").val() == adrs) {
                         var $disp = $("#selected-seats");
 
-                        var html = '<li>库区：' + lctn.Warehouse + '</li>';
-                        $disp.html(html);
+                        //var html = '<li>库区：' + lctn.Warehouse + '</li>';
+                        //$disp.html(html);
                         html = '<li>地址：' + lctn.LocSide + '边' + lctn.LocColumn + '列' + lctn.LocLayer + '层</li>';
-                        $disp.append(html);
+                        $disp.html(html);
                         html = '<li id="li_type">类型：' + formatLocType(lctn.Type) + '</li>';
                         $disp.append(html);
                         html = '<li>状态：' + formatLocStatus(lctn.Status) + '</li>';
@@ -841,10 +857,18 @@
                         $disp.append(html);
                         html = '<li>车牌：<span class="text-info">' + lctn.PlateNum + '</span></li>';
                         $disp.append(html);
+
+                        if (lctn.IsFixLoc == 1)
+                        {
+                            html = '<li>车主姓名：<span class="text-info">' + lctn.CustName + '</span></li>';
+                            $disp.append(html);
+                            html = '<li>注册车牌：<span class="text-info">' + lctn.RcdPlate + '</span></li>';
+                            $disp.append(html);
+                        }
+
                         html = '<li>入库时间：<span class="text-info">' + lctn.InDate + '</span></li>';
                         $disp.append(html);
-                    }
-                    console.log("location addrs-" + adrs + " callback");
+                    }                   
                 },
 
                 //设备信息推送
@@ -858,7 +882,7 @@
                         console.log("feedback deviec info ,but device region no exist");
                         return;
                     }
-                    console.log(name + " object exist");
+                   
                     $("table[id='" + name + "'] input[id='address']").val(formatAddress(smg.Address));
                     $("table[id='" + name + "'] input[id='mode']").val(formatMode(smg.Mode));
                     $("table[id='" + name + "'] input[id='able']").val(formatAble(smg.IsAble));
@@ -930,8 +954,7 @@
                     var red = data.IsRed;
 
                     var name = wh + '-' + code;
-                    //console.log('feedback device - ' + name + ' status- ' + red);
-
+                   
                     var obj = $("table[id='" + name + "']");
                     if (obj.length == 0) {
                         console.log("feedback deviec info ,but device region no exist");

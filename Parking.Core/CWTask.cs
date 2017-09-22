@@ -177,6 +177,14 @@ namespace Parking.Core
             {
                 MainCallback<ImplementTask>.Instance().OnChange(1, itask);
             }
+
+            if (itask.Type == EnmTaskType.SaveCar || 
+                itask.Type == EnmTaskType.GetCar || 
+                itask.Type == EnmTaskType.TempGet)
+            {
+                //所有的作业添加，对于云服务都是更新操作，在云服务上传时，再进行相关类型转换
+                CloudCallback.Instance().WatchImpTask(2, itask);
+            }
             return resp;
         }
 
@@ -186,6 +194,14 @@ namespace Parking.Core
             if (resp.Code == 1)
             {
                 MainCallback<ImplementTask>.Instance().OnChange(1, itask);
+            }
+
+            if (itask.Type == EnmTaskType.SaveCar ||
+                itask.Type == EnmTaskType.GetCar ||
+                itask.Type == EnmTaskType.TempGet)
+            {
+                //所有的作业添加，对于云服务都是更新操作，在云服务上传时，再进行相关类型转换
+                CloudCallback.Instance().WatchImpTask(2, itask);
             }
             return resp;
         }
@@ -203,6 +219,7 @@ namespace Parking.Core
         public async Task<Response> UpdateITaskAsync(ImplementTask itask)
         {
             Response resp = await manager.UpdateAsync(itask);
+
             if (resp.Code == 1)
             {
                 MainCallback<ImplementTask>.Instance().OnChange(2, itask);
@@ -212,6 +229,8 @@ namespace Parking.Core
 
         public Response DeleteITask(ImplementTask itask)
         {
+            EnmTaskType ttype = itask.Type;
+
             ImplementTask copy = new ImplementTask
             {
                 ID = itask.ID,
@@ -229,11 +248,21 @@ namespace Parking.Core
             {
                 MainCallback<ImplementTask>.Instance().OnChange(3, copy);
             }
+
+            if (ttype == EnmTaskType.SaveCar ||
+                ttype == EnmTaskType.GetCar ||
+                ttype == EnmTaskType.TempGet)
+            {
+                //删除
+                CloudCallback.Instance().WatchImpTask(3, copy);
+            }
             return resp;
         }
 
         public async Task<Response> DeleteITaskAsync(ImplementTask itask)
         {
+            EnmTaskType ttype = itask.Type;
+
             ImplementTask copy = new ImplementTask
             {
                 ID = itask.ID,
@@ -241,13 +270,22 @@ namespace Parking.Core
                 DeviceCode = itask.DeviceCode,
                 Type = itask.Type,
                 Status = itask.Status,
-                SendStatusDetail = itask.SendStatusDetail
+                SendStatusDetail = itask.SendStatusDetail,
+                PlateNum=itask.PlateNum
             };
             Response resp = await manager.DeleteAsync(itask);
 
             if (resp.Code == 1)
             {
                 MainCallback<ImplementTask>.Instance().OnChange(3, copy);
+            }
+
+            if (ttype == EnmTaskType.SaveCar ||
+                ttype == EnmTaskType.GetCar ||
+                ttype == EnmTaskType.TempGet)
+            {
+                //删除
+                CloudCallback.Instance().WatchImpTask(3, copy);
             }
             return resp;
         }
@@ -284,6 +322,7 @@ namespace Parking.Core
             task.SendStatusDetail = detail;
             task.SendDtime = DateTime.Now;
             Response resp = UpdateITask(task);
+
             return resp;
         }
 
@@ -298,6 +337,10 @@ namespace Parking.Core
             task.SendStatusDetail = EnmTaskStatusDetail.NoSend;
             task.SendDtime = DateTime.Now;
             Response resp = UpdateITask(task);
+
+            //更新状态
+            CloudCallback.Instance().WatchImpTask(2, task);
+
             return resp;
         }
 
@@ -382,16 +425,12 @@ namespace Parking.Core
                             {
                                 etv.TaskID = etask.ID;
                                 cwdevice.Update(etv);
-                            }
-                            MainCallback<ImplementTask>.Instance().OnChange(1, etask);
+                            }                           
                         }
                     }
                 }
 
                 #endregion
-
-                //显示页面用
-                MainCallback<ImplementTask>.Instance().OnChange(1, task);
             }
             catch (Exception ex)
             {
@@ -525,15 +564,16 @@ namespace Parking.Core
                 if (lct == null)
                 {
                     htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
-                    //更新任务信息
-                    UpdateITask(htsk);
+                    this.DealUpdateTaskStatus(htsk, EnmTaskStatus.ISecondSwipedWaitforCarLeave);
+
                     this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "62.wav");
                     return;
                 }
                 if (tvID == 0)
                 {
                     htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
-                    UpdateITask(htsk);
+                    this.DealUpdateTaskStatus(htsk, EnmTaskStatus.ISecondSwipedWaitforCarLeave);
+
                     this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "42.wav");
                     return;
                 }
@@ -541,7 +581,8 @@ namespace Parking.Core
                 if (string.Compare(lct.LocSize, checkCode) < 0)
                 {
                     htsk.Status = EnmTaskStatus.ISecondSwipedWaitforCarLeave;
-                    UpdateITask(htsk);
+                    this.DealUpdateTaskStatus(htsk, EnmTaskStatus.ISecondSwipedWaitforCarLeave);
+
                     this.AddNofication(htsk.Warehouse, htsk.DeviceCode, "63.wav");
                     return;
                 }
@@ -576,6 +617,10 @@ namespace Parking.Core
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
 
                 resp = UpdateITask(htsk);
+
+                //推送给云服务
+                CloudCallback.Instance().WatchImpTask(2, htsk);
+
                 //添加TV的存车装载，将其加入队列中
                 WorkTask queue = new WorkTask()
                 {
@@ -651,8 +696,7 @@ namespace Parking.Core
                 lct.CarSize = carsize;
                 lct.InDate = DateTime.Now;
                 lct.ICCode = htsk.ICCardCode;
-                lct.PlateNum = htsk.PlateNum;
-                htsk.LocSize = lct.LocSize;
+                lct.PlateNum = htsk.PlateNum;               
                 lct.Status = EnmLocationStatus.Entering;
                 Response resp = new CWLocation().UpdateLocation(lct);
                 if (resp.Code == 1)
@@ -660,6 +704,7 @@ namespace Parking.Core
                     log.Info(DateTime.Now.ToString() + " 转存更新车位-" + lct.Address + " 数据，iccode-" + lct.ICCode + " status-" + lct.Status.ToString());
                 }
 
+                htsk.LocSize = lct.LocSize;
                 htsk.CarSize = carsize;
                 htsk.Distance = distance;
                 htsk.SendDtime = DateTime.Now;
@@ -667,6 +712,9 @@ namespace Parking.Core
                 htsk.Status = EnmTaskStatus.ISecondSwipedWaitforEVDown;
                 htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                 resp = UpdateITask(htsk);
+
+                //推送给云服务
+                CloudCallback.Instance().WatchImpTask(2, htsk);
 
                 //添加TV的存车装载，将其加入队列中
                 WorkTask queue = new WorkTask()
@@ -1561,6 +1609,10 @@ namespace Parking.Core
                 etsk.SendDtime = DateTime.Now;
                 etsk.Distance = distance;
                 UpdateITask(etsk);
+
+                //推送给云服务
+                CloudCallback.Instance().WatchImpTask(2, etsk);
+
             }
             catch (Exception ex)
             {
@@ -1593,7 +1645,7 @@ namespace Parking.Core
                     Distance = tsk.Distance,
                     CarSize = tsk.CarSize,
                     CarWeight = tsk.CarWeight,
-                    PlateNum=""
+                    PlateNum = tsk.PlateNum
                 };
                 AddQueue(queue);
             }
@@ -1616,6 +1668,9 @@ namespace Parking.Core
                 tsk.SendDtime = DateTime.Now;
                 tsk.IsComplete = 0;
                 await UpdateITaskAsync(tsk);
+
+                //推送给云服务
+                CloudCallback.Instance().WatchImpTask(2, tsk);
             }
             catch (Exception ex)
             {
@@ -1699,6 +1754,9 @@ namespace Parking.Core
                             halltask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
                             halltask.SendDtime = DateTime.Now;
                             UpdateITask(halltask);
+
+                            //推送给云服务
+                            CloudCallback.Instance().WatchImpTask(2, halltask);
                         }
                     }
                     else
@@ -1742,6 +1800,8 @@ namespace Parking.Core
                 etsk.SendDtime = DateTime.Now;
                 UpdateITask(etsk);
 
+                //推送给云服务
+                CloudCallback.Instance().WatchImpTask(2, etsk);
             }
             catch (Exception ex)
             {
@@ -1877,6 +1937,9 @@ namespace Parking.Core
             htsk.SendStatusDetail = EnmTaskStatusDetail.NoSend;
             htsk.SendDtime = DateTime.Now;
             UpdateITask(htsk);
+
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, htsk);
         }
 
         /// <summary>
@@ -1893,6 +1956,9 @@ namespace Parking.Core
             UpdateITask(task);
 
             this.AddNofication(task.Warehouse, task.DeviceCode, "19.wav");
+
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, task);
         }
 
         /// <summary>
@@ -1909,6 +1975,9 @@ namespace Parking.Core
             UpdateITask(task);
 
             this.AddNofication(task.Warehouse, task.DeviceCode, "21.wav");
+
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, task);
         }
 
         /// <summary>
@@ -1936,7 +2005,33 @@ namespace Parking.Core
 
             this.AddNofication(task.Warehouse, task.DeviceCode, "19.wav");
 
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, task);
+
             return resp.Code;
+        }
+
+        /// <summary>
+        /// APP扫码，取物转存处理
+        /// </summary>
+        /// <param name="task"></param>
+        public void DealAPPSwipeThreeCard(ImplementTask task)
+        {
+            task.Status = EnmTaskStatus.ISecondSwipedWaitforCheckSize;
+            string frLct = task.FromLctAddress;
+            string toLct = task.ToLctAddress;
+
+            task.FromLctAddress = toLct;
+            task.ToLctAddress = frLct;
+            task.SendStatusDetail = EnmTaskStatusDetail.NoSend;
+            task.SendDtime = DateTime.Now;
+            Response resp = UpdateITask(task);
+
+            this.AddNofication(task.Warehouse, task.DeviceCode, "21.wav");
+
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, task);
+
         }
 
 
@@ -1990,6 +2085,7 @@ namespace Parking.Core
 
                     resp.Code = 1;
                     resp.Message = "正在为你取车，请稍后";
+                    resp.Data = mohall.DeviceCode;
 
                     this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "28.wav");
 
@@ -2035,8 +2131,7 @@ namespace Parking.Core
             Response resp = new Response();
             try
             {
-                Device smg = new AllocateTV().Allocate(mohall, lct);
-                //Device smg = new CWDevice().Find(d => d.Region == lct.Region);
+                Device smg = new AllocateTV().Allocate(mohall, lct);               
                 if (smg == null)
                 {
                     //系统故障
@@ -2116,23 +2211,15 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("CWTask.TempGetCar");
             Response resp = new Response();
             try
-            {
-                //这里判断是否有可用的TV
-                //这里先以平面移动库来做
-                Device smg = new AllocateTV().Allocate(mohall, lct);
-                //Device smg = new CWDevice().Find(d => d.Region == lct.Region);
+            {               
+                Device smg = new AllocateTV().Allocate(mohall, lct);               
                 if (smg == null)
                 {
                     //系统故障
                     resp.Message = "系统故障，找不移动设备。locLayer-" + lct.LocLayer + " warehouse-" + lct.Warehouse;
                     return resp;
                 }
-                if (smg.Mode != EnmModel.Automatic)
-                {
-                    resp.Message = "TV-" + smg.DeviceCode + " 不是全自动状态！";
-                    return resp;
-                }
-
+               
                 lct.Status = EnmLocationStatus.TempGet;
                 resp = new CWLocation().UpdateLocation(lct);
                 if (resp.Code == 1)
@@ -2162,6 +2249,7 @@ namespace Parking.Core
                 {
                     log.Info(DateTime.Now.ToString() + "  取物操作，添加取物队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
                     resp.Message += " 已经加入取车队列，请稍后！";
+                    resp.Data = mohall.DeviceCode;
 
                     CloudCallback.Instance().WatchWorkTask(1, queue);
                 }
@@ -2788,7 +2876,7 @@ namespace Parking.Core
                                             Distance = forwardLctn.WheelBase,
                                             CarSize = forwardLctn.CarSize,
                                             CarWeight = forwardLctn.CarWeight,
-                                            PlateNum=""
+                                            PlateNum=forwardLctn.PlateNum
                                         };
                                         AddQueue(transback_queue);
                                         log.Info("生成回挪队列，deviceCode-" + dev.DeviceCode + " ,ID-" + transback_queue.ID + " ,ICCode - " + forwardLctn.ICCode);
@@ -2872,6 +2960,10 @@ namespace Parking.Core
             unloadtask.SendStatusDetail = EnmTaskStatusDetail.NoSend;
             unloadtask.SendDtime = DateTime.Now;
             UpdateITask(unloadtask);
+
+            //推送给云服务
+            CloudCallback.Instance().WatchImpTask(2, unloadtask);
+
 
             DeleteQueue(unloadQueue.ID);
         }
@@ -4011,8 +4103,7 @@ namespace Parking.Core
                                 if (forwardLctn.Status == EnmLocationStatus.Occupy)
                                 {
                                     #region
-                                    //找出要挪移的车位                                
-                                    //Location transLctn = new AllocateTV().PPYAllocateLctnNeedTransfer(forwardLctn);
+                                    //找出要挪移的车位
                                     Location transLctn = new AllocateTV().AllocateTvNeedTransfer(tv, forwardLctn);
                                     if (transLctn == null)
                                     {
@@ -4074,7 +4165,7 @@ namespace Parking.Core
                                             Distance = master.Distance,
                                             CarSize = master.CarSize,
                                             CarWeight = master.CarWeight,
-                                            PlateNum=""
+                                            PlateNum=master.PlateNum
                                         };
                                         AddQueue(waitqueue);
 
@@ -4107,7 +4198,7 @@ namespace Parking.Core
                                                 Distance = forwardLctn.WheelBase,
                                                 CarSize = forwardLctn.CarSize,
                                                 CarWeight = forwardLctn.CarWeight,
-                                                PlateNum=""
+                                                PlateNum=forwardLctn.PlateNum
                                             };
                                             AddQueue(transback_queue);
                                         }
@@ -4142,7 +4233,7 @@ namespace Parking.Core
                                         Distance = master.Distance,
                                         CarSize = master.CarSize,
                                         CarWeight = master.CarWeight,
-                                        PlateNum=""
+                                        PlateNum=lct.PlateNum
                                     };
                                     AddQueue(waitqueue);
 
@@ -4222,7 +4313,7 @@ namespace Parking.Core
                     Distance = master.Distance,
                     CarSize = master.CarSize,
                     CarWeight = master.CarWeight,
-                    PlateNum = ""
+                    PlateNum = lct.PlateNum
                 };
                 AddQueue(waitqueue);
             }
@@ -4294,8 +4385,7 @@ namespace Parking.Core
                                     {
                                         #region
                                         //找出要挪移的车位
-                                        Location transLctn = new AllocateTV().AllocateTvNeedTransfer(tv, forwardLctn);
-                                        //Location transLctn = new AllocateTV().PPYAllocateLctnNeedTransfer(forwardLctn);
+                                        Location transLctn = new AllocateTV().AllocateTvNeedTransfer(tv, forwardLctn);                                        
                                         if (transLctn == null)
                                         {
                                             log.Error(string.Format("找不到{0}的挪移车位", forwardLctn));
@@ -4356,7 +4446,7 @@ namespace Parking.Core
                                                 Distance = master.Distance,
                                                 CarSize = master.CarSize,
                                                 CarWeight = master.CarWeight,
-                                                PlateNum = ""
+                                                PlateNum = lct.PlateNum
                                             };
                                             AddQueue(waitqueue);
                                             #endregion
@@ -4385,7 +4475,7 @@ namespace Parking.Core
                                                     Distance = forwardLctn.WheelBase,
                                                     CarSize = forwardLctn.CarSize,
                                                     CarWeight = forwardLctn.CarWeight,
-                                                    PlateNum = ""
+                                                    PlateNum = forwardLctn.PlateNum
                                                 };
                                                 AddQueue(transback_queue);
                                             }
@@ -4474,7 +4564,7 @@ namespace Parking.Core
                                 Distance = master.Distance,
                                 CarSize = master.CarSize,
                                 CarWeight = master.CarWeight,
-                                PlateNum = ""
+                                PlateNum = lct.PlateNum
                             };
                             AddQueue(waitHallQueue);
 
@@ -4711,6 +4801,9 @@ namespace Parking.Core
                     OptName = ""
                 };
                 new CWOperateRecordLog().AddOperateLog(olog);
+
+                //推送云服务
+                CloudCallback.Instance().WatchImpTask(2, itask);
 
             }
             catch (Exception ex)
@@ -5131,6 +5224,9 @@ namespace Parking.Core
                     itask.SendDtime = DateTime.Now;
 
                     UpdateITask(itask);
+
+                    //推送云服务
+                    CloudCallback.Instance().WatchImpTask(2, itask);
                 }
                 else
                 {
@@ -5238,6 +5334,9 @@ namespace Parking.Core
                     etsk.SendDtime = DateTime.Now;
 
                     await UpdateITaskAsync(etsk);
+
+                    //推送云服务
+                    CloudCallback.Instance().WatchImpTask(2, etsk);
                 }
             }
             catch (Exception ex)
@@ -5328,6 +5427,8 @@ namespace Parking.Core
                 etask.IsComplete = 11;
 
                 await UpdateITaskAsync(etask);
+
+                CloudCallback.Instance().WatchImpTask(2, etask);
                 #endregion
             }
             catch (Exception ex)

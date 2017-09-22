@@ -69,9 +69,16 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 if (string.IsNullOrEmpty(hallID))
                 {
                     log.Error("APP存车，hallID为空！");
-                    resp.Message = "参数错误";
+                    resp.Message = "参数错误，hallID为空！";
                     return Json(resp);
                 }
+                if (string.IsNullOrEmpty(plate))
+                {
+                    log.Error("APP存车，车牌号为空！");
+                    resp.Message = "参数错误，车牌号为空！";
+                    return Json(resp);
+                }
+
                 int wh = 1;
                 int code = Convert.ToInt32(hallID);
 
@@ -109,46 +116,60 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                         resp.Message = "系统异常，找不到作业";
                         return Json(resp);
                     }
-                    if (tsk.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard)
+                    if (tsk.Status != EnmTaskStatus.ICarInWaitFirstSwipeCard &&
+                        tsk.Status != EnmTaskStatus.TempOCarOutWaitforDrive)
                     {
                         log.Error("APP存车时，不是处于刷卡阶段");
                         resp.Message = "不是处于刷卡阶段";
                         return Json(resp);
                     }
+                    if (tsk.PlateNum != plate)
+                    {
+                        log.Error("APP存车时，入库识别车牌与给定车牌不一致");
+                        resp.Message = "APP绑定车牌与车辆车牌不一致";
+                        return Json(resp);
+                    }
+
                     CWICCard cwiccd = new CWICCard();
 
-                    string physiccode = "1234567890";
-                    Customer cust = cwiccd.FindCust(cc => cc.PlateNum == plate);
-                    if (cust != null)
+                    if (tsk.Type == EnmTaskType.SaveCar)
                     {
-                        ICCard iccd = cwiccd.Find(ic => ic.CustID == cust.ID);
-                        if (iccd != null)
+                        string physiccode = "1234567890";
+                        Customer cust = cwiccd.FindCust(cc => cc.PlateNum == plate);
+                        if (cust != null)
                         {
-                            iccode = iccd.UserCode;
-                            physiccode = iccd.PhysicCode;
+                            ICCard iccd = cwiccd.Find(ic => ic.CustID == cust.ID);
+                            if (iccd != null)
+                            {
+                                iccode = iccd.UserCode;
+                                physiccode = iccd.PhysicCode;
+                            }
                         }
+                        CWSaveProof cwsaveproof = new CWSaveProof();
+                        if (string.IsNullOrEmpty(iccode))
+                        {
+                            iccode = cwsaveproof.GetMaxSNO().ToString();
+                        }
+
+                        SaveCertificate scert = new SaveCertificate();
+                        scert.IsFingerPrint = 2;
+                        scert.Proof = physiccode;
+                        scert.SNO = Convert.ToInt32(iccode);
+                        //添加凭证到存车库中
+                        Response respe = cwsaveproof.Add(scert);
+
+                        tsk.PlateNum = plate;
+                        //更新作业状态为第二次刷卡，启动流程
+                        motsk.DealISwipedSecondCard(tsk, iccode);
+
+                        resp.Code = 1;
+                        resp.Message = "流程进行中";
+                        return Json(resp);
                     }
-                    CWSaveProof cwsaveproof = new CWSaveProof();
-                    if (string.IsNullOrEmpty(iccode))
+                    else if (tsk.Type == EnmTaskType.TempGet)
                     {
-                        iccode = cwsaveproof.GetMaxSNO().ToString();
+                        motsk.DealAPPSwipeThreeCard(tsk);
                     }
-
-                    SaveCertificate scert = new SaveCertificate();
-                    scert.IsFingerPrint = 2;
-                    scert.Proof = physiccode;
-                    scert.SNO = Convert.ToInt32(iccode);
-                    //添加凭证到存车库中
-                    Response respe = cwsaveproof.Add(scert);
-
-                    tsk.PlateNum = plate;
-                    //更新作业状态为第二次刷卡，启动流程
-                    motsk.DealISwipedSecondCard(tsk, iccode);
-
-                    resp.Code = 1;
-                    resp.Message = "流程进行中";
-
-                    return Json(resp);
                 }
                 else
                 {
@@ -376,7 +397,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     log.Error("参数错误,车位尺寸或接口类型 有为空的！");
                     resp.Message = "参数错误";
                     return Json(resp);
-                }               
+                }
                 if (string.IsNullOrEmpty(plate))
                 {
                     log.Error("参数错误：车位预定时，车牌为空的！");
@@ -413,7 +434,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 }
                 else if (deftype == 4)
                 {
-                    Location loc = cwlctn.FindLocation(lc=>lc.PlateNum==plate&&lc.Status==EnmLocationStatus.Book);
+                    Location loc = cwlctn.FindLocation(lc => lc.PlateNum == plate && lc.Status == EnmLocationStatus.Book);
                     if (loc != null)
                     {
                         loc.Status = EnmLocationStatus.Space;
@@ -433,6 +454,83 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 {
                     resp.Message = "接口类型不正确，type- " + type;
                 }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+                resp.Message = "系统异常";
+            }
+            #endregion
+            return Json(resp);
+        }
+
+        /// <summary>
+        /// 云服务请求临时取物
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult RemoteTempGetInterface()
+        {
+            Response resp = new Response();
+            #region
+            Log log = LogFactory.GetLogger("RemoteTempGetInterface");
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+                //显示，记录
+                log.Info(req);
+                JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+               
+                string plate = jo["platenum"].ToString();
+                if (string.IsNullOrEmpty(plate))
+                {
+                    log.Info("参数错误,车牌为空的！");
+                    resp.Message = "参数错误";
+                    return Json(resp);
+                }
+                Location loc = new CWLocation().FindLocation(lc => lc.PlateNum == plate);
+                if (loc == null)
+                {
+                    log.Error("APP取物时，找不到取车位，plate - " + plate);
+                    resp.Message = "没有存车";
+                    return Json(resp);
+                }
+                CWTask motsk = new CWTask();
+                ImplementTask task = motsk.Find(tk => tk.ICCardCode == loc.ICCode);
+                if (task != null)
+                {
+                    log.Error("APP取物时，车位正在作业，iccode - " + loc.ICCode + " ,plate - " + plate);
+                    resp.Message = "正在作业";
+                    return Json(resp);
+                }
+                WorkTask queue = motsk.FindQueue(qu => qu.ICCardCode == loc.ICCode);
+                if (queue != null)
+                {
+                    log.Error("APP取物时，已经加入队列，iccode - " + loc.ICCode + " ,plate - " + plate);
+                    resp.Message = "已经加入队列";
+                    return Json(resp);
+                }
+                if (loc.Type != EnmLocationType.Normal)
+                {
+                    log.Error("APP取物时，车位已被禁用，address - " + loc.Address);
+                    resp.Message = "车位已被禁用";
+                    return Json(resp);
+                }
+                //分配车厅
+                int hallcode = new CWDevice().AllocateHall(loc, false);
+
+                Device moHall = new CWDevice().Find(d => d.DeviceCode == hallcode);
+                if (moHall != null)
+                {
+                    resp = motsk.TempGetCar(moHall, loc); 
+                }
+                else
+                {
+                    resp.Message = "找不到合适车厅";
+                }
+
             }
             catch (Exception ex)
             {

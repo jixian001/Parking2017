@@ -240,6 +240,7 @@
     <Compile Include="Models\AIOICCard.cs" />
     <Compile Include="Models\DeviceTaskDetail.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\LocsMapping.cs" />
     <Compile Include="Models\UserManager\AppUserManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Signalr\ParkingHub.cs" />

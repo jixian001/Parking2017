@@ -10,6 +10,9 @@ namespace Parking.Data
     public delegate void ICCardEventHandler(string msg);
     public delegate void FaultsEventHandler(int warehouse, int code,List<BackAlarm> alarmLst);
     public delegate void PlateDisplayEventtHandler(PlateDisplay plate);
+
+    public delegate void FixLocationEventHandler(Location loc, int isfix, string custname, string deadline,string rcdplate);
+
     /// <summary>
     /// 个推
     /// </summary>
@@ -18,6 +21,9 @@ namespace Parking.Data
         public event ICCardEventHandler ICCardWatchEvent;
         public event FaultsEventHandler FaultsWatchEvent;
         public event PlateDisplayEventtHandler PlateWatchEvent;
+
+        public event FixLocationEventHandler FixLocsWatchEvent;
+
         /// <summary>
         /// 读到卡号时，引发
         /// </summary>
@@ -53,6 +59,20 @@ namespace Parking.Data
             if (PlateWatchEvent != null)
             {
                 PlateWatchEvent(plate);
+            }
+        }
+
+        /// <summary>
+        /// 固定用户绑定或解绑时回馈
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <param name="isfix">0-非固定用户，1-固定用户</param>
+        /// <param name="custname"></param>
+        public void WatchFixLocation(Location loc, int isfix, string custname, string deadline,string rcdplate)
+        {
+            if (FixLocsWatchEvent != null)
+            {
+                FixLocsWatchEvent(loc, isfix, custname, deadline, rcdplate);
             }
         }
 

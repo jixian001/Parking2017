@@ -47,7 +47,7 @@ namespace Parking.Core
             {
                 if (moHall == null)
                 {
-                    log.Error("车厅设备为空！");
+                    log.Info("车厅设备为空！");
                     return;
                 }
 
@@ -55,33 +55,38 @@ namespace Parking.Core
                 {
                     //模式不是全自动
                     motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "5.wav");
+                    log.Info("车厅不是全自动！");
                     return;
                 }
                 if (moHall.TaskID != 0)
-                {
+                {                   
                     //报警- 有故障作业未处理
-                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "39.wav");
+                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "81.wav");
+                    log.Info("有故障作业未处理！");
                     return;
                 }
                 ImplementTask itask =await motsk.FindITaskAsync(d => d.DeviceCode == moHall.DeviceCode && d.Warehouse == moHall.Warehouse);
                 if (itask != null)
                 {
                     //报警- 有故障作业未处理
-                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "39.wav");
+                    motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "81.wav");
                     //强制将其删除
                     motsk.DeleteITask(itask);
-                    log.Error("入库时，执行作业内有车厅作业，强制将其删除，ICCard - " + itask.ICCardCode + " platenum - " + itask.PlateNum);
+                    log.Info("有故障作业未处理！");
+
+                    log.Info("入库时，执行作业内有车厅作业，强制将其删除，ICCard - " + itask.ICCardCode + " platenum - " + itask.PlateNum);
                     return;
                 }
-
                 if (moHall.HallType == EnmHallType.Exit)
                 {
                     //出车厅不允许进车
                     motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "7.wav");
+                    log.Info("出车厅不允许进车！");
                     return;
                 }
                 //增加车厅作业，绑定车厅作业号
                 motsk.DealFirstCarEntrance(moHall);
+
                 motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "18.wav");
             }
             catch (Exception ex)

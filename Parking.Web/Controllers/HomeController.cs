@@ -99,15 +99,47 @@ namespace Parking.Web.Controllers
                 };
                 return Json(nback, JsonRequestBehavior.AllowGet);
             }
-            else
+
+            Customer cust = new CWICCard().FindFixLocationByAddress(lctn.Warehouse, lctn.Address);
+            int isfix = 0;
+            string custname = "";
+            string deadline = "";
+            string rcdplate = "";
+            if (cust != null)
             {
-                var ret = new
-                {
-                    code = 1,
-                    data = lctn
-                };
-                return Json(ret, JsonRequestBehavior.AllowGet);
+                isfix = 1;
+                custname = cust.UserName;
+                deadline = cust.Deadline.ToString();
+                rcdplate = cust.PlateNum;
             }
+            LocsMapping map = new LocsMapping
+            {
+                Warehouse = lctn.Warehouse,
+                Address = lctn.Address,
+                LocSide = lctn.LocSide,
+                LocColumn = lctn.LocColumn,
+                LocLayer = lctn.LocLayer,
+                Type = lctn.Type,
+                Status = lctn.Status,
+                LocSize = lctn.LocSize,
+                ICCode = lctn.ICCode,
+                WheelBase = lctn.WheelBase,
+                CarWeight = lctn.CarWeight,
+                CarSize = lctn.CarSize,
+                InDate = lctn.InDate.ToString(),
+                PlateNum = lctn.PlateNum,
+                IsFixLoc = isfix,
+                CustName = custname,
+                Deadline = deadline,
+                RcdPlate=rcdplate
+            };
+            var ret = new
+            {
+                code = 1,
+                data = map
+            };
+            return Json(ret, JsonRequestBehavior.AllowGet);
+
         }      
         
         [HttpPost]
@@ -133,26 +165,70 @@ namespace Parking.Web.Controllers
         /// <returns></returns>
         public async Task<JsonResult> GetLocationList()
         {
-            List<Location> locList = await new CWLocation().FindLocationListAsync();
-            if (locList.Count > 0)
+            Log log = LogFactory.GetLogger("GetLocationList");
+            try
             {
+                CWICCard cwiccd = new CWICCard();
+
+                List<Location> locList = await new CWLocation().FindLocationListAsync();
+                List<Customer> bindCustsLst = await cwiccd.FindCustListAsync(cc => cc.Type == EnmICCardType.FixedLocation || cc.Type == EnmICCardType.VIP);
+
+                List<LocsMapping> mappingsLst = new List<LocsMapping>();
+                foreach (Location loc in locList)
+                {
+                    Customer cust = bindCustsLst.Find(cc => cc.LocAddress == loc.Address && cc.Warehouse == loc.Warehouse);
+                    int isfix = 0;
+                    string custname = "";
+                    string deadline = "";
+                    string rcdplate = "";
+
+                    if (cust != null)
+                    {
+                        isfix = 1;
+                        custname = cust.UserName;
+                        deadline = cust.Deadline.ToString();
+                        rcdplate = cust.PlateNum;
+                    }
+                    LocsMapping map = new LocsMapping
+                    {
+                        Warehouse = loc.Warehouse,
+                        Address = loc.Address,
+                        LocSide = loc.LocSide,
+                        LocColumn = loc.LocColumn,
+                        LocLayer = loc.LocLayer,
+                        Type = loc.Type,
+                        Status = loc.Status,
+                        LocSize = loc.LocSize,
+                        ICCode = loc.ICCode,
+                        WheelBase = loc.WheelBase,
+                        CarWeight = loc.CarWeight,
+                        CarSize = loc.CarSize,
+                        InDate = loc.InDate.ToString(),
+                        PlateNum = loc.PlateNum,
+                        IsFixLoc = isfix,
+                        CustName = custname,
+                        Deadline = deadline,
+                        RcdPlate=rcdplate
+                    };
+                    mappingsLst.Add(map);
+                }
                 var nback = new
                 {
                     code = 1,
-                    data = locList
+                    data = mappingsLst
                 };
                 return Json(nback, JsonRequestBehavior.AllowGet);
             }
-            else
+            catch (Exception ex)
             {
-
-                var bback = new
-                {
-                    code = 0,
-                    data = ""
-                };
-                return Json(bback, JsonRequestBehavior.AllowGet);
+                log.Error(ex.ToString());
             }
+            var bback = new
+             {
+                 code = 0,
+                 data = "系统异常"
+             };
+            return Json(bback, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>

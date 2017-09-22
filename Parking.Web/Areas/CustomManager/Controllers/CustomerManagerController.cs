@@ -62,7 +62,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 ModelState.AddModelError("", "当前车牌号-  " + model.PlateNum + " 已被绑定，其顾客名- " + other.UserName + " ，请输入正确的车牌号！");
                 return View(model);
             }
-
+            Location lctn = null;
             #region
             if (model.Type==EnmICCardType.FixedLocation)
             {
@@ -71,7 +71,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                     ModelState.AddModelError("","固定车位卡，请指定绑定车位！");
                     return View(model);
                 }
-                Location lctn = new CWLocation().FindLocation(lc => lc.Warehouse == model.Warehouse && lc.Address == model.LocAddress);
+                lctn = new CWLocation().FindLocation(lc => lc.Warehouse == model.Warehouse && lc.Address == model.LocAddress);
                 if (lctn == null)
                 {
                     ModelState.AddModelError("", "绑定车位不存在，地址-" + model.LocAddress);
@@ -185,12 +185,11 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 #endregion
             }
 
-            //if (addcust.Type == EnmICCardType.FixedLocation)
-            //{
-            //    //个推更新固定车位数
-            //    MainCallback<Location>.Instance().OnChange(1, null);
-            //}
-           
+            if (addcust.Type == EnmICCardType.FixedLocation)
+            {
+                SingleCallback.Instance().WatchFixLocation(lctn, 1, addcust.UserName, addcust.Deadline.ToString(), addcust.PlateNum);
+            }
+
             #endregion
             return RedirectToAction("Index");
         }
@@ -498,6 +497,13 @@ namespace Parking.Web.Areas.CustomManager.Controllers
             #endregion
             #region
             Customer cust = cwiccd.FindCust(model.ID);
+            Location origloc = null;
+            //原来是否绑定
+            if (cust.Type == EnmICCardType.FixedLocation)
+            {
+                origloc = new CWLocation().FindLocation(l => l.Warehouse == cust.Warehouse && l.Address == cust.LocAddress);
+            }
+            
             //是固定卡时
             if (model.Type == EnmICCardType.FixedLocation)
             {
@@ -535,6 +541,17 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 cust.Type = model.Type;
                 cust.Warehouse = (int)model.Warehouse;
                 cust.LocAddress = model.LocAddress;
+
+                //释放原车位
+                if (origloc != null)
+                {
+                    if (origloc.Address != lctn.Address)
+                    {
+                        SingleCallback.Instance().WatchFixLocation(origloc, 0, "", "","");
+                    }
+                }
+                //绑定当前车位
+                SingleCallback.Instance().WatchFixLocation(lctn, 1, cust.UserName, cust.Deadline.ToString(),cust.PlateNum);
                 #endregion
             }
             else
@@ -544,6 +561,12 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 cust.LocAddress = "";
                 cust.StartDTime = DateTime.Parse("2017-1-1");
                 cust.Deadline = DateTime.Parse("2017-1-1");
+
+                //释放原车位
+                if (origloc != null)
+                {
+                    SingleCallback.Instance().WatchFixLocation(origloc, 0, "", "","");
+                }
             }
 
             ICCard oriIccd = cwiccd.Find(ic => ic.CustID == model.ID);
@@ -657,10 +680,7 @@ namespace Parking.Web.Areas.CustomManager.Controllers
                 }
             }
             #endregion
-
-            ////个推更新固定车位数
-            //MainCallback<Location>.Instance().OnChange(1, null);
-
+            
             #endregion
             return RedirectToAction("Index");
         }

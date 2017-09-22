@@ -50,42 +50,6 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                         log.Warn("车厅IP - " + ipaddrs + " ,车牌识别结果 - " + plate+" ,触发类型 - "+result.triggerType);
 
                         string headpath = null;
-                        #region
-                        try
-                        {
-                            string picBase64Str = result.imageFile;
-                            byte[] picBuffer = Convert.FromBase64String(picBase64Str);
-                            MemoryStream ms = new MemoryStream(picBuffer);
-                            Image img = Image.FromStream(ms);
-
-                            log.Warn("解析图片byte长度 - " + picBuffer.Length + " ,读到的beforeBase64imageFileLen - "+result.beforeBase64imageFileLen + " ,读到的imageFileLen - " + result.imageFileLen);
-
-                            if (string.IsNullOrEmpty(basePath))
-                            {
-                                basePath = XMLHelper.GetRootNodeValueByXpath("root", "PlatePicPath");
-                                //log.Debug("车牌图片路径 - " + basePath);
-                            }
-                            if (string.IsNullOrEmpty(basePath))
-                            {
-                                log.Error("车牌图片保存路径为空");
-                            }
-                            string imgBasePath = basePath + DateTime.Now.Year + "-" + DateTime.Now.Month + "-"+DateTime.Now.Day + "\\";
-                            if (!Directory.Exists(imgBasePath))
-                            {
-                                Directory.CreateDirectory(imgBasePath);
-                            }
-                            string ti = DateTime.Now.Hour.ToString().PadLeft(2, '0') + DateTime.Now.Minute.ToString().PadLeft(2, '0') +
-                                  DateTime.Now.Second.ToString().PadLeft(2, '0');
-                            string sTime = ti + "_" + plate;
-                            headpath = imgBasePath + sTime + ".jpg";
-                            img.Save(headpath);
-                            log.Warn("图片保存成功， Path - " + headpath);
-                        }
-                        catch (Exception e1)
-                        {
-                            log.Error("图片保存异常 - " + e1.ToString());
-                        }
-                        #endregion
 
                         if (dicHallsInfo.Count != 2)
                         {
@@ -115,6 +79,50 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                             {
                                 dicHallsInfo.Add(h2ipadrs, 12);
                             }
+                        }
+                        #endregion
+
+                        #region
+                        try
+                        {
+                            int nhallID = 0;
+                            if (dicHallsInfo.ContainsKey(ipaddrs))
+                            {
+                                nhallID = dicHallsInfo[ipaddrs];
+                            }
+
+                                string picBase64Str = result.imageFile;
+                            byte[] picBuffer = Convert.FromBase64String(picBase64Str);
+                            MemoryStream ms = new MemoryStream(picBuffer);
+                            Image img = Image.FromStream(ms);
+
+                            log.Warn("解析图片byte长度 - " + picBuffer.Length + " ,读到的beforeBase64imageFileLen - "+result.beforeBase64imageFileLen + " ,读到的imageFileLen - " + result.imageFileLen);
+
+                            if (string.IsNullOrEmpty(basePath))
+                            {
+                                basePath = XMLHelper.GetRootNodeValueByXpath("root", "PlatePicPath");
+                                //log.Debug("车牌图片路径 - " + basePath);
+                            }
+                            if (string.IsNullOrEmpty(basePath))
+                            {
+                                log.Error("车牌图片保存路径为空");
+                            }
+                            string imgBasePath = basePath + DateTime.Now.Year + "-" + DateTime.Now.Month + "-"+DateTime.Now.Day + "\\";
+                            if (!Directory.Exists(imgBasePath))
+                            {
+                                Directory.CreateDirectory(imgBasePath);
+                            }
+                            string ti = DateTime.Now.Hour.ToString().PadLeft(2, '0') + DateTime.Now.Minute.ToString().PadLeft(2, '0') +
+                                  DateTime.Now.Second.ToString().PadLeft(2, '0');
+
+                            string sTime = ti + "_" + plate + "_" + nhallID;
+                            headpath = imgBasePath + sTime + ".jpg";
+                            img.Save(headpath);
+                            log.Warn("图片保存成功， Path - " + headpath);
+                        }
+                        catch (Exception e1)
+                        {
+                            log.Error("图片保存异常 - " + e1.ToString());
                         }
                         #endregion
 
