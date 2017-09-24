@@ -120,6 +120,7 @@
     <Compile Include="Model\SMSInfo.cs" />
     <Compile Include="Model\SubTask.cs" />
     <Compile Include="Model\TempUserInfo.cs" />
+    <Compile Include="Model\TotalInfo.cs" />
     <Compile Include="Model\ZhiWenResult.cs" />
     <Compile Include="OrderParam.cs" />
     <Compile Include="Page.cs" />

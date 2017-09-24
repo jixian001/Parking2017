@@ -739,6 +739,23 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         {
             await new CWTask().MaintainWorkQueueAsync();
             return Content("success");
-        }       
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="warehouse"></param>
+        /// <returns></returns>
+        public async Task<ActionResult> GetLocationsInfo(int warehouse)
+        {
+            TotalInfo info = await new CWLocation().GetLocsInfoAsync();
+            var data = new
+            {
+                type = 1,
+                total = info.Total,
+                temp = info.Temp
+            };
+            return Json(data, JsonRequestBehavior.AllowGet);
+        }
     }
 }

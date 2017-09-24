@@ -28,13 +28,13 @@
 
 .lbl {
     height: 30px;
-    width: 35px;
+    width: 32px;
     float: left;
-    border-radius: 3px;
-    margin: 5px;
+    border-radius: 2px;
+    margin: 3px;
     text-align: center;
     vertical-align: middle;
-    font-size: 14px;
+    font-size: 13px;
     color:white;
 }
 
@@ -72,7 +72,13 @@
 	background-color: #a9e091;
 }
 .lbllocker {
-    background-color: #064970;
+    background-color: #fa2d7f;
+}
+.lblbook {
+    background-color: #2ef8e0;
+}
+.lblwillback {
+    background-color: #e5c2db;
 }
 
 .divborder {

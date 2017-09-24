@@ -27,6 +27,8 @@ namespace Parking.Core.Schedule
         public Device Allocate(Device mohall, Location loc)
         {
             CWDevice cwdevice = new CWDevice();
+            CWTask cwtask = new CWTask();
+
             List<Device> nEtvList = cwdevice.FindList(d => d.Type == EnmSMGType.ETV);
             WorkScope workscope = new WorkScope(nEtvList);
             int hallColmn = Convert.ToInt32(mohall.Address.Substring(1, 2));
@@ -38,8 +40,9 @@ namespace Parking.Core.Schedule
             if (hallsLst.Count == 2)
             {
                 List<Device> availEtvsLst = nEtvList.FindAll(e => e.IsAble == 1);
+                List<WorkTask> hastaskWorkTask = cwtask.FindQueueList(mtsk => mtsk.IsMaster == 2);
                 #region
-                List<Device> freeHallsLst = hallsLst.FindAll(h => h.TaskID == 0).OrderBy(d => Math.Abs(d.Region - loc.Region)).ToList();
+                List<Device> freeHallsLst = hallsLst.FindAll(h => h.TaskID == 0 && hastaskWorkTask.Exists(mtsk => mtsk.DeviceCode == h.DeviceCode) == false).OrderBy(d => Math.Abs(d.Region - loc.Region)).ToList();
                 //如果两个车厅都空闲的
                 if (freeHallsLst.Count == 2)
                 {
@@ -147,7 +150,7 @@ namespace Parking.Core.Schedule
                     #endregion
                 }
 
-                List<Device> busyHallsLst = hallsLst.FindAll(h => h.TaskID != 0).OrderBy(d => Math.Abs(d.Region - loc.Region)).ToList();
+                List<Device> busyHallsLst = hallsLst.FindAll(h => h.TaskID != 0 || hastaskWorkTask.Exists(mtsk => mtsk.DeviceCode == h.DeviceCode)).OrderBy(d => Math.Abs(d.Region - loc.Region)).ToList();
                 //如果两个都忙
                 if (busyHallsLst.Count == 2)
                 {

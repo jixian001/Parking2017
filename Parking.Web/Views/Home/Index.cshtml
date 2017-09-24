@@ -12,13 +12,13 @@
         </ol>
         <div class="carousel-inner">
             <div class="item active" align="center">
-                <img src="@Url.Content("~/Image/first.jpg")" alt="First slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/first.jpg")" alt="First slide" style="height:150px" />
             </div>
             <div class="item" align="center">
-                <img src="@Url.Content("~/Image/second.jpg")" alt="Second slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/second.jpg")" alt="Second slide" style="height:150px" />
             </div>
             <div class="item" align="center">
-                <img src="@Url.Content("~/Image/three.jpg")" alt="Three slide" style="height:200px" />
+                <img src="@Url.Content("~/Image/three.jpg")" alt="Three slide" style="height:150px" />
             </div>
         </div>
         <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
@@ -50,7 +50,7 @@
     <div class="col-md-2 bger">
         <div class="booking-details" id="details" style="height:100%">            
             <input type="hidden" id="lctn" name="lctn" />
-            <h4 class="text-center">已选中的车位(<span id="addr">0</span>)：</h4>
+            <h5 class="text-left">已选中的车位(<span id="addr" class="text-primary">0</span>)：</h5>
             <ul id="selected-seats"></ul>           
             <div id="oprt" class="text-center" style="display:none">
                 <button type="button" id="btnenable">启用</button>
@@ -72,6 +72,8 @@
                     <div class="lbl lblouting">出库</div>
                     <div class="lbl lblspace">空闲</div>
                     <div class="lbl lbllocker">锁定</div>
+                    <div class="lbl lblbook">预约</div>
+                    <div class="lbl lblwillback">回挪</div>
                 </div>
             </div>
         </div>
@@ -268,11 +270,11 @@
                             {
                                 html = '<li>车主姓名：<span class="text-info">' + obj.CustName + '</span></li>';
                                 $disp.append(html);
-                                html = '<li>注册车牌：<span class="text-info">' + obj.RcdPlate + '</span></li>';
+                                html = '<li>注册车牌：<span class="text-info"><br>' + obj.RcdPlate + '</span></li>';
                                 $disp.append(html);
                             }
 
-                            html = '<li>入库时间：<span class="text-info"><br>' +formatDate(obj.InDate) + '</span></li>';
+                            html = '<li>入库时间：<span class="text-info"><br>' +obj.InDate + '</span></li>';
                             $disp.append(html);
 
                             $btn.css("display", "block");
@@ -547,6 +549,12 @@
                         case 5:
                             color = 'outing';
                             break;
+                        case 6:
+                            color = 'willback';
+                            break;
+                        case 7:
+                            color = 'booking';
+                            break;
                         default:
                             color = 'available';
                             break;
@@ -792,6 +800,9 @@
                     case 7:
                         msg = "待挪";
                         break;
+                    case 8:
+                        msg = "预约";
+                        break;
                     default:
                         msg = state;
                         break;
@@ -862,11 +873,11 @@
                         {
                             html = '<li>车主姓名：<span class="text-info">' + lctn.CustName + '</span></li>';
                             $disp.append(html);
-                            html = '<li>注册车牌：<span class="text-info">' + lctn.RcdPlate + '</span></li>';
+                            html = '<li>注册车牌：<span class="text-info"><br>' + lctn.RcdPlate + '</span></li>';
                             $disp.append(html);
                         }
 
-                        html = '<li>入库时间：<span class="text-info">' + lctn.InDate + '</span></li>';
+                        html = '<li>入库时间：<span class="text-info"><br>' + lctn.InDate + '</span></li>';
                         $disp.append(html);
                     }                   
                 },
@@ -916,8 +927,7 @@
                         var lay = parseInt(laystr);
 
                         var tvaddrs = lay + "_" + col;
-                        console.log(tvaddrs);
-
+                       
                         updateTvLocation(tvaddrs, tv);
                     }
 

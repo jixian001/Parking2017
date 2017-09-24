@@ -3,7 +3,7 @@ namespace Parking.Web.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class addcc : DbMigration
+    public partial class init : DbMigration
     {
         public override void Up()
         {
@@ -38,10 +38,20 @@ namespace Parking.Web.Migrations
                     })
                 .PrimaryKey(t => t.ID);
             
+            AddColumn("dbo.FixUserChargeLogs", "OprtCode", c => c.String());
+            AddColumn("dbo.FixUserChargeLogs", "RecordDTime", c => c.DateTime(nullable: false));
+            AddColumn("dbo.WorkTasks", "PlateNum", c => c.String(maxLength: 10));
+            AlterColumn("dbo.TelegramLogs", "ICCode", c => c.String());
+            AlterColumn("dbo.TempUserChargeLogs", "RecordDTime", c => c.DateTime(nullable: false));
         }
         
         public override void Down()
         {
+            AlterColumn("dbo.TempUserChargeLogs", "RecordDTime", c => c.String());
+            AlterColumn("dbo.TelegramLogs", "ICCode", c => c.String(maxLength: 10));
+            DropColumn("dbo.WorkTasks", "PlateNum");
+            DropColumn("dbo.FixUserChargeLogs", "RecordDTime");
+            DropColumn("dbo.FixUserChargeLogs", "OprtCode");
             DropTable("dbo.StatusInfoLogs");
             DropTable("dbo.DeviceInfoLogs");
         }

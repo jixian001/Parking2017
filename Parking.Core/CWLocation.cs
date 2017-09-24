@@ -376,8 +376,11 @@ namespace Parking.Core
             int sspace = 0;
             try
             {
-                List<Location> locLst = await new CWLocation().FindLocationListAsync();
                 CWICCard cwiccd = new CWICCard();
+
+                List<Location> locLst = await new CWLocation().FindLocationListAsync();
+                List<Customer> custsLst =await cwiccd.FindCustListAsync(cu => cu.Type == EnmICCardType.FixedLocation || cu.Type == EnmICCardType.VIP);
+                               
                 for (int i = 0; i < locLst.Count; i++)
                 {
                     Location loc = locLst[i];
@@ -388,7 +391,7 @@ namespace Parking.Core
                         total++;
                     }
                     bool isFixLoc = false;
-                    if (cwiccd.FindFixLocationByAddress(loc.Warehouse, loc.Address) != null)
+                    if (custsLst.Exists(cc => cc.LocAddress == loc.Address && cc.Warehouse == loc.Warehouse))
                     {
                         fix++;
                         isFixLoc = true;
@@ -509,6 +512,51 @@ namespace Parking.Core
             info.BigSpace = bspace;
             info.FixLoc = fix;
 
+            return info;
+        }
+
+        /// <summary>
+        /// 给PLC的统计信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TotalInfo> GetLocsInfoAsync()
+        {
+            TotalInfo info = new TotalInfo();
+            Log log = LogFactory.GetLogger("GetLocsInfoAsync");
+            try
+            {
+                CWICCard cwiccd = new CWICCard();
+                List<Location> locLst =await new CWLocation().FindLocationListAsync();
+                List<Customer> custsLst =await cwiccd.FindCustListAsync(cu => cu.Type == EnmICCardType.FixedLocation || cu.Type == EnmICCardType.VIP);
+                int total = 0;
+                int temp = 0;
+                for (int i = 0; i < locLst.Count; i++)
+                {
+                    Location loc = locLst[i];
+                    if (loc.Type == EnmLocationType.Normal)
+                    {
+                        if (loc.Status == EnmLocationStatus.Space)
+                        {
+                            total++;
+
+                            if (!custsLst.Exists(cc => cc.Warehouse == loc.Warehouse && cc.LocAddress == loc.Address))
+                            {
+                                temp++;
+                            }
+                        }
+                    }
+
+                }
+                info.Total = total;
+                info.Temp = temp;
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+
+                info.Total = 99;
+                info.Temp = 99;
+            }
             return info;
         }
     }

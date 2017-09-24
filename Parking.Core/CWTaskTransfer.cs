@@ -25,7 +25,7 @@ namespace Parking.Core
                 string getcount = XMLHelper.GetRootNodeValueByXpath("root", "MaxHallGetCar");
                 mHallGetCount = string.IsNullOrEmpty(getcount) ? mHallGetCount : Convert.ToInt32(getcount);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log log = LogFactory.GetLogger("CWTaskTransfer init");
                 log.Error(ex.ToString());
@@ -59,13 +59,14 @@ namespace Parking.Core
                     return;
                 }
                 if (moHall.TaskID != 0)
-                {                   
+                {
                     //报警- 有故障作业未处理
                     motsk.AddNofication(moHall.Warehouse, moHall.DeviceCode, "81.wav");
                     log.Info("有故障作业未处理！");
                     return;
                 }
-                ImplementTask itask =await motsk.FindITaskAsync(d => d.DeviceCode == moHall.DeviceCode && d.Warehouse == moHall.Warehouse);
+
+                ImplementTask itask = await motsk.FindITaskAsync(d => d.DeviceCode == moHall.DeviceCode && d.Warehouse == moHall.Warehouse);
                 if (itask != null)
                 {
                     //报警- 有故障作业未处理
@@ -106,7 +107,7 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("CWTaskTransfer.DealICheckCar");
             try
             {
-                ImplementTask tsk =await motsk.FindAsync(tskID);
+                ImplementTask tsk = await motsk.FindAsync(tskID);
                 if (tsk == null)
                 {
                     log.Error("tsk 为空, id-" + tsk);
@@ -115,7 +116,7 @@ namespace Parking.Core
                 if (tsk.Type == EnmTaskType.TempGet)
                 {
                     //注意要刷卡后，将源地址车位与目的地址车位互换下
-                    Location tolct =await new CWLocation().FindLocationAsync(lc => lc.Warehouse == tsk.Warehouse && lc.Address == tsk.ToLctAddress);
+                    Location tolct = await new CWLocation().FindLocationAsync(lc => lc.Warehouse == tsk.Warehouse && lc.Address == tsk.ToLctAddress);
                     if (tolct != null)
                     {
                         if (tolct.Status != EnmLocationStatus.TempGet)
@@ -149,7 +150,7 @@ namespace Parking.Core
             Log log = LogFactory.GetLogger("CWTaskTransfer.DealCarLeave");
             try
             {
-                ImplementTask task =await motsk.FindAsync(taskid);
+                ImplementTask task = await motsk.FindAsync(taskid);
                 if (task == null)
                 {
                     return;
@@ -633,7 +634,7 @@ namespace Parking.Core
         /// <param name="psTZ"></param>
         /// <returns></returns>
         public async Task<Response> DealFingerPrintMessageAsync(byte[] psTZ)
-        {           
+        {
             Log log = LogFactory.GetLogger("CWTasksfer.DealFingerPrintMessage");
             Response resp = new Response();
             if (moHall == null)
@@ -683,7 +684,7 @@ namespace Parking.Core
             CWSaveProof cwsaveproof = new CWSaveProof();
             #region 先判断存车指纹库内是否存在匹配指纹，如果存在，则提示当前指纹已存车
             SaveCertificate sproof = null;
-            List<SaveCertificate> proofLst =await cwsaveproof.FindListAsync(p => p.IsFingerPrint == 1);
+            List<SaveCertificate> proofLst = await cwsaveproof.FindListAsync(p => p.IsFingerPrint == 1);
             foreach (SaveCertificate cert in proofLst)
             {
                 byte[] orig = FPrintBase64.Base64FingerDataToHex(cert.Proof);
@@ -714,7 +715,7 @@ namespace Parking.Core
                 SNO = sproof.SNO.ToString();
             }
 
-            ImplementTask task =await motsk.FindAsync(tk => tk.ICCardCode == SNO && tk.IsComplete == 0);
+            ImplementTask task = await motsk.FindAsync(tk => tk.ICCardCode == SNO && tk.IsComplete == 0);
             if (task != null)
             {
                 if (task.HallCode != moHall.DeviceCode)
@@ -747,15 +748,45 @@ namespace Parking.Core
                     return resp;
                 }
             }
-            WorkTask queue =await motsk.FindQueueAsync(qu => qu.ICCardCode == SNO);
+            WorkTask queue = await motsk.FindQueueAsync(qu => qu.ICCardCode == SNO);
             if (queue != null)
             {
-                motsk.AddNofication(warehouse, code, "9.wav");
+                #region 语音提示
+                if (queue.IsMaster == 2)
+                {
+                    if (queue.MasterType != EnmTaskType.SaveCar)
+                    {
+                        if (moHall.DeviceCode == queue.DeviceCode)
+                        {
+                            motsk.AddNofication(warehouse, code, "27.wav");
+                        }
+                        else
+                        {
+                            if (queue.DeviceCode == 11)
+                            {
+                                motsk.AddNofication(warehouse, code, "24.wav");
+                            }
+                            else if (queue.DeviceCode == 12)
+                            {
+                                motsk.AddNofication(warehouse, code, "25.wav");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                    }
+                }
+                else
+                {
+                    motsk.AddNofication(warehouse, code, "9.wav");
+                }
+                #endregion
                 resp.Message = "正在作业";
                 return resp;
             }
             int getcarCount = motsk.GetHallGetCarCount(warehouse, code);
-            Location lct =await new CWLocation().FindLocationAsync(lt => lt.ICCode == SNO && lt.Type == EnmLocationType.Normal);
+            Location lct = await new CWLocation().FindLocationAsync(lt => lt.ICCode == SNO && lt.Type == EnmLocationType.Normal);
 
             if (moHall.Mode != EnmModel.Automatic)
             {
@@ -781,7 +812,7 @@ namespace Parking.Core
                     resp.Message = "车厅无车，不能存车";
                     return resp;
                 }
-                ImplementTask tsk =await motsk.FindAsync(moHall.TaskID);
+                ImplementTask tsk = await motsk.FindAsync(moHall.TaskID);
                 if (tsk == null)
                 {
                     log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
@@ -1133,7 +1164,7 @@ namespace Parking.Core
         /// </summary>
         /// <param name="physiccode"></param>
         public async Task<Response> DealFingerICCardMessageAsync(string physiccode)
-        {           
+        {
             Log log = LogFactory.GetLogger("CWTaskTransfer.DealFingerICCardMessage");
             Response resp = new Response();
             try
@@ -1171,7 +1202,7 @@ namespace Parking.Core
                 CWSaveProof cwsaveproof = new CWSaveProof();
                 #region 先判断存车指纹库内是否存在物理卡号
                 SaveCertificate sproof = null;
-                List<SaveCertificate> proofLst =await cwsaveproof.FindListAsync(p => p.IsFingerPrint == 2);
+                List<SaveCertificate> proofLst = await cwsaveproof.FindListAsync(p => p.IsFingerPrint == 2);
                 foreach (SaveCertificate cert in proofLst)
                 {
                     int nback = string.Compare(physiccode, cert.Proof);
@@ -1194,7 +1225,7 @@ namespace Parking.Core
                 {
                     //如果没有的，则看看是否已注册过，如果注册过，则取当前注册卡号
                     //如果没有，则分配用户卡号
-                    iccard =await new CWICCard().FindAsync(ic => ic.PhysicCode == physiccode);
+                    iccard = await new CWICCard().FindAsync(ic => ic.PhysicCode == physiccode);
                     if (iccard != null)
                     {
                         SNO = iccard.UserCode;
@@ -1209,7 +1240,7 @@ namespace Parking.Core
                     SNO = SNO.PadLeft(4, '0');
                 }
 
-                ImplementTask task =await motsk.FindAsync(tk => tk.ICCardCode == SNO && tk.IsComplete == 0);
+                ImplementTask task = await motsk.FindAsync(tk => tk.ICCardCode == SNO);
                 if (task != null)
                 {
                     if (task.HallCode != moHall.DeviceCode)
@@ -1248,15 +1279,45 @@ namespace Parking.Core
                         return resp;
                     }
                 }
-                WorkTask queue =await motsk.FindQueueAsync(qu => qu.ICCardCode == SNO);
+                WorkTask queue = await motsk.FindQueueAsync(qu => qu.ICCardCode == SNO);
                 if (queue != null)
                 {
-                    motsk.AddNofication(warehouse, code, "9.wav");
+                    #region 语音提示
+                    if (queue.IsMaster == 2)
+                    {
+                        if (queue.MasterType != EnmTaskType.SaveCar)
+                        {
+                            if (moHall.DeviceCode == queue.DeviceCode)
+                            {
+                                motsk.AddNofication(warehouse, code, "27.wav");
+                            }
+                            else
+                            {
+                                if (queue.DeviceCode == 11)
+                                {
+                                    motsk.AddNofication(warehouse, code, "24.wav");
+                                }
+                                else if (queue.DeviceCode == 12)
+                                {
+                                    motsk.AddNofication(warehouse, code, "25.wav");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            motsk.AddNofication(warehouse, code, "9.wav");
+                        }
+                    }
+                    else
+                    {
+                        motsk.AddNofication(warehouse, code, "9.wav");
+                    }
+                    #endregion
                     resp.Message = "正在作业";
                     return resp;
                 }
                 int getcarCount = motsk.GetHallGetCarCount(warehouse, code);
-                Location lct =await new CWLocation().FindLocationAsync(lt => lt.ICCode == SNO && lt.Type == EnmLocationType.Normal);
+                Location lct = await new CWLocation().FindLocationAsync(lt => lt.ICCode == SNO && lt.Type == EnmLocationType.Normal);
 
                 #region 进车厅
                 if (moHall.HallType == EnmHallType.Entrance)
@@ -1283,7 +1344,7 @@ namespace Parking.Core
                         resp.Message = "车厅无车，不能存车";
                         return resp;
                     }
-                    ImplementTask tsk =await motsk.FindAsync(moHall.TaskID);
+                    ImplementTask tsk = await motsk.FindAsync(moHall.TaskID);
                     if (tsk == null)
                     {
                         log.Error("依车厅TaskID找不到作业信息，TaskID-" + moHall.TaskID + "  hallCode-" + moHall.DeviceCode);
@@ -1294,13 +1355,6 @@ namespace Parking.Core
                     }
                     if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
                     {
-                        #region
-                        //处理刷第一次卡
-                        //motsk.DealISwipedFirstCard(tsk, SNO);
-                        //resp.Code = 1;
-                        //resp.Message = "刷第一次卡成功，请再次刷卡";
-#endregion
-
                         #region 允许存车时，才将当前指纹信息保存到指纹库中,先查询注册指纹库内是否有匹配模板
                         SaveCertificate scert = new SaveCertificate();
                         scert.IsFingerPrint = 2;
@@ -1315,35 +1369,16 @@ namespace Parking.Core
                         Response respe = cwsaveproof.Add(scert);
                         if (respe.Code == 1)
                         {
-                            log.Debug("存车按指纹，保存至存车卡号成功，SNO - " + SNO);
+                            log.Debug("存车刷卡，保存至存车卡号成功，SNO - " + SNO);
                         }
                         #endregion
-                        #region
-                        //    ZhiWenResult result = new ZhiWenResult {
-                        //        IsTakeCar = 0,
-                        //        PlateNum = "",
-                        //        Sound = ""
-                        //    };
-                        //    resp.Data = result;
 
-                        //    return resp;
-                        //}
-                        //else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
-                        //{
-                        //    //处理刷第二次卡
-                        //    if (tsk.ICCardCode != SNO)
-                        //    {
-                        //        motsk.AddNofication(warehouse, code, "64.wav");
-                        //        resp.Message = "与第一次刷卡不一致";
-                        //        return resp;
-                        //    }
-#endregion
                         motsk.DealISwipedSecondCard(tsk, SNO);
                         resp.Code = 1;
                         resp.Message = "刷卡成功，请稍后！";
                         string brand = "";
                         #region 获取车厅内识别车牌
-                        PlateMappingDev device_plate =new CWPlate().FindPlate(moHall.Warehouse, moHall.DeviceCode);
+                        PlateMappingDev device_plate = new CWPlate().FindPlate(moHall.Warehouse, moHall.DeviceCode);
                         if (device_plate != null)
                         {
                             if (!string.IsNullOrEmpty(device_plate.PlateNum))
@@ -1384,14 +1419,16 @@ namespace Parking.Core
                         #region 如果依物理卡号查找不到记录，表示之前存车的就不是使用卡号，可能使用指纹，这时也允许注册用户依车牌号出车
                         if (iccard != null)
                         {
-                            Customer cc =await new CWICCard().FindCustAsync(iccard.CustID);
+                            Customer cc = await new CWICCard().FindCustAsync(iccard.CustID);
                             if (cc != null && !string.IsNullOrEmpty(cc.PlateNum))
                             {
-                                lct =await new CWLocation().FindLocationAsync(l => l.PlateNum == cc.PlateNum);
-
-                                sproof = new SaveCertificate();
-                                sproof.CustID = cc.ID;
-                                isAltered = true;
+                                lct = await new CWLocation().FindLocationAsync(l => l.PlateNum == cc.PlateNum);
+                                if (lct != null)
+                                {
+                                    sproof = new SaveCertificate();
+                                    sproof.CustID = cc.ID;
+                                    isAltered = true;
+                                }
                             }
                         }
                         #endregion
@@ -1460,14 +1497,17 @@ namespace Parking.Core
                     #region 在存车指纹库内查找不到记录，表示之前存车的就不是使用卡号，可能使用指纹，这时也允许注册用户依车牌号出车
                     if (iccard != null)
                     {
-                        Customer cc =await new CWICCard().FindCustAsync(iccard.CustID);
+                        Customer cc = await new CWICCard().FindCustAsync(iccard.CustID);
                         if (cc != null && !string.IsNullOrEmpty(cc.PlateNum))
                         {
-                            sproof = new SaveCertificate();
-                            sproof.CustID = cc.ID;
-                            isAltered = true;
-
-                            lct =await new CWLocation().FindLocationAsync(l => l.PlateNum == cc.PlateNum);
+                            lct = await new CWLocation().FindLocationAsync(l => l.PlateNum == cc.PlateNum);
+                            if (lct != null)
+                            {
+                                //需要取车的，强制生成凭证，加入存车指纹库中
+                                sproof = new SaveCertificate();
+                                sproof.CustID = cc.ID;
+                                isAltered = true;
+                            }
                         }
                     }
                     #endregion
@@ -1502,12 +1542,6 @@ namespace Parking.Core
                         }
                         if (tsk.Status == EnmTaskStatus.ICarInWaitFirstSwipeCard)
                         {
-                            #region
-                            //处理刷第一次卡
-                            //motsk.DealISwipedFirstCard(tsk, SNO);
-                            //resp.Code = 1;
-                            //resp.Message = "刷一次卡成功，请再次刷卡";
-#endregion
 
                             #region 允许存车时，才将当前指纹信息保存到指纹库中,先查询注册指纹库内是否有匹配模板
                             SaveCertificate scert = new SaveCertificate();
@@ -1530,19 +1564,7 @@ namespace Parking.Core
                                 log.Debug("存车刷卡，保存失败，SNO - " + SNO);
                             }
                             #endregion
-                            #region
-                            //    return resp;
-                            //}
-                            //else if (tsk.Status == EnmTaskStatus.IFirstSwipedWaitforCheckSize)
-                            //{
-                            //    //处理刷第二次卡
-                            //    if (tsk.ICCardCode != SNO)
-                            //    {
-                            //        motsk.AddNofication(warehouse, code, "64.wav");
-                            //        resp.Message = "与第一次刷卡不一致";
-                            //        return resp;
-                            //    }
-#endregion
+
                             motsk.DealISwipedSecondCard(tsk, SNO);
                             resp.Code = 1;
                             resp.Message = "刷卡成功,请稍后再离开！";
@@ -1602,7 +1624,7 @@ namespace Parking.Core
                         #region 如果车厅在存车，等存车刷卡了，取车才允许
                         if (moHall.TaskID != 0)
                         {
-                            ImplementTask itask =await motsk.FindAsync(moHall.TaskID);
+                            ImplementTask itask = await motsk.FindAsync(moHall.TaskID);
                             if (itask != null)
                             {
                                 if (itask.Type == EnmTaskType.SaveCar)
@@ -1657,7 +1679,7 @@ namespace Parking.Core
                             if (!string.IsNullOrEmpty(save_cert))
                             {
                                 int csno = Convert.ToInt32(save_cert);
-                                SaveCertificate savec =await cwsaveproof.FindAsync(d => d.SNO == csno);
+                                SaveCertificate savec = await cwsaveproof.FindAsync(d => d.SNO == csno);
                                 if (savec != null)
                                 {
                                     cwsaveproof.Delete(savec.ID);

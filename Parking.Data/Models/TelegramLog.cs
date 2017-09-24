@@ -23,9 +23,10 @@ namespace Parking.Data
         public int DeviceCode { get; set; }
         public string Telegram { get; set; }
         /// <summary>
-        /// 车牌或卡号，不注册的，以车牌为准
+        /// 凭证
         /// </summary>
         public string ICCode { get; set; }
+        public string PlateNum { get; set; }
         public string CarInfo { get; set; }
         [StringLength(10)]
         public string FromAddress { get; set; }

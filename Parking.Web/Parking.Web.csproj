@@ -218,27 +218,20 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201709061416254_init.cs" />
-    <Compile Include="Migrations\201709061416254_init.Designer.cs">
-      <DependentUpon>201709061416254_init.cs</DependentUpon>
+    <Compile Include="Migrations\201709230150219_init.cs" />
+    <Compile Include="Migrations\201709230150219_init.Designer.cs">
+      <DependentUpon>201709230150219_init.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201709081353189_updatecc.cs" />
-    <Compile Include="Migrations\201709081353189_updatecc.Designer.cs">
-      <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201709081406399_addcc.cs" />
-    <Compile Include="Migrations\201709081406399_addcc.Designer.cs">
-      <DependentUpon>201709081406399_addcc.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201709210900386_addplate.cs" />
-    <Compile Include="Migrations\201709210900386_addplate.Designer.cs">
-      <DependentUpon>201709210900386_addplate.cs</DependentUpon>
+    <Compile Include="Migrations\201709230247066_addtlog_plate.cs" />
+    <Compile Include="Migrations\201709230247066_addtlog_plate.Designer.cs">
+      <DependentUpon>201709230247066_addtlog_plate.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\AIOFingerPrint.cs" />
     <Compile Include="Models\AIOICCard.cs" />
     <Compile Include="Models\DeviceTaskDetail.cs" />
+    <Compile Include="Models\FeedbackFingerData.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\LocsMapping.cs" />
     <Compile Include="Models\UserManager\AppUserManager.cs" />
@@ -373,6 +366,9 @@
     <None Include="Properties\PublishProfiles\CustomProfile2.pubxml" />
     <None Include="Properties\PublishProfiles\CustomProfile3.pubxml" />
     <None Include="Properties\PublishProfiles\CustomProfile4.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile5.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile6.pubxml" />
+    <None Include="Properties\PublishProfiles\CustomProfile7.pubxml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Properties\PublishProfiles\FolderProfile1.pubxml" />
     <None Include="Properties\PublishProfiles\Parking.pubxml" />
@@ -454,17 +450,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201709061416254_init.resx">
-      <DependentUpon>201709061416254_init.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201709230150219_init.resx">
+      <DependentUpon>201709230150219_init.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201709081353189_updatecc.resx">
-      <DependentUpon>201709081353189_updatecc.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201709081406399_addcc.resx">
-      <DependentUpon>201709081406399_addcc.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201709210900386_addplate.resx">
-      <DependentUpon>201709210900386_addplate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201709230247066_addtlog_plate.resx">
+      <DependentUpon>201709230247066_addtlog_plate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

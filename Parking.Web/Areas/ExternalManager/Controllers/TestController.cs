@@ -17,11 +17,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
 
         public ActionResult AllocateTest(int warehouse,int hallCol,string checkcode)
         {
-            Parking.Data.Location loc=  new AllocateLocation().PPYAllocate(warehouse, checkcode, hallCol);
-            if (loc != null)
-            {
-                return Content(loc.Address);
-            }
+           
             return Content("test");
         }
 

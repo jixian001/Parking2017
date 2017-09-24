@@ -12,27 +12,27 @@ using System.Web.Script.Serialization;
 using System.Text;
 
 namespace Parking.Web.Controllers
-{   
+{
     public class HomeController : Controller
-    {       
+    {
         public ActionResult Index()
         {
             return View();
         }
 
         public ActionResult About()
-        {            
+        {
             return View();
         }
 
         public ActionResult WeChat()
-        {            
+        {
             return View();
         }
 
         public async Task<JsonResult> GetDeviceList()
         {
-            List<Device> devices = await new CWDevice().FindListAsync();           
+            List<Device> devices = await new CWDevice().FindListAsync();
             return Json(devices, JsonRequestBehavior.AllowGet);
         }
 
@@ -44,11 +44,11 @@ namespace Parking.Web.Controllers
         {
             List<DeviceTaskDetail> detailLst = new List<DeviceTaskDetail>();
 
-            List<Device> hasTask =await new CWDevice().FindListAsync(dv => dv.TaskID != 0);
+            List<Device> hasTask = await new CWDevice().FindListAsync(dv => dv.TaskID != 0);
             CWTask cwtask = new CWTask();
             foreach (Device dev in hasTask)
             {
-                ImplementTask itask =await cwtask.FindAsync(dev.TaskID);
+                ImplementTask itask = await cwtask.FindAsync(dev.TaskID);
                 if (itask != null)
                 {
                     string desp = dev.Warehouse.ToString() + dev.DeviceCode.ToString();
@@ -131,7 +131,7 @@ namespace Parking.Web.Controllers
                 IsFixLoc = isfix,
                 CustName = custname,
                 Deadline = deadline,
-                RcdPlate=rcdplate
+                RcdPlate = rcdplate
             };
             var ret = new
             {
@@ -140,10 +140,10 @@ namespace Parking.Web.Controllers
             };
             return Json(ret, JsonRequestBehavior.AllowGet);
 
-        }      
-        
+        }
+
         [HttpPost]
-        public async Task<JsonResult> ManualDisLocation(string info,bool isdis)
+        public async Task<JsonResult> ManualDisLocation(string info, bool isdis)
         {
             Response _resp = new Response();
             string[] msg = info.Split('_');
@@ -208,7 +208,7 @@ namespace Parking.Web.Controllers
                         IsFixLoc = isfix,
                         CustName = custname,
                         Deadline = deadline,
-                        RcdPlate=rcdplate
+                        RcdPlate = rcdplate
                     };
                     mappingsLst.Add(map);
                 }
@@ -224,10 +224,10 @@ namespace Parking.Web.Controllers
                 log.Error(ex.ToString());
             }
             var bback = new
-             {
-                 code = 0,
-                 data = "系统异常"
-             };
+            {
+                code = 0,
+                data = "系统异常"
+            };
             return Json(bback, JsonRequestBehavior.AllowGet);
         }
 
@@ -255,22 +255,22 @@ namespace Parking.Web.Controllers
         {
             int isGetCar = 0;
             string plateNum = "";
-            Response resp = new Response();           
+            Response resp = new Response();
             Log log = LogFactory.GetLogger("ZhiWen");
             try
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
                 string req = System.Text.Encoding.Default.GetString(bytes);
-                log.Debug("有指纹信息上传！");               
+                log.Debug("有指纹信息上传！");
 
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 AIOFingerPrint fpring = js.Deserialize<AIOFingerPrint>(req);
-                          
+
                 string warehouse = "1";
                 string hallID = fpring.equipmentID;
                 string fingerPrint = fpring.zhiWenInfo;
-                
+
                 int wh = 1;
                 if (!string.IsNullOrEmpty(warehouse))
                 {
@@ -288,17 +288,17 @@ namespace Parking.Web.Controllers
                     return Json(resp);
                 }
 
-                string[] arrayFinger = fingerPrint.Trim().Split(' ');                
+                string[] arrayFinger = fingerPrint.Trim().Split(' ');
                 byte[] psTZ = new byte[arrayFinger.Length];
                 for (int i = 0; i < arrayFinger.Length; i++)
                 {
-                    psTZ[i] = Convert.ToByte(arrayFinger[i].Trim(),16);
+                    psTZ[i] = Convert.ToByte(arrayFinger[i].Trim(), 16);
                 }
 
-                log.Debug("接收到的指纹数量- "+psTZ.Length);
+                log.Debug("接收到的指纹数量- " + psTZ.Length);
                 if (psTZ.Length > 380)
                 {
-                    resp =await new CWTaskTransfer(hall,wh).DealFingerPrintMessageAsync(psTZ);
+                    resp = await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
                     if (resp.Code == 1)
                     {
                         ZhiWenResult result = resp.Data as ZhiWenResult;
@@ -308,9 +308,9 @@ namespace Parking.Web.Controllers
                 }
                 else
                 {
-                    resp.Message = "上传的指纹特性数量不正确，Length- "+psTZ.Length;
+                    resp.Message = "上传的指纹特性数量不正确，Length- " + psTZ.Length;
                 }
-                log.Debug("指纹上传返回值 - "+resp.Message);
+                log.Debug("指纹上传返回值 - " + resp.Message);
             }
             catch (Exception ex)
             {
@@ -344,19 +344,19 @@ namespace Parking.Web.Controllers
             Response resp = new Response();
             Log log = LogFactory.GetLogger("IcCard");
             try
-            {               
+            {
                 byte[] bytes = new byte[Request.InputStream.Length];
-                Request.InputStream.Read(bytes,0,bytes.Length);
+                Request.InputStream.Read(bytes, 0, bytes.Length);
                 string req = System.Text.Encoding.Default.GetString(bytes);
                 log.Debug("有卡号信息上传，解析流得到字符串 - " + req);
-               
+
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 AIOICCard iccard = js.Deserialize<AIOICCard>(req);
 
                 string warehouse = "1";
                 string hallID = iccard.equipmentID;
                 string ccode = iccard.cardInfo;
-                
+
                 int wh = 1;
                 if (!string.IsNullOrEmpty(warehouse))
                 {
@@ -373,7 +373,7 @@ namespace Parking.Web.Controllers
                     return Json(resp);
                 }
                 log.Debug("一体机刷卡信息中，warehouse - " + warehouse + " ,hallID - " + hall);
-                resp =await new CWTaskTransfer(hall,wh).DealFingerICCardMessageAsync(ccode);
+                resp = await new CWTaskTransfer(hall, wh).DealFingerICCardMessageAsync(ccode);
                 if (resp.Code == 1)
                 {
                     ZhiWenResult result = resp.Data as ZhiWenResult;
@@ -399,6 +399,107 @@ namespace Parking.Web.Controllers
             return Json(json);
         }
 
+        /// <summary>
+        /// 指纹机获取当前车厅的取车队列和正在作业信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<JsonResult> QueryCarQueue()
+        {
+            Log log = LogFactory.GetLogger("QueryCarQueue");
+            try
+            {
+                #region
+                CWTask cwtask = new CWTask();
+                List<WorkTask> mtaskLst = await cwtask.FindQueueListAsync(m => m.IsMaster == 2);
+                //如果是连取时，ETV先执行了，队列消失了，但车厅的队列要显示出来
+                List<WorkTask> mtaskhashallLst = await cwtask.FindQueueListAsync(m => m.IsMaster == 1 && (m.MasterType == EnmTaskType.GetCar || m.MasterType == EnmTaskType.TempGet));
+                //获取车厅正在执行的作业
+                List<ImplementTask> hallTaskLst = await cwtask.FindITaskLstAsync();
+                //获取车厅设备
+                List<Device> hallsLst = await new CWDevice().FindListAsync(d => d.Type == EnmSMGType.Hall);
+
+                List<FeedbackFingerData> fdataLst = new List<FeedbackFingerData>();
+                foreach (Device hall in hallsLst)
+                {
+                    List<FeedbackQueue> queueLst = new List<FeedbackQueue>();
+                    #region
+                    int i = 0;
+                    WorkTask nextworktask = mtaskhashallLst.Find(mt => mt.DeviceCode == hall.DeviceCode && mt.Warehouse == hall.Warehouse);
+                    if (nextworktask != null)
+                    {
+                        FeedbackQueue queue = new FeedbackQueue
+                        {
+                            queueNum = i++,
+                            queueCarbrand = nextworktask.PlateNum,
+                            queueIcCode = nextworktask.ICCardCode
+                        };
+
+                        queueLst.Add(queue);
+                    }
+
+                    List<WorkTask> worktaskLst = mtaskLst.FindAll(mt => mt.DeviceCode == hall.DeviceCode && mt.Warehouse == hall.Warehouse);
+                    foreach (WorkTask wtask in worktaskLst)
+                    {
+                        FeedbackQueue queue = new FeedbackQueue
+                        {
+                            queueNum = i++,
+                            queueCarbrand = wtask.PlateNum,
+                            queueIcCode = wtask.ICCardCode
+                        };
+
+                        queueLst.Add(queue);
+                    }
+                    #endregion
+                    string platenum = "";
+                    int tasktype = 0;
+                    #region
+                    ImplementTask itask = hallTaskLst.Find(ht => ht.DeviceCode == hall.DeviceCode && ht.Warehouse == hall.Warehouse);
+                    if (itask != null)
+                    {
+                        platenum = itask.PlateNum;
+                        if (itask.Type == EnmTaskType.SaveCar)
+                        {
+                            tasktype = 1;
+                        }
+                        else
+                        {
+                            tasktype = 2;
+                        }
+                    }
+                    #endregion
+                    FeedbackFingerData single = new FeedbackFingerData
+                    {
+                        wareHouseName = (hall.DeviceCode - 10).ToString() + "车厅",
+                        carBarnd = platenum,
+                        taskType = tasktype,
+                        queueList = queueLst
+                    };
+                    fdataLst.Add(single);
+                }
+
+                var iRet = new
+                {
+                    status = 1,
+                    msg = "查询成功",
+                    data =fdataLst
+                };
+                return Json(iRet);
+
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            var nback = new
+            {
+                status = 0,
+                msg = "查询异常"
+            };
+            return Json(nback);
+        }
+
         #region 测试用
         public ActionResult AnalogFPrintSubmit()
         {
@@ -406,17 +507,17 @@ namespace Parking.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> TestSubmitFPrint(int wh,int hall,string FPrint)
+        public async Task<JsonResult> TestSubmitFPrint(int wh, int hall, string FPrint)
         {
             Response resp = new Response();
             byte[] psTZ = FPrintBase64.Base64FingerDataToHex(FPrint.Trim());
-            resp =await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
+            resp = await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
             return Json(resp);
         }
 
 
         [HttpPost]
-        public async Task<JsonResult> TestSubmitICCard(int wh,int hall,string physcode)
+        public async Task<JsonResult> TestSubmitICCard(int wh, int hall, string physcode)
         {
             Response resp = await new CWTaskTransfer(hall, wh).DealFingerICCardMessageAsync(physcode);
             return Json(resp);

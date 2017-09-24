@@ -400,6 +400,12 @@ namespace Parking.Core
                     {
                         if (etv.IsAvailabe == 1)
                         {
+                            //判断避让
+                            if (!JudgeAvoidOfToAddrs(hall.Address, etv))
+                            {
+                                return;
+                            }
+
                             //生成作业，绑定于etv中
                             ImplementTask etask = new ImplementTask
                             {
@@ -808,7 +814,7 @@ namespace Parking.Core
 
                 //获取相关联的作业
                 string iccode = itask.ICCardCode;
-                ImplementTask relatetask = manager.Find(tsk => tsk.ICCardCode == iccode && tsk.ID != tid && tsk.Type != EnmTaskType.Avoid && tsk.IsComplete == 0);
+                ImplementTask relatetask = manager.Find(tsk => tsk.ICCardCode == iccode && !string.IsNullOrEmpty(iccode) && tsk.ID != tid && tsk.Type != EnmTaskType.Avoid);
                 if (relatetask != null)
                 {
                     #region 释放关联的车厅或TV设备
@@ -2064,14 +2070,14 @@ namespace Parking.Core
                 WorkTask queue = new WorkTask()
                 {
                     IsMaster = 2,
-                    Warehouse = mohall.Warehouse,
-                    DeviceCode = mohall.DeviceCode,
+                    Warehouse = myHall.Warehouse,
+                    DeviceCode = myHall.DeviceCode,
                     MasterType = EnmTaskType.GetCar,
                     TelegramType = 0,
                     SubTelegramType = 0,
-                    HallCode = mohall.DeviceCode,
+                    HallCode = myHall.DeviceCode,
                     FromLctAddress = lct.Address,
-                    ToLctAddress = mohall.Address,
+                    ToLctAddress = myHall.Address,
                     ICCardCode = lct.ICCode,
                     Distance = lct.WheelBase,
                     CarSize = lct.CarSize,
@@ -2084,10 +2090,23 @@ namespace Parking.Core
                     log.Info(DateTime.Now.ToString() + "  刷卡取车，添加取车队列，存车位-" + lct.Address + "，iccode-" + lct.ICCode);
 
                     resp.Code = 1;
-                    resp.Message = "正在为你取车，请稍后";
-                    resp.Data = mohall.DeviceCode;
-
-                    this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "28.wav");
+                    resp.Message = "正在为你取车，请稍后,出车厅 - " + myHall.DeviceCode;
+                    resp.Data = myHall.DeviceCode;
+                    if (myHall.DeviceCode == mohall.DeviceCode)
+                    {
+                        this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "28.wav");
+                    }
+                    else
+                    {
+                        if (myHall.DeviceCode == 11)
+                        {
+                            this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "22.wav");
+                        }
+                        else if (myHall.DeviceCode == 12)
+                        {
+                            this.AddNofication(mohall.Warehouse, mohall.DeviceCode, "23.wav");
+                        }
+                    }
 
                     #region 推送记录给云平台
                     ParkingRecord pkRecord = new ParkingRecord
@@ -5558,6 +5577,7 @@ namespace Parking.Core
                         }
                     }
                 }
+
             }
             catch (Exception ex)
             {

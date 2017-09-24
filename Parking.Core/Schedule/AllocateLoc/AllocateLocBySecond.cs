@@ -34,9 +34,12 @@ namespace Parking.Core
             CScope scope = workscope.GetEtvScope(etv);
             int etvColmn = Convert.ToInt32(etv.Address.Substring(1, 2));
 
-            List<Location> allLocLst = cwlctn.FindLocList();
+            List<Location> allLocsLst = cwlctn.FindLocList();
+            List<Customer> fixCustLst = cwiccd.FindCustList(cu => cu.Type == EnmICCardType.FixedLocation || cu.Type == EnmICCardType.VIP);
+            //排除固定车位
+            List<Location> suitLocsLst = allLocsLst.FindAll(lc => fixCustLst.Exists(cc => cc.LocAddress == lc.Address && cc.Warehouse == lc.Warehouse) == false);
 
-            var queryLstsmall = from loc in allLocLst
+            var queryLstsmall = from loc in suitLocsLst
                                 where loc.Type == EnmLocationType.Normal &&
                                       loc.Status == EnmLocationStatus.Space &&
                                       compareSize(loc.LocSize, checkcode) == 1 &&
@@ -108,7 +111,7 @@ namespace Parking.Core
                 return nextLocsLst[0];
             }
 
-            var queryLstbig = from loc in allLocLst
+            var queryLstbig = from loc in suitLocsLst
                               where loc.Type == EnmLocationType.Normal &&
                                     loc.Status == EnmLocationStatus.Space &&
                                     compareSize(loc.LocSize, checkcode) > 1 &&

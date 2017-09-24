@@ -7,13 +7,13 @@ namespace Parking.Web.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.3-40302")]
-    public sealed partial class addcc : IMigrationMetadata
+    public sealed partial class addtlog_plate : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(addcc));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(addtlog_plate));
         
         string IMigrationMetadata.Id
         {
-            get { return "201709081406399_addcc"; }
+            get { return "201709230247066_addtlog_plate"; }
         }
         
         string IMigrationMetadata.Source

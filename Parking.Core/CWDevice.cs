@@ -210,7 +210,7 @@ namespace Parking.Core
                 int.TryParse(nocar, out nocaraddr);
 
                 string partahold = XMLHelper.GetRootNodeValueByXpath("root", "PartAHold");
-                int.TryParse(hascar, out hascaraddr);
+                int.TryParse(hascar, out partaholdaddr);
 
                 string partbhold = XMLHelper.GetRootNodeValueByXpath("root", "PartBHold");
                 int.TryParse(partbhold, out partbholdaddr);
@@ -225,6 +225,7 @@ namespace Parking.Core
             {
                 Log log = LogFactory.GetLogger("JudgeTVHasCar");
                 log.Error(ex.ToString());
+                return 0;
             }
             #endregion
             //搬运器上有车           
@@ -310,7 +311,7 @@ namespace Parking.Core
                 resp = await manager_alarm.UpdateAlarmListAsync(alarmLst);
 
                 #region 报警记录写入数据库              
-                List<Alarm> faultLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Red);
+                List<Alarm> faultLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Red && f.Description.Contains("备用") == false);
                 if (faultLst.Count > 0)
                 {
                     new CWFaultLog().AddFaultRecord(faultLst);
@@ -318,7 +319,7 @@ namespace Parking.Core
                 #endregion
 
                 #region 写状态位记录入数据库
-                List<Alarm> statusLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Green);
+                List<Alarm> statusLst = alarmLst.FindAll(f => f.Color == EnmAlarmColor.Green && f.Description.Contains("备用") == false);
                 if (faultLst.Count > 0)
                 {
                     new CWStatusLog().AddStateRecord(statusLst);
@@ -333,6 +334,10 @@ namespace Parking.Core
                 List<Alarm> hasValueLst = await manager_alarm.FindListAsync(al => al.Warehouse == warehouse && al.DeviceCode == devicecode && al.Value == 1);
                 foreach (Alarm ar in hasValueLst)
                 {
+                    if (ar.Description.Contains("备用"))
+                    {
+                        continue;
+                    }
                     int type = 0;
                     if (ar.Color == EnmAlarmColor.Green)
                     {

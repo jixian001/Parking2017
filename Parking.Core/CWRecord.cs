@@ -33,16 +33,16 @@ namespace Parking.Core
             {
                 #region 记录数据库
                 TelegramLog tlog = new TelegramLog();
-               
+
                 tlog.RecordDtime = DateTime.Now;
                 tlog.Type = type;
                 if (type == 1)
                 {
-                    tlog.Warehouse = data[0];                  
+                    tlog.Warehouse = data[0];
                 }
                 if (type == 2)
                 {
-                    tlog.Warehouse = data[1];                   
+                    tlog.Warehouse = data[1];
                 }
                 if (data[4] != 0)
                 {
@@ -52,8 +52,17 @@ namespace Parking.Core
                 {
                     tlog.Telegram = "(" + data[2] + "," + data[3] + ")";
                 }
+                int dcode = data[6];
+                string plate = "";               
+                ImplementTask itask = await new CWTask().FindAsync(tsk => tsk.DeviceCode == dcode && tsk.IsComplete == 0);
+                if (itask != null)
+                {
+                    plate = itask.PlateNum;
+                }
+                string iccode = data[11].ToString();
                 tlog.DeviceCode = data[6];
-                tlog.ICCode = data[11].ToString();
+                tlog.ICCode = iccode;
+                tlog.PlateNum = plate;
                 tlog.CarInfo = data[23] + "," + data[25] + "," + data[40] + "," + data[47];
                 string fromAddrs = data[30] + "边" + data[31] + "列" + data[32] + "层";
                 string toAddrs = data[35] + "边" + data[36] + "列" + data[37] + "层";

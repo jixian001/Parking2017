@@ -35,7 +35,7 @@ namespace Parking.Core
             List<Location> allLocLst = cwlctn.FindLocList();
             List<Customer> fixCustLst = cwiccd.FindCustList(cu => cu.Type == EnmICCardType.FixedLocation || cu.Type == EnmICCardType.VIP);
             //排除固定车位
-           List<Location> suitLocsLst = allLocLst.FindAll(lc => fixCustLst.Exists(cc => cc.LocAddress == lc.Address && cc.Warehouse == lc.Warehouse));
+            List<Location> suitLocsLst = allLocLst.FindAll(lc => fixCustLst.Exists(cc => cc.LocAddress == lc.Address && cc.Warehouse == lc.Warehouse) == false);
 
            
             List<Location> sameLctnLst = new List<Location>();
@@ -180,9 +180,6 @@ namespace Parking.Core
             }
 
             #endregion
-
-
-
 
             return null;
         }

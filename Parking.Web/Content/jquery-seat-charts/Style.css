@@ -81,7 +81,13 @@ div.seatCharts-seat.outing {
 	background-color: #e25959;
 }
 div.seatCharts-seat.hascarlocker {
-    background-color: #064970;
+    background-color: #fa2d7f;
+}
+div.seatCharts-seat.booking {
+    background-color: #2ef8e0;
+}
+div.seatCharts-seat.willback {
+    background-color: #e5c2db;
 }
 
 .checkout-button {	

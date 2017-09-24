@@ -471,7 +471,7 @@
                         $("#disp").html("读卡成功");
                         $("#physiccode").val(physc);
 
-                        $.ajax({
+                        @*$.ajax({
                             type: "GET",
                             url: "@Url.Action("FindCardOfGUI")",
                             data: { "iccode": physc, "isPhysc": true },
@@ -483,7 +483,7 @@
                             complete: function (XMLHttpRequest, textStatus) {
                                 $("#disp").empty();
                             }
-                        });
+                        });*@
                     }
                     else
                     {

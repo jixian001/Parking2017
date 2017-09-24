@@ -150,7 +150,7 @@ namespace Parking.Web.Areas.ReportManager.Controllers
                             filterLst.AddRange(lst);
                         }
                         DataTable dt = ConvertToDataTable.ToDataTable<TelegramLog>(filterLst);
-                        string path = ExcelUtility.Instance.RenderDataTableToExcel(dt, "报文日志报表", filename, 11);
+                        string path = ExcelUtility.Instance.RenderDataTableToExcel(dt, "报文日志报表", filename, 12);
                         resp.Code = 1;
                         resp.Message = "数据导出成功，记录数- " + filterLst.Count + " ,文件路径- " + path;
                     }

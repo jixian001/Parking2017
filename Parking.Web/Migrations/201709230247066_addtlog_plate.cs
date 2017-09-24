@@ -3,16 +3,16 @@ namespace Parking.Web.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class addplate : DbMigration
+    public partial class addtlog_plate : DbMigration
     {
         public override void Up()
         {
-            AddColumn("dbo.WorkTasks", "PlateNum", c => c.String(maxLength: 10));
+            AddColumn("dbo.TelegramLogs", "PlateNum", c => c.String());
         }
         
         public override void Down()
         {
-            DropColumn("dbo.WorkTasks", "PlateNum");
+            DropColumn("dbo.TelegramLogs", "PlateNum");
         }
     }
 }
