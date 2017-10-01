@@ -113,8 +113,7 @@ namespace Parking.Core
                             return null;
                         }
                     }
-                }
-
+                }               
                 //分配ETV
                 Device dev = PXDAllocateEtvOfFixLoc(hall, lct);
                 if (dev != null)

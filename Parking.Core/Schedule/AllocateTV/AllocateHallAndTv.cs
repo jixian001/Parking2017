@@ -118,8 +118,8 @@ namespace Parking.Core.Schedule
                             else
                             {
                                 //或在公共区域内，也允许空闲的车厅去接车
-                                int min = 5;
-                                int max = 14;
+                                int min = 7;
+                                int max = 12;
                                 if (locColmn > min && locColmn < max)
                                 {
                                     return hall;

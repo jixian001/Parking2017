@@ -37,7 +37,7 @@ namespace Parking.Data
         /// <summary>
         /// 队列的添加，及更新(这里更新时，暂不推送给云端，不关注车厅号发生变化)
         /// </summary>
-        /// <param name="type">1-添加，2-更新(暂不发送)</param>
+        /// <param name="type">1-添加，2-更新,3- 删除</param>
         /// <param name="mtsk"></param>
         public void WatchWorkTask(int type, WorkTask mtsk)
         {

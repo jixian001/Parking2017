@@ -236,13 +236,10 @@ namespace Parking.Data
 
         public async Task<int> UpdateAsync(TEntity entity)
         {
-            //using (var scope = new TransactionScope())
-            //{
-                _dbContext.Set<TEntity>().Attach(entity);
-                _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
-                //scope.Complete();
-                return await _dbContext.SaveChangesAsync();
-            //}            
+            _dbContext.Set<TEntity>().Attach(entity);
+            _dbContext.Entry<TEntity>(entity).State = EntityState.Modified;
+
+            return await _dbContext.SaveChangesAsync();
         }
 
         #endregion

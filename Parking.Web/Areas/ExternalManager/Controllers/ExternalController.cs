@@ -56,7 +56,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);
@@ -203,7 +203,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
 
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);
@@ -269,12 +269,29 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     resp.Message = "车位已被禁用";
                     return Json(resp);
                 }
+                if (loc.Status != EnmLocationStatus.Occupy)
+                {
+                    log.Error("APP取车时，当前车位正在任务业，address - " + loc.Address+" ,status - "+loc.Status.ToString());
+                    resp.Message = "车位已被禁用";
+                    return Json(resp);
+                }
+                int mcount = new CWTask().FindQueueList(q => q.IsMaster == 2).Count();
+                if (mcount > 6)
+                {
+                    log.Error("APP取车时，取车队列已满");
+                    resp.Message = "取车队列已满";
+                    return Json(resp);
+                }
+
                 //分配车厅
                 int hallcode = new CWDevice().AllocateHall(loc, false);
                 Device moHall = new CWDevice().Find(d => d.DeviceCode == hallcode);
+
                 if (moHall != null)
                 {
                     resp = motsk.DealOSwipedCard(moHall, loc);
+
+                    log.Info("APP取车，取车车位 - "+loc.Address+" ,出车车厅 - "+moHall.DeviceCode);
                 }
                 else
                 {
@@ -304,7 +321,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);
@@ -382,7 +399,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);
@@ -405,17 +422,33 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                     return Json(resp);
                 }
                 CWLocation cwlctn = new CWLocation();
+               
                 int deftype = Convert.ToInt32(type);
                 //车位预定
                 if (deftype == 3)
                 {
+                    Location lctn = cwlctn.FindLocation(l => l.PlateNum == plate);
+                    if (lctn != null)
+                    {
+                        if (lctn.Status == EnmLocationStatus.Book)
+                        {
+                            resp.Message = "当前车辆已预约";
+                        }
+                        else
+                        {
+                            resp.Message = "当前车辆已存车";
+                        }
+                        log.Error("当前车辆已存在，不允许预约！");
+                        return Json(resp);
+                    }
+
                     string checkcode = "122";
                     if (proof == "111")
                     {
                         checkcode = "121";
                     }
                     Location loc = new AllocateLocByBook().AllocateLoc(checkcode);
-                    if (loc == null)
+                    if (loc != null)
                     {
                         loc.Status = EnmLocationStatus.Book;
                         loc.PlateNum = plate;
@@ -478,7 +511,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);
@@ -555,7 +588,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             {
                 byte[] bytes = new byte[Request.InputStream.Length];
                 Request.InputStream.Read(bytes, 0, bytes.Length);
-                string req = System.Text.Encoding.Default.GetString(bytes);
+                string req = System.Text.Encoding.UTF8.GetString(bytes);
                 //显示，记录
                 log.Info(req);
                 JObject jo = (JObject)JsonConvert.DeserializeObject(req);

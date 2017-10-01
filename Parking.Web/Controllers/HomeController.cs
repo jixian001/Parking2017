@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Parking.Web.Models;
 using System.Web.Script.Serialization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Parking.Web.Controllers
 {
@@ -251,7 +252,7 @@ namespace Parking.Web.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public async Task<JsonResult> ZhiWen()
+        public JsonResult ZhiWen()
         {
             int isGetCar = 0;
             string plateNum = "";
@@ -298,7 +299,7 @@ namespace Parking.Web.Controllers
                 log.Debug("接收到的指纹数量- " + psTZ.Length);
                 if (psTZ.Length > 380)
                 {
-                    resp = await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
+                    resp =new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ);
                     if (resp.Code == 1)
                     {
                         ZhiWenResult result = resp.Data as ZhiWenResult;
@@ -335,7 +336,7 @@ namespace Parking.Web.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public async Task<JsonResult> IcCard()
+        public JsonResult IcCard()
         {
             int isGetCar = 0;
             string plateNum = "";
@@ -373,7 +374,7 @@ namespace Parking.Web.Controllers
                     return Json(resp);
                 }
                 log.Debug("一体机刷卡信息中，warehouse - " + warehouse + " ,hallID - " + hall);
-                resp = await new CWTaskTransfer(hall, wh).DealFingerICCardMessageAsync(ccode);
+                resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(ccode);
                 if (resp.Code == 1)
                 {
                     ZhiWenResult result = resp.Data as ZhiWenResult;
@@ -408,7 +409,7 @@ namespace Parking.Web.Controllers
         {
             Log log = LogFactory.GetLogger("QueryCarQueue");
             try
-            {
+            {               
                 #region
                 CWTask cwtask = new CWTask();
                 List<WorkTask> mtaskLst = await cwtask.FindQueueListAsync(m => m.IsMaster == 2);
@@ -424,14 +425,24 @@ namespace Parking.Web.Controllers
                 {
                     List<FeedbackQueue> queueLst = new List<FeedbackQueue>();
                     #region
-                    int i = 0;
+                    int i = 1;
                     WorkTask nextworktask = mtaskhashallLst.Find(mt => mt.DeviceCode == hall.DeviceCode && mt.Warehouse == hall.Warehouse);
                     if (nextworktask != null)
                     {
+                        string plate = "";
+                        if (string.IsNullOrEmpty(nextworktask.PlateNum))
+                        {
+                            plate = nextworktask.ICCardCode;
+                        }
+                        else
+                        {
+                            plate = nextworktask.PlateNum;
+                        }
+
                         FeedbackQueue queue = new FeedbackQueue
                         {
                             queueNum = i++,
-                            queueCarbrand = nextworktask.PlateNum,
+                            queueCarbrand =plate,
                             queueIcCode = nextworktask.ICCardCode
                         };
 
@@ -441,10 +452,20 @@ namespace Parking.Web.Controllers
                     List<WorkTask> worktaskLst = mtaskLst.FindAll(mt => mt.DeviceCode == hall.DeviceCode && mt.Warehouse == hall.Warehouse);
                     foreach (WorkTask wtask in worktaskLst)
                     {
+                        string plate = "";
+                        if (string.IsNullOrEmpty(wtask.PlateNum))
+                        {
+                            plate = wtask.ICCardCode;
+                        }
+                        else
+                        {
+                            plate = wtask.PlateNum;
+                        }
+
                         FeedbackQueue queue = new FeedbackQueue
                         {
                             queueNum = i++,
-                            queueCarbrand = wtask.PlateNum,
+                            queueCarbrand = plate,
                             queueIcCode = wtask.ICCardCode
                         };
 
@@ -452,25 +473,32 @@ namespace Parking.Web.Controllers
                     }
                     #endregion
                     string platenum = "";
-                    int tasktype = 0;
+                    string tasktype = "";
                     #region
                     ImplementTask itask = hallTaskLst.Find(ht => ht.DeviceCode == hall.DeviceCode && ht.Warehouse == hall.Warehouse);
                     if (itask != null)
                     {
-                        platenum = itask.PlateNum;
-                        if (itask.Type == EnmTaskType.SaveCar)
+                        if (string.IsNullOrEmpty(itask.PlateNum))
                         {
-                            tasktype = 1;
+                            platenum = itask.ICCardCode;
                         }
                         else
                         {
-                            tasktype = 2;
+                            platenum = itask.PlateNum;
+                        }
+                        if (itask.Type == EnmTaskType.SaveCar)
+                        {
+                            tasktype = "正在存车";
+                        }
+                        else
+                        {
+                            tasktype = "正在取车";
                         }
                     }
                     #endregion
                     FeedbackFingerData single = new FeedbackFingerData
                     {
-                        wareHouseName = (hall.DeviceCode - 10).ToString() + "车厅",
+                        wareHouseName = (hall.DeviceCode - 10).ToString(),
                         carBarnd = platenum,
                         taskType = tasktype,
                         queueList = queueLst
@@ -484,6 +512,7 @@ namespace Parking.Web.Controllers
                     msg = "查询成功",
                     data =fdataLst
                 };
+
                 return Json(iRet);
 
                 #endregion
@@ -507,19 +536,19 @@ namespace Parking.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> TestSubmitFPrint(int wh, int hall, string FPrint)
+        public JsonResult TestSubmitFPrint(int wh, int hall, string FPrint)
         {
             Response resp = new Response();
             byte[] psTZ = FPrintBase64.Base64FingerDataToHex(FPrint.Trim());
-            resp = await new CWTaskTransfer(hall, wh).DealFingerPrintMessageAsync(psTZ);
+            resp = new CWTaskTransfer(hall, wh).DealFingerPrintMessage(psTZ);
             return Json(resp);
         }
 
 
         [HttpPost]
-        public async Task<JsonResult> TestSubmitICCard(int wh, int hall, string physcode)
+        public JsonResult TestSubmitICCard(int wh, int hall, string physcode)
         {
-            Response resp = await new CWTaskTransfer(hall, wh).DealFingerICCardMessageAsync(physcode);
+            Response resp = new CWTaskTransfer(hall, wh).DealFingerICCardMessage(physcode);
             return Json(resp);
         }
 
@@ -534,6 +563,14 @@ namespace Parking.Web.Controllers
             Response resp = new Response();
             //resp = new ContractLimit().UpdateLocalTime();
             return Json(resp);
+        }
+
+        [HttpGet]
+        public ContentResult BookingLocByCheckCode(string checkcode)
+        {
+            Location loc = new AllocateLocByBook().AllocateLoc(checkcode);
+
+            return Content(loc.Address);
         }
 
         #endregion

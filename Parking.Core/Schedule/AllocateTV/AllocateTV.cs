@@ -112,7 +112,11 @@ namespace Parking.Core
                 List<Device> orderbyLst = availableLst.OrderBy(d => Math.Abs(d.Region - hall.Region)).ToList();
                 return orderbyLst[0];
             }
-            return null;
+
+            //最后强制分配
+            Device cetv = nEtvList.Find(d => d.Mode == EnmModel.Automatic && d.Region == hall.Region);
+
+            return cetv;
         }
 
         /// <summary>

@@ -24,11 +24,25 @@ namespace Parking.Core
 
         public Response Update(Device smg)
         {
-            Response resp = manager.Update(smg);
-            if (resp.Code == 1)
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("device update");
+            try
             {
-                //回调设备状态
-                MainCallback<Device>.Instance().OnChange(2, resp.Data);
+                resp = manager.Update(smg);
+                if (resp.Code == 1)
+                {
+                    //回调设备状态
+                    MainCallback<Device>.Instance().OnChange(2, resp.Data);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+
+                Device dev = Find(d => d.DeviceCode == smg.DeviceCode && d.Warehouse == smg.Warehouse);
+                dev.TaskID = smg.TaskID;
+                dev.SoonTaskID = smg.SoonTaskID;
+                manager.Update(dev);
             }
             #region 记录设备状态
             string addrs = "";
@@ -58,11 +72,25 @@ namespace Parking.Core
 
         public async Task<Response> UpdateAsync(Device smg)
         {
-            Response resp = await manager.UpdateAsync(smg);
-            if (resp.Code == 1)
+            Response resp = new Response();
+            Log log = LogFactory.GetLogger("device update");
+            try
             {
-                //回调设备状态
-                MainCallback<Device>.Instance().OnChange(2, resp.Data);
+                resp = await manager.UpdateAsync(smg);
+                if (resp.Code == 1)
+                {
+                    //回调设备状态
+                    MainCallback<Device>.Instance().OnChange(2, resp.Data);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+
+                Device dev = await FindAsync(d => d.DeviceCode == smg.DeviceCode && d.Warehouse == smg.Warehouse);
+                dev.TaskID = smg.TaskID;
+                dev.SoonTaskID = smg.SoonTaskID;
+                await manager.UpdateAsync(smg);
             }
             return resp;
         }
@@ -374,6 +402,7 @@ namespace Parking.Core
                     {
                         return resp;
                     }
+
                     SMSInfo sms = null;
                     if (dicSmsRequest.ContainsKey(smg.DeviceCode))
                     {
@@ -389,11 +418,12 @@ namespace Parking.Core
                         {
                             return resp;
                         }
-                        //内容重复的，一个小时内只发一次
-                        if (info.Message == myalarm.Description&& DateTime.Compare(rcdtime, DateTime.Now.AddHours(1)) < 0)
-                        {
-                            return resp;
-                        }
+                        ////内容重复的，一个小时内只发一次
+                        //if (info.Message == myalarm.Description&& DateTime.Compare(rcdtime, DateTime.Now.AddHours(1)) < 0)
+                        //{
+                        //    return resp;
+                        //}
+
                         sms = new SMSInfo {
                             warehouse=smg.Warehouse,
                             DeviceCode=smg.DeviceCode,
@@ -415,10 +445,14 @@ namespace Parking.Core
                             Message = myalarm.Description,
                             RcdTime = DateTime.Now.ToString()
                         };
-                        dicSmsRequest.Add(smg.DeviceCode,sms);
+
+                        dicSmsRequest.Add(smg.DeviceCode, sms);
                     }
+
                     if (sms != null)
                     {
+                        log.Info("发送短信 - "+ sms.Message);
+
                         CloudCallback.Instance().SendSMSToCloud(sms);
                     }
                 }
