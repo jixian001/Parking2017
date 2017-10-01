@@ -9,7 +9,7 @@ namespace Parking.Web.Models
     {
         public string wareHouseName { get; set; }
         public string carBarnd { get; set; }
-        public int taskType { get; set; }
+        public string taskType { get; set; }
         public List<FeedbackQueue> queueList { get; set; }
     }
 

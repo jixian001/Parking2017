@@ -614,7 +614,7 @@ namespace Parking.Core
             else if (globalRule.TempChgType == EnmTempChargeType.Hour)
             {
                 #region 按时
-                HourChargeDetail hourdetail = hourDetailManager.Find(globalRule.ID);
+                HourChargeDetail hourdetail = hourDetailManager.Find(hc => hc.TempChgID == globalRule.ID);
                 if (hourdetail == null)
                 {
                     resp.Message = "没有找到 按时计费 规则记录！";

@@ -37,7 +37,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         }
 
         [HttpPost]
-        public async Task<ContentResult> CreateDeviceTaskByQueue()
+        public ContentResult CreateDeviceTaskByQueue()
         {
             try
             {
@@ -51,14 +51,12 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
                 string wh = jo["warehouse"].ToString();
                 string code = jo["devicecode"].ToString();
 
-                int id = Convert.ToInt32(queueID);
-                WorkTask queue = new CWTask().FindQueue(id);
-
+                int queueid = Convert.ToInt32(queueID);
+               
                 int warehouse = Convert.ToInt32(wh);
                 int devicecode = Convert.ToInt32(code);
-
-                Device smg = await new CWDevice().FindAsync(d => d.Warehouse == warehouse && d.DeviceCode == devicecode);
-                Response resp = await new CWTask().CreateDeviceTaskByQueueAsync(queue, smg);
+                
+                Response resp =new CWTask().CreateDeviceTaskByQueue(warehouse, queueid,devicecode);
             }
             catch (Exception ex)
             {
@@ -738,6 +736,7 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
         public async Task<ContentResult> MaintainWorkQueue()
         {
             await new CWTask().MaintainWorkQueueAsync();
+
             return Content("success");
         }
 
@@ -757,5 +756,38 @@ namespace Parking.Web.Areas.ExternalManager.Controllers
             };
             return Json(data, JsonRequestBehavior.AllowGet);
         }
+
+        /// <summary>
+        /// 有车入库时，提前给ETV发移动指令
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<ContentResult> AHeadMoveEtvToIHall()
+        {           
+            try
+            {
+                byte[] bytes = new byte[Request.InputStream.Length];
+                Request.InputStream.Read(bytes, 0, bytes.Length);
+                string req = System.Text.Encoding.Default.GetString(bytes);
+
+                JObject jo = (JObject)JsonConvert.DeserializeObject(req);
+                string wh = jo["Warehouse"].ToString();
+                string code= jo["HallCode"].ToString();
+
+                int warehouse = 0;
+                int hallcode = 0;
+
+                int.TryParse(wh, out warehouse);
+                int.TryParse(code,out hallcode);
+
+                await new CWTask().AHeadMoveEtvToIHall(warehouse,hallcode);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            }
+            return Content("success");
+        }
+
     }
 }

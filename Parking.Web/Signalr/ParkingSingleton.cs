@@ -35,7 +35,7 @@ namespace Parking.Web
             MainCallback<Location>.Instance().WatchEvent += FileWatch_LctnWatchEvent;
             MainCallback<Device>.Instance().WatchEvent += FileWatch_DeviceWatchEvent;
             MainCallback<ImplementTask>.Instance().WatchEvent += FileWatch_IMPTaskWatchEvent;
-            MainCallback<WorkTask>.Instance().WatchEvent += ParkingSingleton_WatchEvent;
+            MainCallback<WorkTask>.Instance().WatchEvent += FileWatch_WatchEvent;
             #endregion
 
             #region 个推
@@ -51,7 +51,6 @@ namespace Parking.Web
             CloudCallback.Instance().ImpTaskWatchEvent += ParkingSingleton_ImpTaskWatchEvent;
             CloudCallback.Instance().SendSMSWatchEvent += ParkingSingleton_SendSMSWatchEvent;
             #endregion
-
         }
 
         public IHubConnectionContext<dynamic> Clients
@@ -77,6 +76,8 @@ namespace Parking.Web
                 {
                     dicCurrClients.Add(connID, client);
                 }
+
+                log.Debug("signalr add , client - " + client + " ,count - " + dicCurrClients.Count);
             }
             Clients.All.nowUsers(dicCurrClients);
         }
@@ -85,10 +86,14 @@ namespace Parking.Web
         {
             lock (dicCurrClients)
             {
+                string clientname = "";
                 if (dicCurrClients.ContainsKey(connID))
                 {
+                    clientname = dicCurrClients[connID];
                     dicCurrClients.Remove(connID);
                 }
+
+                log.Debug("signalr remove , client - " + clientname + " ,current count - " + dicCurrClients.Count);
             }
             Clients.All.nowUsers(dicCurrClients);
         }
@@ -331,7 +336,7 @@ namespace Parking.Web
         /// </summary>
         /// <param name="type"></param>
         /// <param name="entity"></param>
-        private void ParkingSingleton_WatchEvent(int type, WorkTask mtsk)
+        private void FileWatch_WatchEvent(int type, WorkTask mtsk)
         {
             try
             {
@@ -480,6 +485,7 @@ namespace Parking.Web
         private void ParkingSingleton_ParkingRcdWatchEvent(ParkingRecord record)
         {
             string jsonstr = JsonConvert.SerializeObject(record);
+           
             Clients.All.feedbackParkingRecordToCloud(jsonstr);
         }
 
@@ -514,7 +520,7 @@ namespace Parking.Web
         /// <param name="type">1-添加，2-更新（暂不用）</param>
         private void ParkingSingleton_MasterTaskWatchEvent(int type, WorkTask mtsk)
         {
-            if (mtsk.IsMaster == 1 || type != 1)
+            if (mtsk.IsMaster == 1)
             {
                 return;
             }
